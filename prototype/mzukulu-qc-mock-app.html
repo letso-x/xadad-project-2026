@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mzukulu QC — Quality Control Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-950:#0A1526; --navy-900:#0F2340; --navy-800:#153252; --navy-700:#1C4066; --navy-600:#2A548A;
+  --slate-50:#F3F5F7; --slate-100:#E7EBEF; --slate-150:#DDE3E9; --slate-200:#CDD5DD; --slate-400:#8C99A6; --slate-600:#54626F; --slate-800:#28323B; --slate-900:#171E24;
+  --brick-700:#8F3226; --brick-600:#A83F31; --brick-100:#F4E0DB; --brick-050:#FAF0ED;
+  --amber-700:#8A5A12; --amber-100:#FAEBD0;
+  --green-700:#1F6E45; --green-100:#DBEFE1;
+  --red-700:#A23127; --red-100:#F6DBD8;
+  --white:#FFFFFF;
+  --radius:3px;
+  --font-display:'IBM Plex Sans',sans-serif; --font-body:'IBM Plex Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--slate-50);color:var(--slate-900);font-family:var(--font-body);font-size:14px;line-height:1.45;}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;color:var(--navy-950);}
+button{font-family:var(--font-body);cursor:pointer;}
+a{color:var(--navy-700);}
+::selection{background:var(--navy-800);color:#fff;}
+
+/* ===== Shell ===== */
+#app{min-height:100vh;display:flex;flex-direction:column;}
+.topbar{background:var(--navy-950);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px;position:sticky;top:0;z-index:50;border-bottom:3px solid var(--brick-600);}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.brand-mark{width:30px;height:30px;border:2px solid #fff;border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:600;font-size:13px;letter-spacing:-1px;}
+.brand-text{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.3px;}
+.brand-text small{display:block;font-weight:400;font-size:10px;color:var(--slate-400);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px;}
+.topnav{display:flex;gap:2px;align-items:center;flex:1;margin-left:36px;}
+.topnav a{color:var(--slate-200);text-decoration:none;font-size:13px;padding:8px 12px;border-radius:2px;font-weight:500;}
+.topnav a.active,.topnav a:hover{background:var(--navy-800);color:#fff;}
+.topbar-right{display:flex;align-items:center;gap:14px;}
+.search-mini{background:var(--navy-900);border:1px solid var(--navy-700);border-radius:2px;padding:6px 10px;display:flex;align-items:center;gap:6px;}
+.search-mini input{background:transparent;border:0;outline:0;color:#fff;font-size:12.5px;width:150px;}
+.search-mini input::placeholder{color:var(--slate-400);}
+.userchip{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--slate-200);}
+.role-pill{background:var(--brick-600);color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:9px;font-weight:600;}
+.switchlink{color:var(--slate-400);text-decoration:underline;cursor:pointer;font-size:11.5px;}
+
+main{flex:1;padding:26px 32px 60px;max-width:1280px;width:100%;margin:0 auto;}
+.pagehead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.pagehead h1{font-size:21px;font-weight:600;}
+.pagehead .sub{color:var(--slate-600);font-size:12.5px;margin-top:3px;}
+.eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--brick-600);font-weight:600;margin-bottom:4px;}
+.crumbs{font-size:12px;color:var(--slate-600);margin-bottom:10px;}
+.crumbs a{color:var(--navy-700);text-decoration:none;}
+.crumbs a:hover{text-decoration:underline;}
+
+/* ===== Buttons ===== */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--slate-200);background:#fff;color:var(--slate-900);padding:8px 14px;border-radius:2px;font-size:12.5px;font-weight:600;letter-spacing:.2px;}
+.btn:hover{border-color:var(--slate-400);}
+.btn-primary{background:var(--navy-900);border-color:var(--navy-900);color:#fff;}
+.btn-primary:hover{background:var(--navy-800);}
+.btn-brick{background:var(--brick-600);border-color:var(--brick-600);color:#fff;}
+.btn-brick:hover{background:var(--brick-700);}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--navy-700);padding:6px 8px;}
+.btn-sm{padding:5px 10px;font-size:11.5px;}
+.btn-danger{color:var(--red-700);border-color:var(--red-100);background:var(--red-100);}
+.btn[disabled]{opacity:.45;cursor:not-allowed;}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ===== Cards / tables ===== */
+.card{background:#fff;border:1px solid var(--slate-150);border-radius:var(--radius);}
+.card-pad{padding:18px 20px;}
+.section-title-bar{background:var(--navy-900);color:#fff;padding:9px 16px;font-family:var(--font-display);font-weight:600;font-size:12.5px;letter-spacing:.4px;text-transform:uppercase;border-radius:3px 3px 0 0;}
+.panel{border:1px solid var(--slate-150);border-radius:var(--radius);margin-bottom:16px;background:#fff;overflow:hidden;}
+.grid{display:grid;gap:14px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:620px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr;}}
+
+.stat{background:#fff;border:1px solid var(--slate-150);border-left:3px solid var(--navy-800);border-radius:2px;padding:14px 16px;}
+.stat .num{font-family:var(--font-mono);font-size:26px;font-weight:600;color:var(--navy-950);}
+.stat .lbl{font-size:11.5px;color:var(--slate-600);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.stat.warn{border-left-color:var(--brick-600);}
+.stat.warn .num{color:var(--brick-600);}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--slate-100);text-align:left;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--slate-600);font-weight:600;border-bottom:1px solid var(--slate-200);}
+td{padding:10px 12px;border-bottom:1px solid var(--slate-100);vertical-align:middle;}
+tr.rowlink{cursor:pointer;}
+tr.rowlink:hover td{background:var(--slate-50);}
+.tablewrap{overflow-x:auto;}
+
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;border-radius:9px;}
+.badge-progress{background:var(--amber-100);color:var(--amber-700);}
+.badge-complete{background:var(--green-100);color:var(--green-700);}
+.badge-ncr{background:var(--red-100);color:var(--red-700);}
+.badge-active{background:var(--green-100);color:var(--green-700);}
+.badge-inactive{background:var(--slate-150);color:var(--slate-600);}
+.badge-neutral{background:var(--slate-150);color:var(--slate-800);}
+
+.mono{font-family:var(--font-mono);}
+.muted{color:var(--slate-600);}
+.small{font-size:12px;}
+.emptystate{padding:44px 20px;text-align:center;color:var(--slate-600);}
+.emptystate h3{color:var(--slate-800);margin-bottom:6px;font-size:15px;}
+
+/* ===== Forms ===== */
+label{display:block;font-size:11.5px;font-weight:600;color:var(--slate-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px;}
+.field{margin-bottom:14px;}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;border:1px solid var(--slate-200);border-radius:2px;padding:8px 10px;font-size:13px;font-family:var(--font-body);background:#fff;color:var(--slate-900);}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--navy-600);outline-offset:0;border-color:var(--navy-600);}
+textarea{resize:vertical;min-height:70px;}
+.help{font-size:11px;color:var(--slate-400);margin-top:4px;}
+.inline-fields{display:flex;gap:10px;align-items:center;}
+.checkline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--slate-800);}
+.checkline input{width:auto;}
+
+.scopebox{background:var(--brick-050);border:1px solid var(--brick-100);border-left:4px solid var(--brick-600);border-radius:2px;padding:14px 16px;margin-bottom:16px;}
+.scopebox .lbl{font-family:var(--font-mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--brick-700);font-weight:600;margin-bottom:6px;}
+.scopebox p{margin:0 0 6px;font-size:12.5px;}
+.scopebox p:last-child{margin-bottom:0;}
+
+/* Segmented A/R/N/A control */
+.seg{display:inline-flex;border:1px solid var(--slate-200);border-radius:3px;overflow:hidden;}
+.seg button{border:0;background:#fff;padding:6px 12px;font-size:11.5px;font-weight:700;color:var(--slate-600);border-right:1px solid var(--slate-200);}
+.seg button:last-child{border-right:0;}
+.seg button.sel-A{background:var(--green-700);color:#fff;}
+.seg button.sel-R{background:var(--red-700);color:#fff;}
+.seg button.sel-NA{background:var(--slate-600);color:#fff;}
+
+.itemrow{border-bottom:1px solid var(--slate-100);padding:14px 4px;}
+.itemrow:last-child{border-bottom:0;}
+.itemrow .itxt{font-size:13px;color:var(--slate-900);margin-bottom:8px;}
+.itemno{font-family:var(--font-mono);color:var(--slate-400);font-weight:600;margin-right:6px;}
+.itemgrid{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:10px;align-items:end;}
+@media(max-width:800px){.itemgrid{grid-template-columns:1fr;}}
+.itemgrid label{margin-bottom:3px;}
+
+.section-hdr{background:var(--navy-800);color:#fff;padding:8px 14px;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--slate-150);margin-bottom:18px;}
+.tabs button{background:transparent;border:0;padding:9px 4px;margin-right:22px;font-size:12.5px;font-weight:600;color:var(--slate-600);border-bottom:2px solid transparent;margin-bottom:-2px;}
+.tabs button.active{color:var(--navy-900);border-bottom-color:var(--brick-600);}
+
+.modal-bg{position:fixed;inset:0;background:rgba(10,21,38,.55);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.modal{background:#fff;border-radius:4px;max-width:520px;width:100%;max-height:88vh;overflow:auto;}
+.modal-hd{background:var(--navy-950);color:#fff;padding:14px 18px;font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
+.modal-bd{padding:18px;}
+.modal-ft{padding:14px 18px;border-top:1px solid var(--slate-150);display:flex;justify-content:flex-end;gap:8px;}
+.xbtn{background:transparent;border:0;color:#fff;font-size:18px;line-height:1;opacity:.8;}
+.xbtn:hover{opacity:1;}
+
+.toast{position:fixed;bottom:22px;right:22px;background:var(--navy-950);color:#fff;padding:12px 18px;border-radius:3px;font-size:12.5px;z-index:300;border-left:4px solid var(--green-700);box-shadow:0 6px 20px rgba(0,0,0,.2);}
+.toast.err{border-left-color:var(--red-700);}
+
+.qc-num{font-family:var(--font-mono);background:var(--slate-100);border:1px solid var(--slate-200);padding:2px 8px;border-radius:2px;font-size:12px;font-weight:600;color:var(--navy-900);}
+
+footer.app-footer{text-align:center;color:var(--slate-400);font-size:11px;padding:20px;border-top:1px solid var(--slate-150);}
+
+.iconbtn{background:transparent;border:1px solid var(--slate-200);width:28px;height:28px;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;color:var(--slate-600);}
+.iconbtn:hover{border-color:var(--slate-400);color:var(--slate-900);}
+
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--navy-950) 0%,var(--navy-900) 55%, var(--navy-800) 100%);}
+.login-card{background:#fff;width:400px;max-width:92vw;border-radius:4px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+.login-hd{background:var(--navy-950);padding:26px 26px 20px;color:#fff;border-bottom:3px solid var(--brick-600);}
+.login-bd{padding:24px 26px 26px;}
+.login-role{border:1px solid var(--slate-200);border-radius:3px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.login-role:hover{border-color:var(--navy-700);background:var(--slate-50);}
+.login-role .t{font-weight:600;font-size:13px;}
+.login-role .d{font-size:11.5px;color:var(--slate-600);}
+
+.formcard-item{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--slate-100);}
+.formcard-item:last-child{border-bottom:0;}
+.formcard-item:hover{background:var(--slate-50);}
+
+.ncrflag{display:inline-flex;align-items:center;gap:4px;color:var(--red-700);font-weight:600;font-size:11px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =========================================================================
+   MZUKULU QC MANAGEMENT — single-file application
+   Persistence: window.storage (Artifact Storage API) — shared=true so the
+   whole "org" sees the same clients/projects/templates/forms/registers,
+   the way a real Supabase-backed multi-user deployment would behave.
+   Session (which demo user you're logged in as) is personal (shared=false).
+   ========================================================================= */
+
+const STORAGE_KEY = 'mzt-qc-db-v1';
+const SESSION_KEY = 'mzt-qc-session-v1';
+
+let DB = null;          // in-memory mirror of persisted data
+let SESSION = null;     // {role:'admin'|'user', name}
+let ROUTE = '';
+let TOAST_TIMER = null;
+
+/* ---------------------------------------------------------------------
+   Utilities
+--------------------------------------------------------------------- */
+function uid(prefix){ return prefix+'_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(d){ if(!d) return '—'; try{ const dt=new Date(d); return dt.toLocaleDateString('en-ZA',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;} }
+function fmtDateTime(d){ if(!d) return '—'; try{ const dt=new Date(d); return dt.toLocaleDateString('en-ZA',{day:'2-digit',month:'short',year:'numeric'})+' · '+dt.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});}catch(e){return d;} }
+function navigate(hash){ window.location.hash = hash; }
+function q(id){ return document.getElementById(id); }
+function isAdmin(){ return SESSION && SESSION.role==='admin'; }
+
+function showToast(msg, isErr){
+  const el = document.createElement('div');
+  el.className = 'toast'+(isErr?' err':'');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(TOAST_TIMER);
+  setTimeout(()=>el.remove(), 2600);
+}
+
+/* ---------------------------------------------------------------------
+   Persistence
+--------------------------------------------------------------------- */
+async function loadDB(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, true);
+    if(res && res.value){ return JSON.parse(res.value); }
+  }catch(e){ /* not found yet */ }
+  return null;
+}
+async function saveDB(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(DB), true);
+  }catch(e){
+    console.error('Storage error', e);
+    showToast('Could not save — storage error', true);
+  }
+}
+async function loadSession(){
+  try{
+    const res = await window.storage.get(SESSION_KEY, false);
+    if(res && res.value) return JSON.parse(res.value);
+  }catch(e){}
+  return null;
+}
+async function saveSession(){
+  try{ await window.storage.set(SESSION_KEY, JSON.stringify(SESSION), false); }catch(e){}
+}
+
+/* ---------------------------------------------------------------------
+   Demo seed data — structures below are taken directly from the
+   uploaded Mzukulu QC-3xx checklists and the QC-203 register.
+--------------------------------------------------------------------- */
+function seedTemplates(){
+  function items(list){
+    return list.map((it,i)=>({ id: uid('itm'), no:i+1, text:it[0], hasRef: !!it[1], refLabel: it[1]||'', refRequired: !!it[1] }));
+  }
+  const T = [];
+
+  T.push({
+    id:'tpl-301', docNumber:'MZT-QC-301', docName:'Cable Trenching & Installation',
+    description:'Underground cable route — excavation, bedding, laying and reinstatement',
+    revision:'Rev 1', issueDate:'2025-01-15', active:true,
+    projectFields:['Trench section / Ref.','Cable N° / Schedule ref.'],
+    scope:"Work to conform to the latest 'Approved for Construction' drawings, the approved cable schedule, the project standard trench detail and SANS 10142-1.",
+    acceptance:"Trench may not be covered until every line below is signed 'A' or a closed-out NCR is referenced.",
+    sections:[{id:uid('sec'), title:'', items: items([
+      ['Route of the excavation is as per the AFC drawing; existing services proved and permit to excavate in place.'],
+      ['Excavated trench width and depth are as per the standard drawing.','Depth / Width (mm)'],
+      ['Trench floor is free of debris, stones, roots and standing water.'],
+      ['Sleeve / kick-pipe size, quantity and location are as per drawing.'],
+      ['50 mm bedding of clean sieved sand placed and levelled before cables are laid.'],
+      ['Cables installed as per AFC drawings and the approved cable schedule.'],
+      ['Cables correctly numbered and tagged at both ends and at 5 m intervals.'],
+      ['Cables properly dressed, laid without crossovers and with correct phase / group spacing.'],
+      ['Cables free of kinks and surface damage; minimum bending radius maintained.'],
+      ['Cable continuity and insulation tests completed and results recorded.','Certificate N°'],
+      ['Trench back-filled and compacted with clean sieved sand to 300 mm below finished grade.'],
+      ['Warning / protection tiles fitted continuously over the full cable run.'],
+      ['Cable warning tape installed at 300 mm below finished grade.'],
+      ['Trench back-filled and compacted with surrounding earth to finished grade; surface reinstated.'],
+      ['Cables emerging from underground protected by kick pipes and correctly sealed.'],
+      ['Route markers installed at changes of direction, at joints and at road crossings.'],
+      ["All field revisions recorded on the 'As-Built' drawing set."]
+    ])}]
+  });
+
+  T.push({
+    id:'tpl-302', docNumber:'MZT-QC-302', docName:'Underground Cable Installation',
+    description:'Cable pulling, laying and protection in trench, sleeve and duct',
+    revision:'Rev 1', issueDate:'2025-01-15', active:true,
+    projectFields:['Trench / Duct section','Cable N° / Type'],
+    scope:"Pulling tension and bending radius shall not exceed the cable manufacturer's published limits.",
+    acceptance:"Cables shall be tested before and after pulling — record both certificate numbers.",
+    sections:[{id:uid('sec'), title:'', items: items([
+      ['Route of the excavation is as per the AFC drawing.'],
+      ['Excavated trench width and depth are as per the standard drawing.'],
+      ['Trench floor free of debris, stones, roots and standing water.'],
+      ['Sleeve size, position and bell-ends are as per drawing.'],
+      ['50 mm bedding of clean sieved sand placed before cables are laid.'],
+      ['Drum test certificate available and acceptable prior to pulling.','Certificate N°'],
+      ['Cable rollers, bends and pulling equipment correctly set up; pulling eye / stocking correct.'],
+      ['Pulling tension monitored and within the manufacturer\'s limit.','Max tension (kN)'],
+      ['Cables installed as per AFC drawings and the approved cable schedule.'],
+      ['Cables correctly numbered and tagged at both ends and at 5 m intervals.'],
+      ['Cables properly dressed with adequate slack left at both terminations.'],
+      ['Cables free of kinks and surface damage; minimum bending radius maintained.'],
+      ['Post-installation continuity and insulation tests completed and recorded.','Certificate N°'],
+      ['Trench back-filled and compacted with clean sieved sand to 350 mm below grade.'],
+      ['Protection tiles and warning tape fitted.'],
+      ['Trench back-filled and compacted with surrounding earth to finished grade.'],
+      ['Cables emerging from underground protected by kick pipes; kick pipes correctly sealed.'],
+      ["All field revisions recorded on the 'As-Built' drawing set."]
+    ])}]
+  });
+
+  T.push({
+    id:'tpl-303', docNumber:'MZT-QC-303', docName:'Underground Sleeve & Conduit Installation',
+    description:'Sleeves, ducts and road crossings prior to cable pulling',
+    revision:'Rev 1', issueDate:'2025-01-15', active:true,
+    projectFields:['Location / Chainage','Sleeve size & type'],
+    scope:"Conduit and sleeve installation to conform to SANS 10142-1 and the project standard drawings.",
+    acceptance:"Total bend in any one system shall not exceed 360° without an intermediate pull box.",
+    sections:[{id:uid('sec'), title:'', items: items([
+      ['Trenching checked for location, elevation and levelness and is free of debris.'],
+      ['Pipe size, location and routing conform to drawings; material correct and undamaged.'],
+      ['Field bend radius correct per drawing and pipe free of deformities or flattening.'],
+      ['Trenching checked for interference with underground piping, earthing and other services.'],
+      ['Seals installed on all exposed pipe ends before concrete is poured.'],
+      ['Underground sleeves extend at least 750 mm past the edge of the road crossing.'],
+      ['Bell-ends fitted to all conduit terminations.'],
+      ['Long-radius bends correctly jointed to conduit; joints solvent-welded / coupled as specified.'],
+      ['Stub-ups maintain 50 mm spacing from the structure and are correctly supported.'],
+      ['Conduit left with end caps and pulling ropes installed.'],
+      ['Conduit cleaned with mandrel and swabbing brush prior to pulling cable.'],
+      ['Earthing / bonding completed where RGS (galvanised steel) conduit is used.'],
+      ['Duct seals installed where conduit enters or leaves a hazardous area classification.'],
+      ['Conduit closed up with duct seal after cable installation.'],
+      ['Back-fill and compaction test performed as required.','Result (%)'],
+      ['Conduit and installation conform to SANS standards and project specification.'],
+      ["All field revisions recorded on the 'As-Built' drawing set."]
+    ])}]
+  });
+
+  T.push({
+    id:'tpl-304', docNumber:'MZT-QC-304', docName:'Manufacture & Installation of Cable Racks',
+    description:'Cable ladder, tray and support steelwork',
+    revision:'Rev 1', issueDate:'2025-01-15', active:true,
+    projectFields:['Cable rack section','Rack type & size'],
+    scope:"Racking, brackets and fixings to be as per AFC drawings and the manufacturer's installation instructions.",
+    acceptance:"Earth continuity across the full racking run must be proved and recorded before cables are installed.",
+    sections:[{id:uid('sec'), title:'', items: items([
+      ['Cable racks and support brackets manufactured to AFC drawings.'],
+      ['Material, finish and corrosion protection as per specification.'],
+      ['Cable rack route as per AFC drawing.'],
+      ["Support brackets evenly spaced and correctly mounted; span within manufacturer's limits."],
+      ['Installed racking is the correct size, orientation and elevation.'],
+      ['Minimum separation from hot surfaces, process piping and instrument routes maintained.'],
+      ['Installed racking does not obstruct walkways, access routes or equipment removal paths.'],
+      ['Racking securely fixed to supports with the correct specified bolts, nuts and washers.'],
+      ['Installed sections correctly joined with splice plates and the specified fasteners.'],
+      ['All bolts torqued as per manufacturer specification.','Torque (Nm)'],
+      ['Cut and welded sections cleaned and coated by the client-approved method.'],
+      ['Segregation between power, control and instrument racks maintained as specified.'],
+      ['Racking bonded, electrically continuous and connected to the main earth.'],
+      ['Earth continuity test completed and results recorded.','Certificate N°'],
+      ['Covers / lids fitted where specified and correctly secured.'],
+      ["All field revisions recorded on the 'As-Built' drawing set."]
+    ])}]
+  });
+
+  T.push({
+    id:'tpl-305', docNumber:'MZT-QC-305', docName:'Above-Ground Cable Installation',
+    description:'Cables installed on racking, tray, trunking and cleats',
+    revision:'Rev 1', issueDate:'2025-01-15', active:true,
+    projectFields:['Cable rack section','Cable N° / Schedule ref.'],
+    scope:"Racking must be signed off on MZT-QC-304 before cables are installed on it.",
+    acceptance:"Cable spacing, segregation and fixing centres to be as per specification.",
+    sections:[{id:uid('sec'), title:'', items: items([
+      ['Cable size, type, location and routing are as per the AFC cable schedule.'],
+      ['Cable racks approved for cable installation (MZT-QC-304 signed off).'],
+      ['Cable reference tags fitted at both ends and at required intervals, as per cable schedule.'],
+      ['Cables free of kinks, flattening and surface damage.'],
+      ['Cable bending radius correct at all changes of direction.'],
+      ['Cables installed without crossovers and strapped to tray at the specified centres.'],
+      ['Correct segregation maintained between power, control, instrument and IS circuits.'],
+      ['Cable cleats / straps of correct type, UV-rated where exposed, and correctly tensioned.'],
+      ['Cables exit tray from the rear / underside as per standard detail.'],
+      ['Adequate slack left at both terminations for glanding and future re-termination.'],
+      ['Vertical runs adequately supported; weight not carried on glands or terminations.'],
+      ['Fire-stopping / barriers reinstated at all wall and floor penetrations.'],
+      ['Continuity and insulation tests performed and results recorded.','Certificate N°'],
+      ["All revisions recorded on the 'As-Built' drawing set."]
+    ])}]
+  });
+
+  T.push({
+    id:'tpl-306', docNumber:'MZT-QC-306', docName:'Electrical Enclosure Installation',
+    description:'Junction boxes, marshalling cabinets, local panels and field enclosures',
+    revision:'Rev 1', issueDate:'2025-01-15', active:true,
+    projectFields:['Enclosure / Cabinet N°','Area classification & IP rating'],
+    scope:"To prevent ingress of dust and water, doors and covers are to be opened only while work is in progress.",
+    acceptance:"Where the enclosure is installed in a classified area, the Ex certification must be verified and recorded.",
+    sections:[
+      {id:uid('sec'), title:'Enclosure & Mounting', items: items([
+        ['Installation conforms to the area classification and the specified IP rating.'],
+        ['Identification and warning labels fitted and legible.'],
+        ['Location, elevation and orientation as per drawing.'],
+        ['Enclosure properly mounted with no uncertified modifications or unauthorised drilling.'],
+        ['Correct separation maintained between the enclosure and adjacent equipment / hot surfaces.'],
+        ['Suitably positioned for safe access by operations and maintenance.'],
+        ['All brackets secured, bolts cut to correct length, cut edges corrosion-protected.']
+      ])},
+      {id:uid('sec'), title:'Cable Entry & Termination', items: items([
+        ['Correct cable glands installed, tight, with IP washers fitted; unused entries blanked with certified plugs.'],
+        ['Cables correctly secured with no strain on cable glands.'],
+        ['Cables correctly tagged and circuit numbers installed as per schedule.'],
+        ['Terminal rails secured and spacing correct; terminals of correct type and rating.'],
+        ['Terminals secured with correct end stops and end-shield assemblies fitted.'],
+        ['Phase separation integrity maintained (barriers / live-part shrouding installed).'],
+        ['Terminal identification markers installed and matching the termination schedule.'],
+        ['Core / wire markers installed at both ends.'],
+        ['Correct lugs installed, fully crimped, with no excess exposed copper.'],
+        ['All terminals checked for tightness.','Torque (Nm)']
+      ])},
+      {id:uid('sec'), title:'Internals, Earthing & Close-Out', items: items([
+        ['Internals clean, dry and free of moisture and construction debris.'],
+        ['All circuit breakers, fuses and links verified for continuity, rating and type.'],
+        ['Internal wiring layout neat, tidy and correctly routed in trunking.'],
+        ['Internal and external earthing and bonding complete; earth sleeves / tape installed.'],
+        ['Neutrals identified and terminated in the correct sequence.'],
+        ['Gaskets and seals undamaged and correctly fitted; weather-proofing devices installed.'],
+        ['No visible damage; all doors and covers installed and secured.'],
+        ["All revisions recorded on the 'As-Built' drawing set."]
+      ])}
+    ]
+  });
+
+  return T;
+}
+
+function seedDB(){
+  const clientId = 'cli-hulett';
+  const projectId = 'prj-hulett-factory';
+  const templates = seedTemplates();
+
+  const db = {
+    clients:[
+      { id: clientId, name:'Hulett', contact:'Sipho Ndlovu · sipho.ndlovu@hulett.co.za · 031 555 0142', active:true }
+    ],
+    projects:[
+      { id: projectId, clientId, name:'Hulett Factory Electrical Installation', number:'MZT-2026-014',
+        contractNo:'HUL/EL/2026/03', site:'Hulett Sugar Refinery, Durban', description:'New electrical reticulation for the factory expansion — underground and above-ground cabling, racking and field enclosures.',
+        status:'Active', startDate:'2026-02-10', endDate:'2026-11-30' }
+    ],
+    templates,
+    forms:[],
+    registers:[]
+  };
+
+  // Demo form instance 1 — MZT-QC-301, in progress
+  const t301 = templates.find(t=>t.id==='tpl-301');
+  const f1items = t301.sections[0].items.map((it,i)=>({ itemId:it.id, resp: i<11 ? 'A' : (i===11?'R':null), ref: it.hasRef ? (i===1?'Depth 900 mm  Width 450 mm':'') : '', initials: i<12?'TM':'', date: i<12?'2026-03-14':'', ncrClosed:false }));
+  db.forms.push({
+    id:'frm-demo-301a', templateId:'tpl-301', projectId, qcRecordNo:'QC-0001',
+    fieldValues:{'Trench section / Ref.':'TR-01 (Sub A to MDB1)','Cable N° / Schedule ref.':'C-014 / Sched Rev C'},
+    status:'In Progress', items:f1items,
+    remarks:'Protection tiles for the final 40 m section not yet installed — awaiting tile delivery.',
+    ncrNo:'NCR-0007',
+    signoff:{ inspected:{name:'T. Mahlangu',sig:'',date:'2026-03-14'}, reviewed:{name:'',sig:'',date:''}, approved:{name:'',sig:'',date:''} },
+    createdAt:'2026-03-12T08:20:00Z', updatedAt:'2026-03-14T15:05:00Z', createdBy:'Site User'
+  });
+
+  // Demo form instance 2 — MZT-QC-305, complete/accepted (shows same-template-multiple-times pattern too)
+  const t305 = templates.find(t=>t.id==='tpl-305');
+  const f2items = t305.sections[0].items.map((it)=>({ itemId:it.id, resp:'A', ref: it.hasRef?'Cert. N° EI-2231':'', initials:'TM', date:'2026-04-02', ncrClosed:false }));
+  db.forms.push({
+    id:'frm-demo-305a', templateId:'tpl-305', projectId, qcRecordNo:'QC-0002',
+    fieldValues:{'Cable rack section':'Rack Run 3 — Substation to MCC2','Cable N° / Schedule ref.':'C-021 to C-034'},
+    status:'Complete - Accepted', items:f2items, remarks:'', ncrNo:'',
+    signoff:{ inspected:{name:'T. Mahlangu',sig:'✓',date:'2026-04-02'}, reviewed:{name:'B. Reddy',sig:'✓',date:'2026-04-03'}, approved:{name:'S. Ndlovu',sig:'✓',date:'2026-04-04'} },
+    createdAt:'2026-04-01T09:00:00Z', updatedAt:'2026-04-04T11:00:00Z', createdBy:'Site User'
+  });
+
+  // Demo form instance 3 - MZT-QC-309-style placeholder skipped (309 not uploaded); use 306 in progress instead
+  const t306 = templates.find(t=>t.id==='tpl-306');
+  const allItems306 = t306.sections.flatMap(s=>s.items);
+  const f3items = allItems306.map((it,i)=>({ itemId:it.id, resp: i<10?'A':null, ref:'', initials:i<10?'PN':'', date:i<10?'2026-05-06':'', ncrClosed:false }));
+  db.forms.push({
+    id:'frm-demo-306a', templateId:'tpl-306', projectId, qcRecordNo:'QC-0003',
+    fieldValues:{'Enclosure / Cabinet N°':'JB-014','Area classification & IP rating':'Zone 2 / IP65'},
+    status:'In Progress', items:f3items, remarks:'', ncrNo:'',
+    signoff:{ inspected:{name:'',sig:'',date:''}, reviewed:{name:'',sig:'',date:''}, approved:{name:'',sig:'',date:''} },
+    createdAt:'2026-05-06T07:40:00Z', updatedAt:'2026-05-06T12:10:00Z', createdBy:'Site User'
+  });
+
+  // Demo register — MZT-QC-203
+  db.registers.push({
+    id:'reg-demo-1', projectId, qcRecordNo:'QC-0004',
+    fieldValues:{ project:'Hulett Factory Electrical Installation', projectNo:'MZT-2026-014', client:'Hulett', contractNo:'HUL/EL/2026/03',
+      area:'Sub A — MDB1 Feeders', drawingRev:'E-1042 Rev C', cableScheduleRef:'CS-014 Rev C', registerRevision:'Rev 2' },
+    cables:[
+      { id:uid('cab'), no:1, cableNo:'C-014', from:'Sub A', to:'MDB1', type:'3C x 95mm² Cu XLPE', drumNo:'D-2201', length:'145', pulled:true, glanded:true, terminated:true, irCert:'IR-3301', contCert:'CT-3301', complete:true },
+      { id:uid('cab'), no:2, cableNo:'C-015', from:'Sub A', to:'MDB1', type:'3C x 95mm² Cu XLPE', drumNo:'D-2201', length:'148', pulled:true, glanded:true, terminated:false, irCert:'', contCert:'', complete:false },
+      { id:uid('cab'), no:3, cableNo:'C-021', from:'MCC2', to:'Pump P-04', type:'4C x 16mm² Cu XLPE', drumNo:'D-2214', length:'62', pulled:true, glanded:false, terminated:false, irCert:'', contCert:'', complete:false },
+      { id:uid('cab'), no:4, cableNo:'C-022', from:'MCC2', to:'Pump P-05', type:'4C x 16mm² Cu XLPE', drumNo:'D-2214', length:'58', pulled:false, glanded:false, terminated:false, irCert:'', contCert:'', complete:false }
+    ],
+    notes:'Cables C-014/C-015 pulled together in TR-01 — see MZT-QC-301 QC-0001 for trench sign-off.',
+    signoff:{ maintainedBy:{name:'Mzukulu Technologies — QC',sig:'T. Mahlangu',date:'2026-04-05'}, verifiedBy:{name:'Managing Contractor',sig:'',date:''} },
+    status:'In Progress', createdAt:'2026-03-12T08:00:00Z', updatedAt:'2026-04-05T10:00:00Z', createdBy:'Site User'
+  });
+
+  return db;
+}
+
+/* ---------------------------------------------------------------------
+   Boot
+--------------------------------------------------------------------- */
+async function boot(){
+  q_app().innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#8C99A6;font-family:IBM Plex Mono,monospace;font-size:12px;letter-spacing:1px;">LOADING MZUKULU QC…</div>';
+  let loaded = await loadDB();
+  if(!loaded){ loaded = seedDB(); DB = loaded; await saveDB(); }
+  DB = loaded;
+  SESSION = await loadSession();
+  window.addEventListener('hashchange', render);
+  render();
+}
+function q_app(){ return document.getElementById('app'); }
+
+/* ---------------------------------------------------------------------
+   Data helpers
+--------------------------------------------------------------------- */
+function getClient(id){ return DB.clients.find(c=>c.id===id); }
+function getProject(id){ return DB.projects.find(p=>p.id===id); }
+function getTemplate(id){ return DB.templates.find(t=>t.id===id); }
+function getForm(id){ return DB.forms.find(f=>f.id===id); }
+function getRegister(id){ return DB.registers.find(r=>r.id===id); }
+function projectsForClient(cid){ return DB.projects.filter(p=>p.clientId===cid); }
+function formsForProject(pid){ return DB.forms.filter(f=>f.projectId===pid); }
+function registersForProject(pid){ return DB.registers.filter(r=>r.projectId===pid); }
+function allTemplateItemIds(t){ return t.sections.flatMap(s=>s.items.map(i=>i.id)); }
+function templateItemById(t,itemId){ for(const s of t.sections){ const it=s.items.find(x=>x.id===itemId); if(it) return it; } return null; }
+
+function nextQcRecordNo(){
+  const nums = [];
+  DB.forms.forEach(f=>{ const m=/QC-(\d+)/.exec(f.qcRecordNo||''); if(m) nums.push(parseInt(m[1],10)); });
+  DB.registers.forEach(r=>{ const m=/QC-(\d+)/.exec(r.qcRecordNo||''); if(m) nums.push(parseInt(m[1],10)); });
+  const next = (nums.length? Math.max(...nums):0)+1;
+  return 'QC-'+String(next).padStart(4,'0');
+}
+
+function formStatusBadge(status){
+  if(status==='In Progress') return '<span class="badge badge-progress">In Progress</span>';
+  if(status==='Complete - Accepted') return '<span class="badge badge-complete">Complete — Accepted</span>';
+  if(status==='Complete - NCR Raised') return '<span class="badge badge-ncr">Complete — NCR Raised</span>';
+  return '<span class="badge badge-neutral">'+esc(status)+'</span>';
+}
+
+/* =========================================================================
+   ROUTER / RENDER
+   ========================================================================= */
+function parseHash(){
+  let h = window.location.hash.replace(/^#\/?/,'');
+  const [path, qs] = h.split('?');
+  const parts = path.split('/').filter(Boolean);
+  const params = {};
+  if(qs) qs.split('&').forEach(kv=>{ const [k,v]=kv.split('='); params[decodeURIComponent(k)] = decodeURIComponent(v||''); });
+  return {parts, params};
+}
+
+function render(){
+  if(!SESSION){ q_app().innerHTML = viewLogin(); return; }
+  const {parts, params} = parseHash();
+  const root = parts[0] || 'dashboard';
+  let body = '';
+  ROUTE = root;
+
+  if(root==='dashboard') body = viewDashboard();
+  else if(root==='clients') body = viewClients();
+  else if(root==='projects' && parts[1]) body = viewProjectDetail(parts[1]);
+  else if(root==='projects') body = viewProjects();
+  else if(root==='library') body = viewLibrary();
+  else if(root==='templates' && parts[1]==='new') body = requireAdmin(viewTemplateEditor(null));
+  else if(root==='templates' && parts[2]==='edit') body = requireAdmin(viewTemplateEditor(parts[1]));
+  else if(root==='templates') body = requireAdmin(viewTemplates());
+  else if(root==='form' && parts[1]==='new') body = viewFormNew(params);
+  else if(root==='form' && parts[1]) body = viewFormDetail(parts[1]);
+  else if(root==='register' && parts[1]==='new') body = viewRegisterNew(params);
+  else if(root==='register' && parts[1]) body = viewRegisterDetail(parts[1]);
+  else if(root==='search') body = viewSearch(params.q||'');
+  else if(root==='users') body = requireAdmin(viewUsers());
+  else body = viewDashboard();
+
+  q_app().innerHTML = shell(body, root);
+  attachGlobalHandlers();
+}
+
+function requireAdmin(html){
+  if(!isAdmin()) return '<div class="emptystate"><h3>Administrator access required</h3><p>You need administrator permissions to view this page.</p></div>';
+  return html;
+}
+
+/* ---------------------------------------------------------------------
+   Shell / navigation chrome
+--------------------------------------------------------------------- */
+function shell(body, root){
+  const navItems = [
+    ['dashboard','Dashboard'], ['clients','Clients'], ['projects','Projects'],
+    ['library','Form Library']
+  ];
+  if(isAdmin()) navItems.push(['templates','Checklist Builder']);
+  const nav = navItems.map(([r,label])=>`<a href="#/${r}" class="${root===r?'active':''}">${label}</a>`).join('');
+  return `
+  <div class="topbar">
+    <div style="display:flex;align-items:center;">
+      <div class="brand" onclick="navigate('#/dashboard')">
+        <div class="brand-mark">MZ</div>
+        <div class="brand-text">Mzukulu QC<small>Quality Control System</small></div>
+      </div>
+      <div class="topnav">${nav}</div>
+    </div>
+    <div class="topbar-right">
+      <form class="search-mini" onsubmit="return doGlobalSearch(event)">
+        <span style="color:#8C99A6;font-size:12px;">⌕</span>
+        <input id="globalSearchInput" type="text" placeholder="Search projects, forms, clients…">
+      </form>
+      <div class="userchip">
+        <span>${esc(SESSION.name)}</span>
+        <span class="role-pill">${esc(SESSION.role)}</span>
+        <span class="switchlink" onclick="doLogout()">Switch user</span>
+      </div>
+    </div>
+  </div>
+  <main>${body}</main>
+  <footer class="app-footer">Mzukulu Technologies (Pty) Ltd — QC Management System · Demo data environment</footer>
+  `;
+}
+
+function doGlobalSearch(ev){
+  ev.preventDefault();
+  const v = q('globalSearchInput').value.trim();
+  navigate('#/search?q='+encodeURIComponent(v));
+  return false;
+}
+function attachGlobalHandlers(){
+  const {params} = parseHash();
+  if(ROUTE==='search' && params.q){ const el=q('globalSearchInput'); if(el) el.value = params.q; }
+}
+
+/* ---------------------------------------------------------------------
+   LOGIN
+--------------------------------------------------------------------- */
+function viewLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-hd">
+        <div class="brand-mark" style="margin-bottom:10px;">MZ</div>
+        <h1 style="color:#fff;font-size:18px;">Mzukulu QC</h1>
+        <div style="color:#9FB0C6;font-size:12px;margin-top:2px;">Quality Control Management System</div>
+      </div>
+      <div class="login-bd">
+        <div class="eyebrow" style="margin-bottom:10px;">Select a demo account</div>
+        <div class="login-role" onclick="doLogin('admin')">
+          <div><div class="t">Admin Demo — S. Ndlovu</div><div class="d">Full access: clients, projects, checklist builder</div></div>
+          <div class="role-pill">Admin</div>
+        </div>
+        <div class="login-role" onclick="doLogin('user')">
+          <div><div class="t">Site User Demo — T. Mahlangu</div><div class="d">Complete forms, view projects, search records</div></div>
+          <div class="role-pill" style="background:#153252;">User</div>
+        </div>
+        <div class="help" style="margin-top:14px;">This demo signs you in as one of two roles to show role-based access. A production deployment would use Supabase Auth with real accounts.</div>
+      </div>
+    </div>
+  </div>`;
+}
+async function doLogin(role){
+  SESSION = { role, name: role==='admin' ? 'S. Ndlovu' : 'T. Mahlangu' };
+  await saveSession();
+  navigate('#/dashboard');
+  render();
+}
+async function doLogout(){
+  SESSION = null;
+  try{ await window.storage.delete(SESSION_KEY, false); }catch(e){}
+  render();
+}
+
+/* ---------------------------------------------------------------------
+   DASHBOARD
+--------------------------------------------------------------------- */
+function viewDashboard(){
+  const totalProjects = DB.projects.length;
+  const activeProjects = DB.projects.filter(p=>p.status==='Active').length;
+  const inProgress = DB.forms.filter(f=>f.status==='In Progress').length + DB.registers.filter(r=>r.status==='In Progress').length;
+  const completed = DB.forms.filter(f=>f.status.startsWith('Complete')).length + DB.registers.filter(r=>r.status==='Complete').length;
+  const attention = DB.forms.filter(f=>f.status==='Complete - NCR Raised' || (f.status==='In Progress' && f.items.some(i=>i.resp==='R'))).length;
+
+  const recentAll = [
+    ...DB.forms.map(f=>({...f, kind:'form'})),
+    ...DB.registers.map(r=>({...r, kind:'register'}))
+  ];
+  const recentCreated = [...recentAll].sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);
+  const recentUpdated = [...recentAll].sort((a,b)=> new Date(b.updatedAt)-new Date(a.updatedAt)).slice(0,5);
+
+  function rowFor(item){
+    const proj = getProject(item.projectId);
+    const label = item.kind==='form' ? getTemplate(item.templateId).docNumber+' — '+getTemplate(item.templateId).docName : 'MZT-QC-203 — Cable Schedule & Installation Register';
+    const link = item.kind==='form' ? '#/form/'+item.id : '#/register/'+item.id;
+    return `<div class="formcard-item rowlink" onclick="navigate('${link}')" style="cursor:pointer;">
+      <div>
+        <div style="font-weight:600;font-size:12.5px;">${esc(label)}</div>
+        <div class="small muted">${esc(proj?proj.name:'')} · <span class="qc-num">${esc(item.qcRecordNo)}</span></div>
+      </div>
+      ${item.kind==='form'?formStatusBadge(item.status):formStatusBadge(item.status==='Complete'?'Complete - Accepted':'In Progress')}
+    </div>`;
+  }
+
+  return `
+  <div class="eyebrow">Overview</div>
+  <div class="pagehead"><h1>Dashboard</h1></div>
+
+  <div class="grid grid-4" style="margin-bottom:22px;">
+    <div class="stat"><div class="num">${totalProjects}</div><div class="lbl">Total Projects</div></div>
+    <div class="stat"><div class="num">${activeProjects}</div><div class="lbl">Active Projects</div></div>
+    <div class="stat"><div class="num">${inProgress}</div><div class="lbl">Forms In Progress</div></div>
+    <div class="stat"><div class="num">${completed}</div><div class="lbl">Completed Forms</div></div>
+  </div>
+  <div class="grid grid-4" style="margin-bottom:26px;">
+    <div class="stat warn"><div class="num">${attention}</div><div class="lbl">Requiring Attention (NCR)</div></div>
+    <div class="stat"><div class="num">${DB.clients.length}</div><div class="lbl">Clients</div></div>
+    <div class="stat"><div class="num">${DB.templates.filter(t=>t.active).length}</div><div class="lbl">Active Checklist Templates</div></div>
+    <div class="stat"><div class="num">${DB.forms.length+DB.registers.length}</div><div class="lbl">Total QC Records</div></div>
+  </div>
+
+  <div class="pagehead"><h1 style="font-size:15px;">Quick Actions</h1></div>
+  <div class="btnrow" style="margin-bottom:26px;">
+    <button class="btn btn-primary" onclick="navigate('#/library')">＋ New Form</button>
+    <button class="btn" onclick="navigate('#/projects')">View Projects</button>
+    <button class="btn" onclick="navigate('#/search')">Search Forms</button>
+    <button class="btn" onclick="navigate('#/library')">Form Library</button>
+    ${isAdmin()?`
+    <button class="btn" onclick="navigate('#/templates')">Manage Checklist Templates</button>
+    <button class="btn" onclick="navigate('#/templates/new')">Create Checklist Template</button>
+    <button class="btn" onclick="navigate('#/projects')">Manage Projects</button>
+    <button class="btn" onclick="navigate('#/clients')">Manage Clients</button>`:''}
+  </div>
+
+  <div class="grid grid-2">
+    <div class="panel">
+      <div class="section-title-bar">Recently Created</div>
+      ${recentCreated.length? recentCreated.map(rowFor).join('') : '<div class="emptystate small">No records yet.</div>'}
+    </div>
+    <div class="panel">
+      <div class="section-title-bar">Recently Updated</div>
+      ${recentUpdated.length? recentUpdated.map(rowFor).join('') : '<div class="emptystate small">No records yet.</div>'}
+    </div>
+  </div>
+  `;
+}
+
+/* ---------------------------------------------------------------------
+   CLIENTS
+--------------------------------------------------------------------- */
+function viewClients(){
+  const rows = DB.clients.map(c=>{
+    const projCount = projectsForClient(c.id).length;
+    return `<tr class="rowlink" onclick="openClient('${c.id}')">
+      <td style="font-weight:600;">${esc(c.name)}</td>
+      <td class="muted small">${esc(c.contact||'—')}</td>
+      <td>${projCount} project${projCount===1?'':'s'}</td>
+      <td>${c.active?'<span class="badge badge-active">Active</span>':'<span class="badge badge-inactive">Inactive</span>'}</td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="eyebrow">Clients</div>
+  <div class="pagehead">
+    <div><h1>Clients</h1><div class="sub">Organisations Mzukulu delivers projects for.</div></div>
+    ${isAdmin()?'<button class="btn btn-primary" onclick="openClientModal()">＋ New Client</button>':''}
+  </div>
+  <div class="card">
+    <div class="tablewrap">
+    <table><thead><tr><th>Client</th><th>Contact</th><th>Projects</th><th>Status</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan=4 class="emptystate">No clients yet.</td></tr>'}</tbody></table>
+    </div>
+  </div>
+  `;
+}
+function openClient(id){
+  const c = getClient(id);
+  const projs = projectsForClient(id);
+  showModal('Client — '+c.name, `
+    <div class="field"><label>Contact</label><div>${esc(c.contact||'—')}</div></div>
+    <div class="field"><label>Status</label><div>${c.active?'Active':'Inactive'}</div></div>
+    <div class="field"><label>Projects</label>
+      ${projs.length? projs.map(p=>`<div class="formcard-item"><div>${esc(p.name)}</div><span class="badge badge-neutral">${esc(p.status)}</span></div>`).join('') : '<div class="muted small">No projects yet.</div>'}
+    </div>
+  `, isAdmin() ? [{label:'Edit', cls:'btn-primary', onclick:`closeModal();openClientModal('${id}')`}] : []);
+}
+function openClientModal(id){
+  const c = id?getClient(id):null;
+  showModal(c?'Edit Client':'New Client', `
+    <div class="field"><label>Client Name</label><input id="m_name" type="text" value="${c?esc(c.name):''}"></div>
+    <div class="field"><label>Contact Information</label><input id="m_contact" type="text" value="${c?esc(c.contact||''):''}" placeholder="Name · email · phone"></div>
+    <div class="field checkline"><input id="m_active" type="checkbox" ${(!c || c.active)?'checked':''}> <label style="margin:0;">Active</label></div>
+  `, [{label:'Save', cls:'btn-primary', onclick:`saveClient(${c?`'${id}'`:'null'})`}]);
+}
+async function saveClient(id){
+  const name = q('m_name').value.trim();
+  if(!name){ showToast('Client name is required', true); return; }
+  const contact = q('m_contact').value.trim();
+  const active = q('m_active').checked;
+  if(id){ const c=getClient(id); c.name=name; c.contact=contact; c.active=active; }
+  else{ DB.clients.push({id:uid('cli'), name, contact, active}); }
+  await saveDB(); closeModal(); render(); showToast('Client saved.');
+}
+
+/* ---------------------------------------------------------------------
+   PROJECTS
+--------------------------------------------------------------------- */
+function viewProjects(){
+  const rows = DB.projects.map(p=>{
+    const c = getClient(p.clientId);
+    const fc = formsForProject(p.id).length + registersForProject(p.id).length;
+    return `<tr class="rowlink" onclick="navigate('#/projects/${p.id}')">
+      <td style="font-weight:600;">${esc(p.name)}<div class="small muted mono">${esc(p.number)}</div></td>
+      <td>${esc(c?c.name:'—')}</td>
+      <td class="small">${esc(p.site||'—')}</td>
+      <td><span class="badge badge-neutral">${esc(p.status)}</span></td>
+      <td class="small muted">${fc} form${fc===1?'':'s'}</td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="eyebrow">Projects</div>
+  <div class="pagehead">
+    <div><h1>Projects</h1><div class="sub">All client site projects.</div></div>
+    ${isAdmin()?'<button class="btn btn-primary" onclick="openProjectModal()">＋ New Project</button>':''}
+  </div>
+  <div class="card"><div class="tablewrap">
+  <table><thead><tr><th>Project</th><th>Client</th><th>Site</th><th>Status</th><th>QC Forms</th></tr></thead>
+  <tbody>${rows || '<tr><td colspan=5 class="emptystate">No projects yet.</td></tr>'}</tbody></table>
+  </div></div>
+  `;
+}
+function openProjectModal(id){
+  const p = id?getProject(id):null;
+  const clientOpts = DB.clients.map(c=>`<option value="${c.id}" ${p&&p.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+  showModal(p?'Edit Project':'New Project', `
+    <div class="field"><label>Client</label><select id="m_client">${clientOpts}</select></div>
+    <div class="field"><label>Project Name</label><input id="m_pname" type="text" value="${p?esc(p.name):''}"></div>
+    <div class="grid grid-2">
+      <div class="field"><label>Project No.</label><input id="m_pnum" type="text" value="${p?esc(p.number):''}"></div>
+      <div class="field"><label>Contract / Order No.</label><input id="m_pcontract" type="text" value="${p?esc(p.contractNo||''):''}"></div>
+    </div>
+    <div class="field"><label>Site / Location</label><input id="m_psite" type="text" value="${p?esc(p.site||''):''}"></div>
+    <div class="field"><label>Description</label><textarea id="m_pdesc">${p?esc(p.description||''):''}</textarea></div>
+    <div class="grid grid-2">
+      <div class="field"><label>Status</label><select id="m_pstatus">
+        ${['Planning','Active','On Hold','Complete'].map(s=>`<option ${p&&p.status===s?'selected':''}>${s}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>Start Date</label><input id="m_pstart" type="date" value="${p?p.startDate||'':''}"></div>
+    </div>
+    <div class="field"><label>End Date</label><input id="m_pend" type="date" value="${p?p.endDate||'':''}"></div>
+  `, [{label:'Save', cls:'btn-primary', onclick:`saveProject(${p?`'${id}'`:'null'})`}]);
+}
+async function saveProject(id){
+  const name = q('m_pname').value.trim();
+  if(!name){ showToast('Project name is required', true); return; }
+  const data = { clientId:q('m_client').value, name, number:q('m_pnum').value.trim(), contractNo:q('m_pcontract').value.trim(),
+    site:q('m_psite').value.trim(), description:q('m_pdesc').value.trim(), status:q('m_pstatus').value,
+    startDate:q('m_pstart').value, endDate:q('m_pend').value };
+  if(id){ Object.assign(getProject(id), data); }
+  else{ DB.projects.push({id:uid('prj'), ...data}); }
+  await saveDB(); closeModal(); render(); showToast('Project saved.');
+}
+
+function viewProjectDetail(id){
+  const p = getProject(id);
+  if(!p) return '<div class="emptystate">Project not found.</div>';
+  const c = getClient(p.clientId);
+  const forms = formsForProject(id).map(f=>{
+    const t = getTemplate(f.templateId);
+    return {label:t.docNumber+' — '+t.docName, id:f.id, status:f.status, qc:f.qcRecordNo, link:'#/form/'+f.id, updated:f.updatedAt};
+  });
+  const regs = registersForProject(id).map(r=>({label:'MZT-QC-203 — Cable Schedule & Installation Register', id:r.id, status:r.status==='Complete'?'Complete - Accepted':'In Progress', qc:r.qcRecordNo, link:'#/register/'+r.id, updated:r.updatedAt}));
+  const all = [...forms, ...regs].sort((a,b)=> new Date(b.updated)-new Date(a.updated));
+
+  const rows = all.map(f=>`<tr class="rowlink" onclick="navigate('${f.link}')">
+    <td style="font-weight:600;">${esc(f.label)}</td>
+    <td><span class="qc-num">${esc(f.qc)}</span></td>
+    <td>${formStatusBadge(f.status)}</td>
+    <td class="small muted">${fmtDate(f.updated)}</td>
+  </tr>`).join('');
+
+  return `
+  <div class="crumbs"><a href="#/projects">Projects</a> / ${esc(p.name)}</div>
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">${esc(c?c.name:'')}</div>
+      <h1>${esc(p.name)}</h1>
+      <div class="sub mono">${esc(p.number)} · ${esc(p.site||'')}</div>
+    </div>
+    <div class="btnrow">
+      ${isAdmin()?`<button class="btn" onclick="openProjectModal('${id}')">Edit Project</button>`:''}
+      <button class="btn btn-primary" onclick="navigate('#/library?projectId=${id}')">＋ New Form</button>
+    </div>
+  </div>
+
+  <div class="grid grid-3" style="margin-bottom:20px;">
+    <div class="card card-pad"><label>Client</label>${esc(c?c.name:'—')}</div>
+    <div class="card card-pad"><label>Contract / Order No.</label>${esc(p.contractNo||'—')}</div>
+    <div class="card card-pad"><label>Status</label><span class="badge badge-neutral">${esc(p.status)}</span></div>
+    <div class="card card-pad"><label>Start Date</label>${fmtDate(p.startDate)}</div>
+    <div class="card card-pad"><label>End Date</label>${fmtDate(p.endDate)}</div>
+    <div class="card card-pad"><label>QC Forms</label>${all.length}</div>
+  </div>
+  ${p.description?`<div class="card card-pad" style="margin-bottom:20px;"><label>Description</label>${esc(p.description)}</div>`:''}
+
+  <div class="panel">
+    <div class="section-title-bar">QC Forms — ${esc(p.name)}</div>
+    <div class="tablewrap">
+    <table><thead><tr><th>Document</th><th>QC Record No.</th><th>Status</th><th>Updated</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan=4 class="emptystate">No forms yet for this project.</td></tr>'}</tbody></table>
+    </div>
+  </div>
+  `;
+}
+
+/* ---------------------------------------------------------------------
+   FORM LIBRARY
+--------------------------------------------------------------------- */
+function viewLibrary(){
+  const {params} = parseHash();
+  const preselectProject = params.projectId || '';
+  const checklists = DB.templates.filter(t=>t.active);
+  const projOpts = DB.projects.map(p=>`<option value="${p.id}" ${p.id===preselectProject?'selected':''}>${esc(p.name)}</option>`).join('');
+
+  const checklistRows = checklists.map(t=>`
+    <div class="formcard-item">
+      <div>
+        <div style="font-weight:600;font-size:13px;">${esc(t.docNumber)} — ${esc(t.docName)}</div>
+        <div class="small muted">${esc(t.description||'')} · Rev ${esc(t.revision)}</div>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="startNewForm('${t.id}')">Create Form</button>
+    </div>`).join('');
+
+  return `
+  <div class="eyebrow">Form Library</div>
+  <div class="pagehead"><div><h1>Form Library</h1><div class="sub">Browse available checklists and registers, then create a new instance for a project.</div></div></div>
+
+  <div class="card card-pad" style="margin-bottom:22px;">
+    <label>Project for the new form</label>
+    <select id="libProjectSelect">${projOpts || '<option value="">No projects — create one first</option>'}</select>
+    <div class="help">This project will be used for whichever form you create below.</div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title-bar">Checklists (configurable — MZT-QC-3xx)</div>
+    ${checklistRows || '<div class="emptystate small">No active checklist templates.</div>'}
+  </div>
+
+  <div class="panel">
+    <div class="section-title-bar">Registers / Specialised Forms</div>
+    <div class="formcard-item">
+      <div>
+        <div style="font-weight:600;font-size:13px;">MZT-QC-203 — Cable Schedule & Installation Register</div>
+        <div class="small muted">Quality control register · master tracking of every cable from drum through to termination and test</div>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="startNewRegister()">Create Register</button>
+    </div>
+  </div>
+  ${isAdmin()?`<div class="small muted" style="margin-top:10px;">Need a new checklist type? <a href="#/templates/new">Create a checklist template</a>.</div>`:''}
+  `;
+}
+function currentLibProject(){ const el=q('libProjectSelect'); return el?el.value:''; }
+function startNewForm(templateId){
+  const pid = currentLibProject();
+  if(!pid){ showToast('Select a project first', true); return; }
+  navigate('#/form/new?templateId='+templateId+'&projectId='+pid);
+}
+function startNewRegister(){
+  const pid = currentLibProject();
+  if(!pid){ showToast('Select a project first', true); return; }
+  navigate('#/register/new?projectId='+pid);
+}
+
+/* ---------------------------------------------------------------------
+   CHECKLIST TEMPLATES (admin) — list + builder
+--------------------------------------------------------------------- */
+function viewTemplates(){
+  const rows = DB.templates.map(t=>{
+    const usage = DB.forms.filter(f=>f.templateId===t.id).length;
+    return `<tr class="rowlink" onclick="navigate('#/templates/${t.id}/edit')">
+      <td class="mono" style="font-weight:600;">${esc(t.docNumber)}</td>
+      <td>${esc(t.docName)}</td>
+      <td class="small muted">${esc(t.revision)}</td>
+      <td>${t.active?'<span class="badge badge-active">Active</span>':'<span class="badge badge-inactive">Archived</span>'}</td>
+      <td class="small muted">${usage} instance${usage===1?'':'s'}</td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="eyebrow">Administration</div>
+  <div class="pagehead">
+    <div><h1>Checklist Templates</h1><div class="sub">Configurable MZT-QC-3xx style checklists. Editing here never changes forms already completed from a template.</div></div>
+    <button class="btn btn-primary" onclick="navigate('#/templates/new')">＋ Create Checklist Template</button>
+  </div>
+  <div class="card"><div class="tablewrap">
+  <table><thead><tr><th>Doc No.</th><th>Name</th><th>Revision</th><th>Status</th><th>Usage</th></tr></thead>
+  <tbody>${rows}</tbody></table>
+  </div></div>
+  `;
+}
+
+let TPL_DRAFT = null; // working copy while editing
+
+function viewTemplateEditor(id){
+  const existing = id ? getTemplate(id) : null;
+  TPL_DRAFT = existing ? JSON.parse(JSON.stringify(existing)) : {
+    id:null, docNumber:'', docName:'', description:'', revision:'Rev 1', issueDate:todayISO(), active:true,
+    projectFields:[], scope:'', acceptance:'', sections:[{id:uid('sec'), title:'', items:[]}]
+  };
+  return renderTemplateEditor();
+}
+function renderTemplateEditor(){
+  const t = TPL_DRAFT;
+  const fieldsHtml = t.projectFields.map((f,i)=>`
+    <div class="inline-fields" style="margin-bottom:8px;">
+      <input type="text" value="${esc(f)}" oninput="tplUpdateField(${i}, this.value)" placeholder="e.g. Enclosure / Cabinet N°">
+      <button class="iconbtn" onclick="tplRemoveField(${i})" title="Remove">✕</button>
+    </div>`).join('');
+
+  const sectionsHtml = t.sections.map((sec, si)=>`
+    <div class="panel">
+      <div class="section-hdr" style="display:flex;justify-content:space-between;align-items:center;">
+        <input type="text" value="${esc(sec.title)}" placeholder="Section title (optional — leave blank for a single unnamed section)"
+          style="background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 8px;font-size:12px;width:60%;"
+          oninput="tplUpdateSectionTitle(${si}, this.value)">
+        <button class="btn btn-sm" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4);" onclick="tplRemoveSection(${si})">Remove Section</button>
+      </div>
+      <div class="card-pad">
+        ${sec.items.map((it,ii)=>`
+          <div class="itemrow">
+            <div class="itemgrid">
+              <div style="align-self:start;padding-top:8px;"><span class="itemno">${ii+1}.</span></div>
+              <div class="field" style="margin:0;">
+                <label>Requirement / question</label>
+                <textarea style="min-height:44px;" oninput="tplUpdateItem(${si},${ii},'text',this.value)">${esc(it.text)}</textarea>
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Reference / reading field</label>
+                <input type="text" value="${esc(it.refLabel||'')}" placeholder="Leave blank if none" oninput="tplUpdateItem(${si},${ii},'refLabel',this.value)">
+                <div class="checkline" style="margin-top:6px;"><input type="checkbox" ${it.refRequired?'checked':''} onchange="tplUpdateItem(${si},${ii},'refRequired',this.checked)"><label style="margin:0;">Required</label></div>
+              </div>
+              <div style="align-self:start;padding-top:22px;text-align:right;">
+                <button class="btn btn-sm btn-danger" onclick="tplRemoveItem(${si},${ii})">Remove</button>
+              </div>
+            </div>
+          </div>`).join('')}
+        <button class="btn btn-sm" style="margin-top:10px;" onclick="tplAddItem(${si})">＋ Add Checklist Item</button>
+      </div>
+    </div>
+  `).join('');
+
+  return `
+  <div class="crumbs"><a href="#/templates">Checklist Templates</a> / ${t.id? esc(t.docNumber):'New Template'}</div>
+  <div class="pagehead"><h1>${t.id?'Edit Checklist Template':'Create Checklist Template'}</h1></div>
+
+  <div class="panel">
+    <div class="section-title-bar">Document Information</div>
+    <div class="card-pad grid grid-2">
+      <div class="field"><label>Document Number</label><input type="text" value="${esc(t.docNumber)}" placeholder="MZT-QC-307" oninput="TPL_DRAFT.docNumber=this.value"></div>
+      <div class="field"><label>Document Name</label><input type="text" value="${esc(t.docName)}" placeholder="e.g. Earthing & Bonding Installation" oninput="TPL_DRAFT.docName=this.value"></div>
+      <div class="field" style="grid-column:1/-1;"><label>Description / Subtitle</label><input type="text" value="${esc(t.description)}" oninput="TPL_DRAFT.description=this.value"></div>
+      <div class="field"><label>Revision</label><input type="text" value="${esc(t.revision)}" oninput="TPL_DRAFT.revision=this.value"></div>
+      <div class="field"><label>Issue Date</label><input type="date" value="${t.issueDate}" oninput="TPL_DRAFT.issueDate=this.value"></div>
+      <div class="field checkline"><input type="checkbox" ${t.active?'checked':''} onchange="TPL_DRAFT.active=this.checked"><label style="margin:0;">Active (visible in Form Library)</label></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title-bar">Project Information Fields</div>
+    <div class="card-pad">
+      <div class="help" style="margin-bottom:10px;">Extra site-specific fields shown on the form header, in addition to the standard Project / Client / QC Record No. Example: "Enclosure / Cabinet N°".</div>
+      ${fieldsHtml}
+      <button class="btn btn-sm" onclick="tplAddField()">＋ Add Field</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title-bar">Scope & Acceptance Criteria</div>
+    <div class="card-pad grid grid-2">
+      <div class="field"><label>Scope</label><textarea oninput="TPL_DRAFT.scope=this.value">${esc(t.scope)}</textarea></div>
+      <div class="field"><label>Acceptance Criteria</label><textarea oninput="TPL_DRAFT.acceptance=this.value">${esc(t.acceptance)}</textarea></div>
+    </div>
+  </div>
+
+  <div class="pagehead"><h2 style="font-size:14px;">Checklist Sections</h2>
+    <button class="btn btn-sm" onclick="tplAddSection()">＋ Add Section</button>
+  </div>
+  ${sectionsHtml}
+
+  <div class="btnrow" style="margin-top:20px;">
+    <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+    <button class="btn" onclick="navigate('#/templates')">Cancel</button>
+    ${t.id?`<button class="btn btn-danger" onclick="archiveTemplate('${t.id}')">${t.active?'Archive':'Reactivate'} Template</button>`:''}
+  </div>
+  `;
+}
+function rerenderTplEditor(){ q_app().innerHTML = shell(renderTemplateEditor(), 'templates'); }
+function tplAddField(){ TPL_DRAFT.projectFields.push(''); rerenderTplEditor(); }
+function tplUpdateField(i,v){ TPL_DRAFT.projectFields[i]=v; }
+function tplRemoveField(i){ TPL_DRAFT.projectFields.splice(i,1); rerenderTplEditor(); }
+function tplAddSection(){ TPL_DRAFT.sections.push({id:uid('sec'), title:'', items:[]}); rerenderTplEditor(); }
+function tplRemoveSection(si){ if(!confirm('Remove this section and its items?')) return; TPL_DRAFT.sections.splice(si,1); rerenderTplEditor(); }
+function tplUpdateSectionTitle(si,v){ TPL_DRAFT.sections[si].title=v; }
+function tplAddItem(si){ const sec=TPL_DRAFT.sections[si]; sec.items.push({id:uid('itm'), no:sec.items.length+1, text:'', hasRef:false, refLabel:'', refRequired:false}); rerenderTplEditor(); }
+function tplRemoveItem(si,ii){ TPL_DRAFT.sections[si].items.splice(ii,1); rerenderTplEditor(); }
+function tplUpdateItem(si,ii,field,val){
+  const it = TPL_DRAFT.sections[si].items[ii];
+  it[field]=val;
+  if(field==='refLabel'){ it.hasRef = !!val; }
+}
+async function saveTemplate(){
+  const t = TPL_DRAFT;
+  if(!t.docNumber.trim() || !t.docName.trim()){ showToast('Document number and name are required', true); return; }
+  if(t.sections.every(s=>s.items.length===0)){ showToast('Add at least one checklist item', true); return; }
+  if(t.id){ const idx=DB.templates.findIndex(x=>x.id===t.id); DB.templates[idx]=t; }
+  else{ t.id = 'tpl-'+uid('c'); DB.templates.push(t); }
+  await saveDB();
+  showToast('Checklist template saved.');
+  navigate('#/templates');
+  render();
+}
+async function archiveTemplate(id){
+  const t=getTemplate(id); t.active=!t.active; await saveDB(); render(); showToast(t.active?'Template reactivated.':'Template archived.');
+}
+
+/* ---------------------------------------------------------------------
+   FORM INSTANCE — create + fill (MZT-QC-3xx checklists)
+--------------------------------------------------------------------- */
+let FORM_DRAFT = null;
+
+function viewFormNew(params){
+  const t = getTemplate(params.templateId);
+  const p = getProject(params.projectId);
+  if(!t || !p) return '<div class="emptystate">Missing template or project.</div>';
+  FORM_DRAFT = {
+    id: uid('frm'), templateId:t.id, projectId:p.id, qcRecordNo: nextQcRecordNo(),
+    fieldValues:{}, status:'In Progress',
+    items: t.sections.flatMap(s=>s.items).map(it=>({itemId:it.id, resp:null, ref:'', initials:'', date:'', ncrClosed:false})),
+    remarks:'', ncrNo:'',
+    signoff:{ inspected:{name:'',sig:'',date:''}, reviewed:{name:'',sig:'',date:''}, approved:{name:'',sig:'',date:''} },
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), createdBy: SESSION.name, isNew:true
+  };
+  return renderFormFill(t, p);
+}
+function viewFormDetail(id){
+  const f = getForm(id);
+  if(!f) return '<div class="emptystate">Form not found.</div>';
+  FORM_DRAFT = JSON.parse(JSON.stringify(f));
+  const t = getTemplate(f.templateId);
+  const p = getProject(f.projectId);
+  return renderFormFill(t, p);
+}
+
+function renderFormFill(t, p){
+  const f = FORM_DRAFT;
+  const c = getClient(p.clientId);
+  const fieldHtml = t.projectFields.map(fl=>`
+    <div class="field"><label>${esc(fl)}</label>
+      <input type="text" value="${esc(f.fieldValues[fl]||'')}" oninput="formUpdateField('${esc(fl).replace(/'/g,"\\'")}', this.value)">
+    </div>`).join('');
+
+  let itemCounter = 0;
+  const sectionsHtml = t.sections.map(sec=>`
+    ${sec.title?`<div class="section-hdr">${esc(sec.title)}</div>`:''}
+    <div class="card-pad" style="padding-top:10px;padding-bottom:4px;">
+      ${sec.items.map(it=>{
+        itemCounter++;
+        const resp = f.items.find(x=>x.itemId===it.id) || {resp:null,ref:'',initials:'',date:''};
+        return `
+        <div class="itemrow">
+          <div class="itxt"><span class="itemno">${itemCounter}.</span>${esc(it.text)}</div>
+          <div class="itemgrid">
+            <div>
+              <label>Result</label>
+              <div class="seg">
+                <button class="${resp.resp==='A'?'sel-A':''}" onclick="formSetResp('${it.id}','A')">A</button>
+                <button class="${resp.resp==='R'?'sel-R':''}" onclick="formSetResp('${it.id}','R')">R</button>
+                <button class="${resp.resp==='NA'?'sel-NA':''}" onclick="formSetResp('${it.id}','NA')">N/A</button>
+              </div>
+            </div>
+            ${it.hasRef?`<div class="field" style="margin:0;"><label>${esc(it.refLabel)}${it.refRequired?' *':''}</label><input type="text" value="${esc(resp.ref||'')}" oninput="formSetItemField('${it.id}','ref',this.value)"></div>`:'<div></div>'}
+            <div class="field" style="margin:0;"><label>Initials</label><input type="text" value="${esc(resp.initials||'')}" oninput="formSetItemField('${it.id}','initials',this.value)"></div>
+            <div class="field" style="margin:0;"><label>Date</label><input type="date" value="${resp.date||''}" oninput="formSetItemField('${it.id}','date',this.value)"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+
+  const hasRejected = f.items.some(i=>i.resp==='R');
+
+  return `
+  <div class="crumbs"><a href="#/projects/${p.id}">${esc(p.name)}</a> / ${esc(t.docNumber)}</div>
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">${esc(t.docNumber)} · Rev ${esc(t.revision)}</div>
+      <h1>${esc(t.docName)}</h1>
+      <div class="sub">${esc(t.description||'')}</div>
+    </div>
+    <div style="text-align:right;">
+      ${formStatusBadge(f.status)}
+      <div class="qc-num" style="margin-top:6px;display:inline-block;">${esc(f.qcRecordNo)}</div>
+    </div>
+  </div>
+
+  <div class="panel"><div class="section-title-bar">Project Information</div>
+    <div class="card-pad grid grid-3">
+      <div class="field"><label>Client</label><div>${esc(c?c.name:'—')}</div></div>
+      <div class="field"><label>Project</label><div>${esc(p.name)}</div></div>
+      <div class="field"><label>Project No.</label><div>${esc(p.number)}</div></div>
+      <div class="field"><label>Contract / Order No.</label><div>${esc(p.contractNo||'—')}</div></div>
+      <div class="field"><label>Area / Location</label><div>${esc(p.site||'—')}</div></div>
+      <div class="field"><label>QC Record No.</label><div class="qc-num">${esc(f.qcRecordNo)}</div></div>
+      ${fieldHtml}
+    </div>
+  </div>
+
+  <div class="scopebox">
+    <div class="lbl">Scope & Acceptance Criteria</div>
+    <p>${esc(t.scope)}</p>
+    <p><strong>${esc(t.acceptance)}</strong></p>
+  </div>
+
+  <div class="panel">
+    <div class="section-title-bar">Inspection / Test Requirements</div>
+    ${sectionsHtml}
+  </div>
+
+  <div class="help" style="margin:-6px 0 16px;">A = Accepted / conforms &nbsp;·&nbsp; R = Rejected — raise an NCR and record the number &nbsp;·&nbsp; N/A = Not applicable. Every rejected line must be closed out before sign-off.</div>
+
+  ${hasRejected?`
+  <div class="panel"><div class="section-title-bar" style="background:var(--brick-600);">Non-Conformance</div>
+    <div class="card-pad">
+      <div class="ncrflag" style="margin-bottom:10px;">⚠ This form contains rejected items — an NCR number is required.</div>
+      <div class="field"><label>NCR Number</label><input type="text" value="${esc(f.ncrNo)}" placeholder="e.g. NCR-0007" oninput="FORM_DRAFT.ncrNo=this.value"></div>
+    </div>
+  </div>`:''}
+
+  <div class="panel"><div class="section-title-bar">Remarks / Observations / Deviations</div>
+    <div class="card-pad"><textarea style="min-height:90px;" oninput="FORM_DRAFT.remarks=this.value">${esc(f.remarks)}</textarea></div>
+  </div>
+
+  <div class="panel"><div class="section-title-bar">Sign-Off</div>
+    <div class="card-pad grid grid-3">
+      ${signoffBlock('Inspected / Tested By','inspected',f.signoff.inspected)}
+      ${signoffBlock('Reviewed By','reviewed',f.signoff.reviewed)}
+      ${signoffBlock('Approved By','approved',f.signoff.approved)}
+    </div>
+  </div>
+
+  <div class="panel"><div class="card-pad" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div class="small muted">Created ${fmtDateTime(f.createdAt)} by ${esc(f.createdBy)} · Last updated ${fmtDateTime(f.updatedAt)}</div>
+  </div></div>
+
+  <div class="btnrow">
+    <button class="btn" onclick="saveForm('In Progress')">Save Progress</button>
+    <button class="btn btn-primary" onclick="submitForm()">Submit / Finalise</button>
+    <button class="btn" onclick="navigate('#/projects/${p.id}')">Back to Project</button>
+  </div>
+  `;
+}
+function signoffBlock(label, key, data){
+  return `<div class="field">
+    <label>${label}</label>
+    <input type="text" placeholder="Name" value="${esc(data.name)}" style="margin-bottom:6px;" oninput="formSignoff('${key}','name',this.value)">
+    <input type="text" placeholder="Signature (type initials)" value="${esc(data.sig)}" style="margin-bottom:6px;" oninput="formSignoff('${key}','sig',this.value)">
+    <input type="date" value="${data.date||''}" oninput="formSignoff('${key}','date',this.value)">
+  </div>`;
+}
+function rerenderFormFill(){
+  const t = getTemplate(FORM_DRAFT.templateId); const p = getProject(FORM_DRAFT.projectId);
+  q_app().innerHTML = shell(renderFormFill(t,p), 'library');
+}
+function formUpdateField(fl,val){ FORM_DRAFT.fieldValues[fl]=val; }
+function formSetResp(itemId, resp){
+  const row = FORM_DRAFT.items.find(x=>x.itemId===itemId);
+  row.resp = row.resp===resp ? null : resp;
+  if(row.resp && !row.date) row.date = todayISO();
+  rerenderFormFill();
+}
+function formSetItemField(itemId, field, val){ FORM_DRAFT.items.find(x=>x.itemId===itemId)[field]=val; }
+function formSignoff(key, field, val){ FORM_DRAFT.signoff[key][field]=val; }
+
+function persistFormDraft(status){
+  FORM_DRAFT.status = status;
+  FORM_DRAFT.updatedAt = new Date().toISOString();
+  const idx = DB.forms.findIndex(x=>x.id===FORM_DRAFT.id);
+  const clean = {...FORM_DRAFT}; delete clean.isNew;
+  if(idx>=0) DB.forms[idx]=clean; else DB.forms.push(clean);
+}
+async function saveForm(status){
+  persistFormDraft(status==='In Progress' ? (FORM_DRAFT.status==='In Progress'?'In Progress':FORM_DRAFT.status) : status);
+  await saveDB();
+  showToast('Form saved as In Progress.');
+  navigate('#/form/'+FORM_DRAFT.id);
+  render();
+}
+async function submitForm(){
+  const t = getTemplate(FORM_DRAFT.templateId);
+  const totalItems = t.sections.flatMap(s=>s.items).length;
+  const answered = FORM_DRAFT.items.filter(i=>i.resp).length;
+  if(answered < totalItems){ showToast('All checklist items must be marked A, R or N/A before submitting.', true); return; }
+  const missingRef = FORM_DRAFT.items.some(i=>{
+    const it = templateItemById(t, i.itemId);
+    return it && it.refRequired && i.resp==='A' && !i.ref;
+  });
+  if(missingRef){ showToast('A required reference / reading is missing on an accepted item.', true); return; }
+  const hasRejected = FORM_DRAFT.items.some(i=>i.resp==='R');
+  if(hasRejected && !FORM_DRAFT.ncrNo){ showToast('Record the NCR number before submitting a form with rejected items.', true); return; }
+  if(!FORM_DRAFT.signoff.inspected.name){ showToast('"Inspected / Tested By" sign-off is required before submitting.', true); return; }
+  const status = hasRejected ? 'Complete - NCR Raised' : 'Complete - Accepted';
+  persistFormDraft(status);
+  await saveDB();
+  showToast('Form submitted — '+status+'.');
+  navigate('#/form/'+FORM_DRAFT.id);
+  render();
+}
+
+/* ---------------------------------------------------------------------
+   REGISTER INSTANCE — MZT-QC-203 (predefined, not builder-driven)
+--------------------------------------------------------------------- */
+let REG_DRAFT = null;
+const REG_HEADER_FIELDS = [
+  ['project','Project'], ['projectNo','Project N°'], ['client','Client'], ['contractNo','Contract / Order N°'],
+  ['area','Area / Location'], ['drawingRev','Drawing N° & Rev.'], ['cableScheduleRef','Cable Schedule Ref. & Rev.'], ['registerRevision','Register Revision']
+];
+const CABLE_COLS = [
+  ['cableNo','Cable N°','text'], ['from','From','text'], ['to','To','text'], ['type','Type / Size / Cores','text'],
+  ['drumNo','Drum N°','text'], ['length','Length (m)','text'], ['pulled','Pulled','bool'], ['glanded','Glanded','bool'],
+  ['terminated','Terminated','bool'], ['irCert','IR Cert. N°','text'], ['contCert','Cont. Cert. N°','text'], ['complete','Complete','bool']
+];
+
+function viewRegisterNew(params){
+  const p = getProject(params.projectId);
+  if(!p) return '<div class="emptystate">Missing project.</div>';
+  const c = getClient(p.clientId);
+  REG_DRAFT = {
+    id: uid('reg'), projectId:p.id, qcRecordNo: nextQcRecordNo(),
+    fieldValues:{ project:p.name, projectNo:p.number, client:c?c.name:'', contractNo:p.contractNo||'', area:p.site||'', drawingRev:'', cableScheduleRef:'', registerRevision:'Rev 1' },
+    cables:[ blankCableRow(1) ],
+    notes:'', signoff:{ maintainedBy:{name:'',sig:'',date:''}, verifiedBy:{name:'',sig:'',date:''} },
+    status:'In Progress', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), createdBy:SESSION.name, isNew:true
+  };
+  return renderRegisterFill(p);
+}
+function viewRegisterDetail(id){
+  const r = getRegister(id);
+  if(!r) return '<div class="emptystate">Register not found.</div>';
+  REG_DRAFT = JSON.parse(JSON.stringify(r));
+  return renderRegisterFill(getProject(r.projectId));
+}
+function blankCableRow(no){ return {id:uid('cab'), no, cableNo:'', from:'', to:'', type:'', drumNo:'', length:'', pulled:false, glanded:false, terminated:false, irCert:'', contCert:'', complete:false}; }
+
+function renderRegisterFill(p){
+  const r = REG_DRAFT;
+  const headerHtml = REG_HEADER_FIELDS.map(([k,label])=>`
+    <div class="field"><label>${label}</label><input type="text" value="${esc(r.fieldValues[k]||'')}" oninput="regUpdateField('${k}', this.value)"></div>`).join('');
+
+  const rows = r.cables.map((row,i)=>`
+    <tr>
+      <td class="mono small">${row.no}</td>
+      ${CABLE_COLS.map(([key,label,type])=>{
+        if(type==='bool') return `<td style="text-align:center;"><input type="checkbox" ${row[key]?'checked':''} onchange="regSetCable('${row.id}','${key}',this.checked)"></td>`;
+        return `<td><input type="text" value="${esc(row[key]||'')}" style="min-width:90px;border:1px solid transparent;background:transparent;padding:4px 6px;" onfocus="this.style.border='1px solid #CDD5DD';this.style.background='#fff';" onblur="this.style.border='1px solid transparent';this.style.background='transparent';" oninput="regSetCable('${row.id}','${key}',this.value)"></td>`;
+      }).join('')}
+      <td><button class="iconbtn" title="Remove row" onclick="regRemoveCable('${row.id}')">✕</button></td>
+    </tr>`).join('');
+
+  const total = r.cables.length;
+  const complete = r.cables.filter(c=>c.complete).length;
+
+  return `
+  <div class="crumbs"><a href="#/projects/${p.id}">${esc(p.name)}</a> / MZT-QC-203</div>
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">MZT-QC-203 · Quality Control Register</div>
+      <h1>Cable Schedule & Installation Register</h1>
+      <div class="sub">Master tracking of every cable from drum through to termination and test.</div>
+    </div>
+    <div style="text-align:right;">
+      ${formStatusBadge(r.status==='Complete'?'Complete - Accepted':'In Progress')}
+      <div class="qc-num" style="margin-top:6px;display:inline-block;">${esc(r.qcRecordNo)}</div>
+    </div>
+  </div>
+
+  <div class="panel"><div class="section-title-bar">Project Information</div>
+    <div class="card-pad grid grid-3">${headerHtml}
+      <div class="field"><label>QC Record No.</label><div class="qc-num">${esc(r.qcRecordNo)}</div></div>
+    </div>
+  </div>
+
+  <div class="scopebox">
+    <div class="lbl">How to use this register</div>
+    <p>One line per cable. This register is the single source of truth for cable progress and must be updated as each step is completed.</p>
+    <p><strong>Enter the QC record number of the test certificate against each cable — not just a tick.</strong></p>
+  </div>
+
+  <div class="panel">
+    <div class="section-title-bar" style="display:flex;justify-content:space-between;">
+      <span>Cable Register</span><span class="mono" style="font-weight:400;text-transform:none;">${complete} / ${total} complete</span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>N°</th>${CABLE_COLS.map(([k,l])=>`<th>${l}</th>`).join('')}<th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="card-pad"><button class="btn btn-sm" onclick="regAddCable()">＋ Add Cable Row</button></div>
+  </div>
+
+  <div class="panel"><div class="section-title-bar">Notes</div>
+    <div class="card-pad"><textarea oninput="REG_DRAFT.notes=this.value">${esc(r.notes)}</textarea></div>
+  </div>
+
+  <div class="panel"><div class="section-title-bar">Sign-Off</div>
+    <div class="card-pad grid grid-2">
+      ${signoffBlockReg('Register Maintained By','maintainedBy',r.signoff.maintainedBy,'Mzukulu Technologies — QC')}
+      ${signoffBlockReg('Verified By','verifiedBy',r.signoff.verifiedBy,'Managing Contractor')}
+    </div>
+  </div>
+
+  <div class="panel"><div class="card-pad small muted">Created ${fmtDateTime(r.createdAt)} by ${esc(r.createdBy)} · Last updated ${fmtDateTime(r.updatedAt)}</div></div>
+
+  <div class="btnrow">
+    <button class="btn" onclick="saveRegister('In Progress')">Save Progress</button>
+    <button class="btn btn-primary" onclick="submitRegister()">Mark Register Complete</button>
+    <button class="btn" onclick="navigate('#/projects/${p.id}')">Back to Project</button>
+  </div>
+  `;
+}
+function signoffBlockReg(label, key, data, roleHint){
+  return `<div class="field">
+    <label>${label}</label>
+    <input type="text" placeholder="Name (${roleHint})" value="${esc(data.name)}" style="margin-bottom:6px;" oninput="regSignoff('${key}','name',this.value)">
+    <input type="text" placeholder="Signature (type initials)" value="${esc(data.sig)}" style="margin-bottom:6px;" oninput="regSignoff('${key}','sig',this.value)">
+    <input type="date" value="${data.date||''}" oninput="regSignoff('${key}','date',this.value)">
+  </div>`;
+}
+function rerenderRegFill(){ q_app().innerHTML = shell(renderRegisterFill(getProject(REG_DRAFT.projectId)), 'library'); }
+function regUpdateField(k,v){ REG_DRAFT.fieldValues[k]=v; }
+function regSetCable(id,key,val){ const row=REG_DRAFT.cables.find(c=>c.id===id); row[key]=val; if(['pulled','glanded','terminated'].includes(key)){ } }
+function regAddCable(){ REG_DRAFT.cables.push(blankCableRow(REG_DRAFT.cables.length+1)); rerenderRegFill(); }
+function regRemoveCable(id){ REG_DRAFT.cables = REG_DRAFT.cables.filter(c=>c.id!==id); REG_DRAFT.cables.forEach((c,i)=>c.no=i+1); rerenderRegFill(); }
+function regSignoff(key,field,val){ REG_DRAFT.signoff[key][field]=val; }
+
+function persistRegDraft(status){
+  REG_DRAFT.status = status; REG_DRAFT.updatedAt = new Date().toISOString();
+  const idx = DB.registers.findIndex(x=>x.id===REG_DRAFT.id);
+  const clean = {...REG_DRAFT}; delete clean.isNew;
+  if(idx>=0) DB.registers[idx]=clean; else DB.registers.push(clean);
+}
+async function saveRegister(status){
+  persistRegDraft('In Progress');
+  await saveDB(); showToast('Register saved.');
+  navigate('#/register/'+REG_DRAFT.id); render();
+}
+async function submitRegister(){
+  persistRegDraft('Complete');
+  await saveDB(); showToast('Register marked complete.');
+  navigate('#/register/'+REG_DRAFT.id); render();
+}
+
+/* ---------------------------------------------------------------------
+   SEARCH
+--------------------------------------------------------------------- */
+function viewSearch(qStr){
+  const query = (qStr||'').trim().toLowerCase();
+  let results = [];
+  if(query){
+    DB.clients.forEach(c=>{ if(c.name.toLowerCase().includes(query)) results.push({type:'Client', label:c.name, sub:c.contact||'', link:'#/clients'}); });
+    DB.projects.forEach(p=>{
+      const c = getClient(p.clientId);
+      const hay = [p.name,p.number,p.site,c?c.name:'',p.status].join(' ').toLowerCase();
+      if(hay.includes(query)) results.push({type:'Project', label:p.name, sub:(c?c.name+' · ':'')+p.number, link:'#/projects/'+p.id});
+    });
+    DB.forms.forEach(f=>{
+      const t = getTemplate(f.templateId); const p = getProject(f.projectId);
+      const hay = [t.docNumber,t.docName,f.qcRecordNo,f.status,p.name].join(' ').toLowerCase();
+      if(hay.includes(query)) results.push({type:'Form', label:t.docNumber+' — '+t.docName, sub:p.name+' · '+f.qcRecordNo, link:'#/form/'+f.id, status:f.status});
+    });
+    DB.registers.forEach(r=>{
+      const p = getProject(r.projectId);
+      const hay = ['MZT-QC-203','Cable Schedule Installation Register',r.qcRecordNo,p.name].join(' ').toLowerCase();
+      if(hay.includes(query)) results.push({type:'Register', label:'MZT-QC-203 — Cable Schedule & Installation Register', sub:p.name+' · '+r.qcRecordNo, link:'#/register/'+r.id, status:r.status==='Complete'?'Complete - Accepted':'In Progress'});
+    });
+    DB.templates.forEach(t=>{
+      const hay = [t.docNumber,t.docName,t.description].join(' ').toLowerCase();
+      if(hay.includes(query)) results.push({type:'Checklist Template', label:t.docNumber+' — '+t.docName, sub:t.description, link: isAdmin() ? '#/templates/'+t.id+'/edit' : '#/library'});
+    });
+  }
+  const rows = results.map(r=>`
+    <div class="formcard-item rowlink" onclick="navigate('${r.link}')" style="cursor:pointer;">
+      <div>
+        <div class="small muted" style="text-transform:uppercase;letter-spacing:.4px;font-size:10.5px;">${r.type}</div>
+        <div style="font-weight:600;">${esc(r.label)}</div>
+        <div class="small muted">${esc(r.sub)}</div>
+      </div>
+      ${r.status?formStatusBadge(r.status):''}
+    </div>`).join('');
+
+  return `
+  <div class="eyebrow">Search</div>
+  <div class="pagehead"><h1>Search</h1></div>
+  <div class="card card-pad" style="margin-bottom:20px;">
+    <form onsubmit="return doSearchSubmit(event)">
+      <input type="text" id="searchPageInput" value="${esc(qStr)}" placeholder="Search clients, projects, QC document numbers, record numbers, status…" style="font-size:14px;padding:12px;">
+    </form>
+    <div class="help">Try a client name, project name, document number (e.g. MZT-QC-301), or a QC record number (e.g. QC-0001).</div>
+  </div>
+  ${query ? `<div class="panel"><div class="section-title-bar">${results.length} result${results.length===1?'':'s'} for "${esc(qStr)}"</div>${rows || '<div class="emptystate small">No matches found.</div>'}</div>` : ''}
+  `;
+}
+function doSearchSubmit(ev){ ev.preventDefault(); navigate('#/search?q='+encodeURIComponent(q('searchPageInput').value)); return false; }
+
+/* ---------------------------------------------------------------------
+   USERS (admin stub — spec allows role management "if appropriate")
+--------------------------------------------------------------------- */
+function viewUsers(){
+  return `<div class="eyebrow">Administration</div><div class="pagehead"><h1>Users</h1></div>
+  <div class="card card-pad">
+    <div class="formcard-item"><div><strong>S. Ndlovu</strong><div class="small muted">Administrator</div></div><span class="role-pill">Admin</span></div>
+    <div class="formcard-item"><div><strong>T. Mahlangu</strong><div class="small muted">Site User</div></div><span class="role-pill" style="background:#153252;">User</span></div>
+  </div>
+  <div class="help" style="margin-top:10px;">This demo ships two fixed roles. Production would manage real user accounts and permissions through Supabase Auth.</div>`;
+}
+
+/* ---------------------------------------------------------------------
+   MODAL
+--------------------------------------------------------------------- */
+function showModal(title, bodyHtml, actions){
+  const actionsHtml = (actions||[]).map(a=>`<button class="btn ${a.cls||''}" onclick="${a.onclick}">${a.label}</button>`).join('');
+  const el = document.createElement('div');
+  el.className = 'modal-bg'; el.id='modalRoot';
+  el.innerHTML = `<div class="modal">
+    <div class="modal-hd"><span>${esc(title)}</span><button class="xbtn" onclick="closeModal()">✕</button></div>
+    <div class="modal-bd">${bodyHtml}</div>
+    <div class="modal-ft"><button class="btn" onclick="closeModal()">Close</button>${actionsHtml}</div>
+  </div>`;
+  el.addEventListener('click', (e)=>{ if(e.target===el) closeModal(); });
+  document.body.appendChild(el);
+}
+function closeModal(){ const m=q('modalRoot'); if(m) m.remove(); }
+
+/* ---------------------------------------------------------------------
+   GO
+--------------------------------------------------------------------- */
+boot();
+</script>
+</body>
+</html>
