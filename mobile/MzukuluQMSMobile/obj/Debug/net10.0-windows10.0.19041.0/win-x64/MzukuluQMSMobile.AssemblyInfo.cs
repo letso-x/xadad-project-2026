@@ -18,7 +18,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MzukuluQMSMobile")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+6a71f6c65be4e86d73bc9157f1023ded4b14b097")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+72eb5cf6e269b39567297f7bdd8efd9c6851533c")]
 [assembly: System.Reflection.AssemblyProductAttribute("MzukuluQMSMobile")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MzukuluQMSMobile")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
