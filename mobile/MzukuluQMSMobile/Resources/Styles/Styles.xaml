@@ -431,4 +431,20 @@
         <Setter Property="SelectedTabColor" Value="{AppThemeBinding Light={StaticResource Gray950}, Dark={StaticResource Gray200}}" />
     </Style>
 
+    <!-- Style definition for the Quick Actions list item rows -->
+    <Style TargetType="Button" Class="QuickActionButton">
+        <Setter Property="BackgroundColor" Value="White" />
+        <Setter Property="TextColor" Value="#0C2340" />
+        <Setter Property="BorderColor" Value="#E2E8F0" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="HeightRequest" Value="46" />
+        <Setter Property="HorizontalOptions" Value="Fill" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="14" />
+        <!-- Aligns text to the left matching the look -->
+        <Setter Property="HorizontalOptions" Value="Start" />
+        <Setter Property="Padding" Value="16,0" />
+    </Style>
+
 </ResourceDictionary>

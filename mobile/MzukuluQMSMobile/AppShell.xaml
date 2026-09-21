@@ -1,118 +1,191 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Shell
     x:Class="MzukuluQMSMobile.AppShell"
- xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
- xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
- xmlns:local="clr-namespace:MzukuluQMSMobile"
- Title="MzukuluQMSMobile"
-    
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:MzukuluQMSMobile"
+    Title="Mzukulu QMS"
     FlyoutBehavior="Flyout"
     FlyoutWidth="280"
-    FlyoutBackgroundColor="#091422">
+    FlyoutBackgroundColor="#091422"
+    Shell.BackgroundColor="#091422"
+    Shell.ForegroundColor="White"
+    Shell.TitleColor="White"
+    Shell.DisabledColor="#53687E"
+    Shell.UnselectedColor="#B7C6DC">
 
-    <!-- THE STYLE SYSTEM: Targets the dynamic visual states safely inside shell template structures -->
+    <!-- Shared styling -->
     <Shell.Resources>
         <ResourceDictionary>
-            <Style TargetType="Layout" Class="FlyoutItemStyle">
-                <Setter Property="VisualStateManager.VisualStateGroups">
-                    <VisualStateGroupList>
-                        <VisualStateGroup x:Name="CommonStates">
-                            <!-- Only selected navigation items turn orange -->
-                            <VisualState x:Name="Selected">
-                                <VisualState.Setters>
-                                    <Setter Property="BackgroundColor" Value="#A23C2A" />
-                                </VisualState.Setters>
-                            </VisualState>
-                            <!-- Inactive navigation rows remain completely transparent -->
-                            <VisualState x:Name="Normal">
-                                <VisualState.Setters>
-                                    <Setter Property="BackgroundColor" Value="Transparent" />
-                                </VisualState.Setters>
-                            </VisualState>
-                        </VisualStateGroup>
-                    </VisualStateGroupList>
-                </Setter>
+
+            <Style TargetType="Label">
+                <Setter Property="TextColor" Value="White" />
             </Style>
+
+            <Style TargetType="Shell" />
         </ResourceDictionary>
     </Shell.Resources>
 
-    <!-- 1. UPPER FIXED HEADER (Branding) -->
+    <!-- Fixed branding header -->
     <Shell.FlyoutHeader>
-        <VerticalStackLayout Padding="0, 24, 0, 12" BackgroundColor="#091422">
-            <Grid ColumnDefinitions="Auto, *" Padding="16, 0, 16, 16" ColumnSpacing="12">
-                <Border Grid.Column="0" HeightRequest="36" WidthRequest="36" BackgroundColor="#A23C2A" StrokeThickness="0">
+        <VerticalStackLayout
+            Padding="16,24,16,16"
+            BackgroundColor="#091422"
+            Spacing="12">
+
+            <Grid
+                ColumnDefinitions="Auto,*"
+                ColumnSpacing="12">
+
+                <Border
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    BackgroundColor="#A23C2A"
+                    StrokeThickness="0"
+                    VerticalOptions="Center">
+
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="8" />
                     </Border.StrokeShape>
-                    <Label Text="MZ" TextColor="White" FontAttributes="Bold" FontSize="13" HorizontalOptions="Center" VerticalOptions="Center"/>
+
+                    <Label
+                        Text="MZ"
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center" />
                 </Border>
-                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-                    <Label Text="Mzukulu QMS" TextColor="White" FontAttributes="Bold" FontSize="15"/>
-                    <Label Text="QUALITY CONTROL SYSTEM" TextColor="#53687E" FontSize="10" CharacterSpacing="1"/>
+
+                <VerticalStackLayout
+                    Grid.Column="1"
+                    VerticalOptions="Center"
+                    Spacing="2">
+
+                    <Label
+                        Text="Mzukulu QMS"
+                        FontSize="16"
+                        FontAttributes="Bold" />
+
+                    <Label
+                        Text="QUALITY CONTROL SYSTEM"
+                        TextColor="#53687E"
+                        FontSize="10"
+                        CharacterSpacing="1" />
                 </VerticalStackLayout>
             </Grid>
-            <BoxView HeightRequest="1" BackgroundColor="#112235" />
 
-            <!-- Structural Category Label Anchor -->
-            <Label Text="OPERATIONS" TextColor="#42556B" FontSize="11" FontAttributes="Bold" CharacterSpacing="1" Padding="16, 16, 16, 4"/>
+            <BoxView
+                HeightRequest="1"
+                Color="#112235" />
+
         </VerticalStackLayout>
     </Shell.FlyoutHeader>
 
-    <!-- 2. REUSABLE LINK TEMPLATE: Automatically manages icons and orange highlight toggling safely -->
-    <Shell.ItemTemplate>
-        <DataTemplate>
-            <Border Margin="12, 2, 12, 2" StrokeThickness="0" StrokeShape="RoundRectangle 8">
+    <!-- Operations navigation -->
+    <FlyoutItem
+        Title="Operations"
+        Route="Operations"
+        FlyoutDisplayOptions="AsMultipleItems">
 
-                <!-- The Visual State Manager directly checks selection states using the Style Class definition -->
-                <Grid StyleClass="FlyoutItemStyle" ColumnDefinitions="Auto, *" Padding="12, 10">
-                    <!-- Icon Text Binding Asset -->
-                    <Label Grid.Column="0" Text="{Binding FlyoutIcon}" Margin="0,0,12,0" VerticalOptions="Center"/>
-                    <!-- Menu Link String Binding -->
-                    <Label Grid.Column="1" Text="{Binding Title}" TextColor="White" FontSize="14" VerticalOptions="Center"/>
-                </Grid>
+        <ShellContent
+            Title="Dashboard"
+            Icon="dashboard.png"
+            Route="Dashboard"
+            ContentTemplate="{DataTemplate local:Dashboard}" />
 
-            </Border>
-        </DataTemplate>
-    </Shell.ItemTemplate>
+        <ShellContent
+            Title="Clients"
+            Icon="clients.png"
+            Route="Clients"
+            ContentTemplate="{DataTemplate local:ClientsPage}" />
 
-    <!-- 3. GENUINE APPLICATION NAVIGATION LINK CONFIGURATION -->
-    <FlyoutItem Title="Dashboard" FlyoutIcon="🎛️">
-        <ShellContent Route="DashboardPage" ContentTemplate="{DataTemplate local:Dashboard}"/>
+        <ShellContent
+            Title="Projects"
+            Icon="projects.png"
+            Route="Projects"
+            ContentTemplate="{DataTemplate local:ProjectsPage}" />
+
+        <ShellContent
+            Title="Form Library"
+            Icon="library.png"
+            Route="FormLibrary"
+            ContentTemplate="{DataTemplate local:FormLibraryPage}" />
+
+        <ShellContent
+            Title="Search"
+            Icon="search.png"
+            Route="Search"
+            ContentTemplate="{DataTemplate local:SearchPage}" />
+
     </FlyoutItem>
 
-    <FlyoutItem Title="Clients" FlyoutIcon="👥">
-        <ShellContent Route="ClientsPage" ContentTemplate="{DataTemplate local:ClientsPage}"/>
+    <!-- Administration navigation -->
+    <FlyoutItem
+        Title="Administration"
+        Route="Administration"
+        FlyoutDisplayOptions="AsMultipleItems">
+
+        <ShellContent
+            Title="Checklist Builder"
+            Icon="checklist.png"
+            Route="ChecklistBuilder"
+            ContentTemplate="{DataTemplate local:ChecklistBuilderPage}" />
+
     </FlyoutItem>
 
-    <FlyoutItem Title="Projects" FlyoutIcon="📁">
-        <ShellContent Route="ProjectsPage" ContentTemplate="{DataTemplate local:ProjectsPage}"/>
-    </FlyoutItem>
-
-    <FlyoutItem Title="Form Library" FlyoutIcon="📚">
-        <ShellContent Route="FormLibraryPage" ContentTemplate="{DataTemplate local:FormLibraryPage}"/>
-    </FlyoutItem>
-
-    <FlyoutItem Title="Search" FlyoutIcon="🔍">
-        <ShellContent Route="SearchPage" ContentTemplate="{DataTemplate local:SearchPage}"/>
-    </FlyoutItem>
-
-    <FlyoutItem Title="Checklist Builder" FlyoutIcon="🛠️">
-        <ShellContent Route="ChecklistBuilderPage" ContentTemplate="{DataTemplate local:ChecklistBuilderPage}"/>
-    </FlyoutItem>
-
-    <!-- 4. LOWER FIXED FOOTER CONTAINER (Pinned User Profile Box) -->
+    <!-- Fixed logged-in user footer -->
     <Shell.FlyoutFooter>
-        <VerticalStackLayout BackgroundColor="#060E18">
-            <BoxView HeightRequest="1" BackgroundColor="#112235"/>
-            <Grid ColumnDefinitions="Auto, *" Padding="16, 16, 16, 20" ColumnSpacing="12">
-                <Border Grid.Column="0" HeightRequest="36" WidthRequest="36" BackgroundColor="#1B324D" StrokeShape="RoundRectangle 18" StrokeThickness="0">
-                    <Label Text="SN" TextColor="White" FontAttributes="Bold" FontSize="12" HorizontalOptions="Center" VerticalOptions="Center"/>
+        <VerticalStackLayout
+            BackgroundColor="#060E18"
+            Spacing="0">
+
+            <BoxView
+                HeightRequest="1"
+                Color="#112235" />
+
+            <Grid
+                ColumnDefinitions="Auto,*"
+                Padding="16,16,16,20"
+                ColumnSpacing="12">
+
+                <Border
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    BackgroundColor="#1B324D"
+                    StrokeThickness="0"
+                    VerticalOptions="Center">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+
+                    <Label
+                        Text="SN"
+                        FontSize="12"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center" />
                 </Border>
-                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-                    <Label Text="S. Ndlovu" TextColor="White" FontAttributes="Bold" FontSize="14"/>
-                    <Label Text="ADMIN" TextColor="#53687E" FontSize="10" FontAttributes="Bold"/>
+
+                <VerticalStackLayout
+                    Grid.Column="1"
+                    VerticalOptions="Center"
+                    Spacing="2">
+
+                    <Label
+                        Text="S. Ndlovu"
+                        FontSize="14"
+                        FontAttributes="Bold" />
+
+                    <Label
+                        Text="ADMIN"
+                        TextColor="#53687E"
+                        FontSize="10"
+                        FontAttributes="Bold" />
                 </VerticalStackLayout>
+
             </Grid>
         </VerticalStackLayout>
     </Shell.FlyoutFooter>
+
 </Shell>
