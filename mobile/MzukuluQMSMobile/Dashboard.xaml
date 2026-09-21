@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MzukuluQMSMobile.Dashboard"
+             Title=""
+             BackgroundColor="#F8FAFC">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="24">
+
+            <!-- 1. HEADER OVERVIEW SECTION -->
+            <VerticalStackLayout Spacing="4">
+                <Label Text="OVERVIEW" 
+                       TextColor="#A23C2A" 
+                       FontSize="11" 
+                       FontAttributes="Bold" 
+                       CharacterSpacing="1.5"/>
+                <Label Text="QC Control Centre" 
+                       TextColor="#0B1B2B" 
+                       FontSize="24" 
+                       FontAttributes="Bold"/>
+                <Label Text="What's happening across every project, at a glance." 
+                       TextColor="#556B85" 
+                       FontSize="14"/>
+            </VerticalStackLayout>
+
+            <!-- 2. METRIC CARDS GRID/STACK -->
+            <VerticalStackLayout Spacing="12">
+
+                <!-- Total Projects -->
+                <Border Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 12" BackgroundColor="White" Padding="16, 14">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0" HeightRequest="32" WidthRequest="32" BackgroundColor="#F1F5F9" StrokeThickness="0" StrokeShape="RoundRectangle 6" VerticalOptions="Start" Margin="0,0,16,0">
+                            <Label Text="📁" FontSize="14" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="1" TextColor="#0B1B2B" FontSize="26" FontAttributes="Bold"/>
+                            <Label Text="Total Projects" TextColor="#64748B" FontSize="13"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Active Projects -->
+                <Border Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 12" BackgroundColor="White" Padding="16, 14">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0" HeightRequest="32" WidthRequest="32" BackgroundColor="#F1F5F9" StrokeThickness="0" StrokeShape="RoundRectangle 6" VerticalOptions="Start" Margin="0,0,16,0">
+                            <Label Text="📋" FontSize="14" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="1" TextColor="#0B1B2B" FontSize="26" FontAttributes="Bold"/>
+                            <Label Text="Active Projects" TextColor="#64748B" FontSize="13"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Forms In Progress -->
+                <Border Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 12" BackgroundColor="White" Padding="16, 14">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0" HeightRequest="32" WidthRequest="32" BackgroundColor="#F1F5F9" StrokeThickness="0" StrokeShape="RoundRectangle 6" VerticalOptions="Start" Margin="0,0,16,0">
+                            <Label Text="🕒" FontSize="14" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="3" TextColor="#0B1B2B" FontSize="26" FontAttributes="Bold"/>
+                            <Label Text="Forms In Progress" TextColor="#64748B" FontSize="13"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Total QC Records -->
+                <Border Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 12" BackgroundColor="White" Padding="16, 14">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0" HeightRequest="32" WidthRequest="32" BackgroundColor="#F1F5F9" StrokeThickness="0" StrokeShape="RoundRectangle 6" VerticalOptions="Start" Margin="0,0,16,0">
+                            <Label Text="📄" FontSize="14" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="4" TextColor="#0B1B2B" FontSize="26" FontAttributes="Bold"/>
+                            <Label Text="Total QC Records" TextColor="#64748B" FontSize="13"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Requiring Attention (NCR) - Alert Styling -->
+                <Border Stroke="#FEE2E2" StrokeThickness="1" StrokeShape="RoundRectangle 12" BackgroundColor="#FEF2F2" Padding="16, 14">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0" HeightRequest="32" WidthRequest="32" BackgroundColor="#FEE2E2" StrokeThickness="0" StrokeShape="RoundRectangle 6" VerticalOptions="Start" Margin="0,0,16,0">
+                            <Label Text="⚠️" FontSize="14" TextColor="#991B1B" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="1" TextColor="#991B1B" FontSize="26" FontAttributes="Bold"/>
+                            <Label Text="Requiring Attention (NCR)" TextColor="#991B1B" FontSize="13" FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Clients -->
+                <Border Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 12" BackgroundColor="White" Padding="16, 14">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0" HeightRequest="32" WidthRequest="32" BackgroundColor="#F1F5F9" StrokeThickness="0" StrokeShape="RoundRectangle 6" VerticalOptions="Start" Margin="0,0,16,0">
+                            <Label Text="🏢" FontSize="14" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="1" TextColor="#0B1B2B" FontSize="26" FontAttributes="Bold"/>
+                            <Label Text="Clients" TextColor="#64748B" FontSize="13"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Active Checklist Templates -->
+                <Border Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 12" BackgroundColor="White" Padding="16, 14">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0" HeightRequest="32" WidthRequest="32" BackgroundColor="#F1F5F9" StrokeThickness="0" StrokeShape="RoundRectangle 6" VerticalOptions="Start" Margin="0,0,16,0">
+                            <Label Text="🛠️" FontSize="14" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="6" TextColor="#0B1B2B" FontSize="26" FontAttributes="Bold"/>
+                            <Label Text="Active Checklist Templates" TextColor="#64748B" FontSize="13"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Completed Forms -->
+                <Border Stroke="#E2E8F0" StrokeThickness="1" StrokeShape="RoundRectangle 12" BackgroundColor="White" Padding="16, 14">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0" HeightRequest="32" WidthRequest="32" BackgroundColor="#F1F5F9" StrokeThickness="0" StrokeShape="RoundRectangle 6" VerticalOptions="Start" Margin="0,0,16,0">
+                            <Label Text="✅" FontSize="14" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="1" TextColor="#0B1B2B" FontSize="26" FontAttributes="Bold"/>
+                            <Label Text="Completed Forms" TextColor="#64748B" FontSize="13"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+            </VerticalStackLayout>
+
+            <!-- 3. RECENT QC ACTIVITY CONTAINER -->
+            <Border StrokeThickness="0" StrokeShape="RoundRectangle 12" BackgroundColor="White">
+                <VerticalStackLayout>
+                    <!-- Container Header Panel -->
+                    <Grid BackgroundColor="#0C2340" Padding="16, 12">
+                        <Label Text="RECENT QC ACTIVITY" TextColor="White" FontSize="12" FontAttributes="Bold" CharacterSpacing="1"/>
+                    </Grid>
+
+                    <!-- Activity Row items -->
+                    <VerticalStackLayout Padding="16" Spacing="16">
+
+                        <!-- Row 1: MZT-QC-306 -->
+                        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                <Label Text="• MZT-QC-306 — Electrical Enclosure Installation" TextColor="#0B1B2B" FontSize="14" FontAttributes="Bold"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

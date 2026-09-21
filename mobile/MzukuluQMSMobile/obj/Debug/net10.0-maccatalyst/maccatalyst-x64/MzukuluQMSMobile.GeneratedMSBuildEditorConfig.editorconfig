@@ -47,11 +47,61 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
+[C:/Users/User/source/letso-x/xadad-project-2026/mobile/MzukuluQMSMobile/ChecklistBuilderPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = MzukuluQMSMobile.ChecklistBuilderPage.xaml
+build_metadata.AdditionalFiles.TargetPath = ChecklistBuilderPage.xaml
+build_metadata.AdditionalFiles.RelativePath = ChecklistBuilderPage.xaml
+build_metadata.AdditionalFiles.Inflator = SourceGen
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
+[C:/Users/User/source/letso-x/xadad-project-2026/mobile/MzukuluQMSMobile/ClientsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = MzukuluQMSMobile.ClientsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = ClientsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = ClientsPage.xaml
+build_metadata.AdditionalFiles.Inflator = SourceGen
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
+[C:/Users/User/source/letso-x/xadad-project-2026/mobile/MzukuluQMSMobile/Dashboard.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = MzukuluQMSMobile.Dashboard.xaml
+build_metadata.AdditionalFiles.TargetPath = Dashboard.xaml
+build_metadata.AdditionalFiles.RelativePath = Dashboard.xaml
+build_metadata.AdditionalFiles.Inflator = SourceGen
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
+[C:/Users/User/source/letso-x/xadad-project-2026/mobile/MzukuluQMSMobile/FormLibraryPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = MzukuluQMSMobile.FormLibraryPage.xaml
+build_metadata.AdditionalFiles.TargetPath = FormLibraryPage.xaml
+build_metadata.AdditionalFiles.RelativePath = FormLibraryPage.xaml
+build_metadata.AdditionalFiles.Inflator = SourceGen
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
 [C:/Users/User/source/letso-x/xadad-project-2026/mobile/MzukuluQMSMobile/MainPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = MzukuluQMSMobile.MainPage.xaml
 build_metadata.AdditionalFiles.TargetPath = MainPage.xaml
 build_metadata.AdditionalFiles.RelativePath = MainPage.xaml
+build_metadata.AdditionalFiles.Inflator = SourceGen
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
+[C:/Users/User/source/letso-x/xadad-project-2026/mobile/MzukuluQMSMobile/ProjectsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = MzukuluQMSMobile.ProjectsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = ProjectsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = ProjectsPage.xaml
 build_metadata.AdditionalFiles.Inflator = SourceGen
 build_metadata.AdditionalFiles.NoWarn = 
 build_metadata.AdditionalFiles.EnableDiagnostics = 
@@ -72,6 +122,16 @@ build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = MzukuluQMSMobile.Resources.Styles.Styles.xaml
 build_metadata.AdditionalFiles.TargetPath = Resources\Styles\Styles.xaml
 build_metadata.AdditionalFiles.RelativePath = Resources\Styles\Styles.xaml
+build_metadata.AdditionalFiles.Inflator = SourceGen
+build_metadata.AdditionalFiles.NoWarn = 
+build_metadata.AdditionalFiles.EnableDiagnostics = 
+build_metadata.AdditionalFiles.LineInfo = 
+
+[C:/Users/User/source/letso-x/xadad-project-2026/mobile/MzukuluQMSMobile/SearchPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = MzukuluQMSMobile.SearchPage.xaml
+build_metadata.AdditionalFiles.TargetPath = SearchPage.xaml
+build_metadata.AdditionalFiles.RelativePath = SearchPage.xaml
 build_metadata.AdditionalFiles.Inflator = SourceGen
 build_metadata.AdditionalFiles.NoWarn = 
 build_metadata.AdditionalFiles.EnableDiagnostics = 

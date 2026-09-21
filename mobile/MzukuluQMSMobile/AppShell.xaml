@@ -4,11 +4,188 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:MzukuluQMSMobile"
-    Title="MzukuluQMSMobile">
+    Title="Mzukulu QMS"
+    FlyoutBehavior="Flyout"
+    FlyoutWidth="280"
+    FlyoutBackgroundColor="#091422"
+    Shell.BackgroundColor="#091422"
+    Shell.ForegroundColor="White"
+    Shell.TitleColor="White"
+    Shell.DisabledColor="#53687E"
+    Shell.UnselectedColor="#B7C6DC">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <!-- Shared styling -->
+    <Shell.Resources>
+        <ResourceDictionary>
+
+            <Style TargetType="Label">
+                <Setter Property="TextColor" Value="White" />
+            </Style>
+
+            <Style TargetType="Shell" />
+        </ResourceDictionary>
+    </Shell.Resources>
+
+    <!-- Fixed branding header -->
+    <Shell.FlyoutHeader>
+        <VerticalStackLayout
+            Padding="16,24,16,16"
+            BackgroundColor="#091422"
+            Spacing="12">
+
+            <Grid
+                ColumnDefinitions="Auto,*"
+                ColumnSpacing="12">
+
+                <Border
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    BackgroundColor="#A23C2A"
+                    StrokeThickness="0"
+                    VerticalOptions="Center">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+
+                    <Label
+                        Text="MZ"
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center" />
+                </Border>
+
+                <VerticalStackLayout
+                    Grid.Column="1"
+                    VerticalOptions="Center"
+                    Spacing="2">
+
+                    <Label
+                        Text="Mzukulu QMS"
+                        FontSize="16"
+                        FontAttributes="Bold" />
+
+                    <Label
+                        Text="QUALITY CONTROL SYSTEM"
+                        TextColor="#53687E"
+                        FontSize="10"
+                        CharacterSpacing="1" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <BoxView
+                HeightRequest="1"
+                Color="#112235" />
+
+        </VerticalStackLayout>
+    </Shell.FlyoutHeader>
+
+    <!-- Operations navigation -->
+    <FlyoutItem
+        Title="Operations"
+        Route="Operations"
+        FlyoutDisplayOptions="AsMultipleItems">
+
+        <ShellContent
+            Title="Dashboard"
+            Icon="dashboard.png"
+            Route="Dashboard"
+            ContentTemplate="{DataTemplate local:Dashboard}" />
+
+        <ShellContent
+            Title="Clients"
+            Icon="clients.png"
+            Route="Clients"
+            ContentTemplate="{DataTemplate local:ClientsPage}" />
+
+        <ShellContent
+            Title="Projects"
+            Icon="projects.png"
+            Route="Projects"
+            ContentTemplate="{DataTemplate local:ProjectsPage}" />
+
+        <ShellContent
+            Title="Form Library"
+            Icon="library.png"
+            Route="FormLibrary"
+            ContentTemplate="{DataTemplate local:FormLibraryPage}" />
+
+        <ShellContent
+            Title="Search"
+            Icon="search.png"
+            Route="Search"
+            ContentTemplate="{DataTemplate local:SearchPage}" />
+
+    </FlyoutItem>
+
+    <!-- Administration navigation -->
+    <FlyoutItem
+        Title="Administration"
+        Route="Administration"
+        FlyoutDisplayOptions="AsMultipleItems">
+
+        <ShellContent
+            Title="Checklist Builder"
+            Icon="checklist.png"
+            Route="ChecklistBuilder"
+            ContentTemplate="{DataTemplate local:ChecklistBuilderPage}" />
+
+    </FlyoutItem>
+
+    <!-- Fixed logged-in user footer -->
+    <Shell.FlyoutFooter>
+        <VerticalStackLayout
+            BackgroundColor="#060E18"
+            Spacing="0">
+
+            <BoxView
+                HeightRequest="1"
+                Color="#112235" />
+
+            <Grid
+                ColumnDefinitions="Auto,*"
+                Padding="16,16,16,20"
+                ColumnSpacing="12">
+
+                <Border
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    BackgroundColor="#1B324D"
+                    StrokeThickness="0"
+                    VerticalOptions="Center">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+
+                    <Label
+                        Text="SN"
+                        FontSize="12"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center" />
+                </Border>
+
+                <VerticalStackLayout
+                    Grid.Column="1"
+                    VerticalOptions="Center"
+                    Spacing="2">
+
+                    <Label
+                        Text="S. Ndlovu"
+                        FontSize="14"
+                        FontAttributes="Bold" />
+
+                    <Label
+                        Text="ADMIN"
+                        TextColor="#53687E"
+                        FontSize="10"
+                        FontAttributes="Bold" />
+                </VerticalStackLayout>
+
+            </Grid>
+        </VerticalStackLayout>
+    </Shell.FlyoutFooter>
 
 </Shell>
