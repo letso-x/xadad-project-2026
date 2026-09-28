@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A297CEC2-945B-47BB-9691-D9BB6399FCE1}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>MzuApplication</RootNamespace>
+    <AssemblyName>MzuApplication</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Dpi.cs" />
+    <Compile Include="Theme.cs" />
+    <Compile Include="Format.cs" />
+    <Compile Include="Models\Models.cs" />
+    <Compile Include="Data\Repository.cs" />
+    <Compile Include="Models\Enterprise.cs" />
+    <Compile Include="Data\Audit.cs" />
+    <Compile Include="Data\Exporter.cs" />
+    <Compile Include="Data\NcrService.cs" />
+    <Compile Include="Data\Analytics.cs" />
+    <Compile Include="Data\Seed.cs" />
+    <Compile Include="Controls\PaintScope.cs" />
+    <Compile Include="Controls\Glyphs.cs" />
+    <Compile Include="Controls\Card.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Pill.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\FlatButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\NavLink.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TextInput.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProgressTrack.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\BrandMark.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\DataTable.cs" />
+    <Compile Include="Controls\ActivityRow.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ResponseSelector.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Toast.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Ui.cs" />
+    <Compile Include="Forms\LoginForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Dialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\ViewBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\DashboardView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\ClientsView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\ProjectsView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\ProjectDetailView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\LibraryView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\TemplatesView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\TemplateEditorView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\FormFillView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\RegisterView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MzukuluLogo.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\StatTile.cs" />
+    <Compile Include="Views\NcrView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\AuditView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\ReportsView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\SettingsView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\SearchView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="app.manifest" />
+    <!-- Drop the real artwork here as Assets\logo.png; it is copied next to the exe
+         and picked up automatically by MzukuluLogo. -->
+    <Content Include="Assets\logo.png" Condition="Exists('Assets\logo.png')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
