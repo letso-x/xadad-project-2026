@@ -77,6 +77,14 @@ namespace MzuApplication.Data
 
                     if (_db != null && _db.Templates.Count > 0)
                     {
+                        // A database saved before user accounts existed would have no
+                        // users and nobody could sign in. Backfill the default accounts
+                        // so the app stays usable after upgrading.
+                        if (_db.Users == null || _db.Users.Count == 0)
+                        {
+                            Seed.EnsureDefaultUsers(_db);
+                            Save();
+                        }
                         return;
                     }
                 }

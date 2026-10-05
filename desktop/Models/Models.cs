@@ -257,6 +257,9 @@ namespace MzuApplication.Models
         /// <summary>Tracked non-conformance reports.</summary>
         public List<Ncr> Ncrs { get; set; }
 
+        /// <summary>Registered user accounts.</summary>
+        public List<UserAccount> Users { get; set; }
+
         public OrgSettings Settings { get; set; }
 
         public Database()
@@ -268,6 +271,7 @@ namespace MzuApplication.Models
             Registers = new List<CableRegister>();
             Audit = new List<AuditEntry>();
             Ncrs = new List<Ncr>();
+            Users = new List<UserAccount>();
             Settings = new OrgSettings();
         }
     }

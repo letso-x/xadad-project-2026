@@ -242,11 +242,22 @@ namespace MzuApplication.Forms
         /// <summary>Adds a primary footer action. The callback runs on click.</summary>
         public void AddPrimaryAction(string text, Action onClick)
         {
+            AddAction(text, ButtonVariant.Primary, onClick);
+        }
+
+        /// <summary>Adds a destructive (red) footer action.</summary>
+        public void AddDangerAction(string text, Action onClick)
+        {
+            AddAction(text, ButtonVariant.Danger, onClick);
+        }
+
+        private void AddAction(string text, ButtonVariant variant, Action onClick)
+        {
             FlatButton button = new FlatButton
             {
                 Text = text,
-                Variant = ButtonVariant.Primary,
-                Width = Math.Max(90, text.Length * 9 + 30),
+                Variant = variant,
+                Width = Math.Max(Dpi.S(90), Dpi.S(text.Length * 8 + 28)),
                 Height = Dpi.S(34)
             };
             button.Click += (s, e) => onClick();

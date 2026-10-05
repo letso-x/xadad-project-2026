@@ -126,3 +126,47 @@ namespace MzuApplication.Models
         }
     }
 }
+
+namespace MzuApplication.Models
+{
+    /// <summary>
+    /// A registered user account. Passwords are never stored directly — only a salted
+    /// PBKDF2 hash and the salt used to produce it, so the stored data cannot be
+    /// reversed into the original password.
+    /// </summary>
+    public class UserAccount
+    {
+        public string Id { get; set; }
+
+        /// <summary>Login name, matched case-insensitively.</summary>
+        public string Username { get; set; }
+
+        /// <summary>Full display name shown in the UI and audit trail.</summary>
+        public string FullName { get; set; }
+
+        public string Email { get; set; }
+
+        /// <summary>Base64 PBKDF2 hash of the password.</summary>
+        public string PasswordHash { get; set; }
+
+        /// <summary>Base64 random salt mixed into the hash.</summary>
+        public string PasswordSalt { get; set; }
+
+        /// <summary>PBKDF2 iteration count used, stored so it can be raised later.</summary>
+        public int HashIterations { get; set; }
+
+        public UserRole Role { get; set; }
+
+        /// <summary>Disabled accounts cannot sign in.</summary>
+        public bool Active { get; set; }
+
+        /// <summary>
+        /// When true, the user is forced to set a new password at their next sign-in.
+        /// Set after an administrator resets the password.
+        /// </summary>
+        public bool MustChangePassword { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+        public DateTime? LastLoginAt { get; set; }
+    }
+}

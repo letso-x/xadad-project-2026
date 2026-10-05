@@ -9,22 +9,25 @@ using MzuApplication.Models;
 namespace MzuApplication.Forms
 {
     /// <summary>
-    /// Credential sign-in. Users authenticate with a username and password, or follow
-    /// the link to enroll a new account. On success the signed-in account is available
-    /// via <see cref="Auth.Current"/>.
+    /// Self-enrollment. A new user supplies a full name, username, optional email and a
+    /// password (entered twice). On success the account is created and the dialog
+    /// returns OK with the chosen username for a convenient hand-off to sign-in.
     /// </summary>
-    public class LoginForm : Form
+    public class RegisterForm : Form
     {
         private Card _card;
+        private TextInput _fullName;
         private TextInput _username;
+        private TextInput _email;
         private TextInput _password;
+        private TextInput _confirm;
         private Label _error;
 
-        public LoginForm()
+        public RegisterForm()
         {
-            Text = "Mzukulu QMS — Sign in";
-            ClientSize = new Size(Dpi.S(940), Dpi.S(640));
-            MinimumSize = new Size(Dpi.S(560), Dpi.S(600));
+            Text = "Mzukulu QMS — Create account";
+            ClientSize = new Size(Dpi.S(940), Dpi.S(720));
+            MinimumSize = new Size(Dpi.S(560), Dpi.S(680));
             StartPosition = FormStartPosition.CenterScreen;
             DoubleBuffered = true;
             BackColor = Theme.Navy950;
@@ -35,8 +38,8 @@ namespace MzuApplication.Forms
             CenterCard();
         }
 
-        /// <summary>True when the dialog closed because the user chose to register.</summary>
-        public bool RegisterRequested { get; private set; }
+        /// <summary>The username that was created, valid once the dialog returns OK.</summary>
+        public string CreatedUsername { get; private set; }
 
         protected override void OnPaintBackground(PaintEventArgs e)
         {
@@ -68,7 +71,7 @@ namespace MzuApplication.Forms
 
         private void BuildCard()
         {
-            int cardWidth = Dpi.S(410);
+            int cardWidth = Dpi.S(430);
 
             _card = new Card
             {
@@ -78,7 +81,6 @@ namespace MzuApplication.Forms
                 Radius = Dpi.S(16)
             };
 
-            // ---- Navy header -------------------------------------------------
             Card header = new Card
             {
                 Fill = Theme.Navy950,
@@ -86,13 +88,13 @@ namespace MzuApplication.Forms
                 Radius = Dpi.S(16),
                 TopOnly = true,
                 Width = cardWidth,
-                Height = Dpi.S(132),
+                Height = Dpi.S(120),
                 Location = new Point(0, 0)
             };
 
             MzukuluLogo mark = new MzukuluLogo
             {
-                Location = new Point(Dpi.S(28), Dpi.S(28)),
+                Location = new Point(Dpi.S(28), Dpi.S(26)),
                 Size = new Size(Dpi.S(32), Dpi.S(32))
             };
             header.Controls.Add(mark);
@@ -103,8 +105,8 @@ namespace MzuApplication.Forms
                 Font = new Font("Segoe UI", 12F, FontStyle.Bold),
                 ForeColor = Color.White,
                 BackColor = Color.Transparent,
-                Location = new Point(Dpi.S(26), Dpi.S(70)),
-                Text = "Mzukulu QMS"
+                Location = new Point(Dpi.S(26), Dpi.S(66)),
+                Text = "Create your account"
             };
             header.Controls.Add(brand);
 
@@ -114,54 +116,28 @@ namespace MzuApplication.Forms
                 Font = Theme.Small,
                 ForeColor = Color.FromArgb(0x9F, 0xB0, 0xC6),
                 BackColor = Color.Transparent,
-                Location = new Point(Dpi.S(28), Dpi.S(99)),
-                Text = "Quality Management System"
+                Location = new Point(Dpi.S(28), Dpi.S(92)),
+                Text = "Enroll yourself into Mzukulu QMS"
             };
             header.Controls.Add(tagline);
 
             _card.Controls.Add(header);
 
-            // ---- Body --------------------------------------------------------
             int left = Dpi.S(28);
             int fieldWidth = cardWidth - Dpi.S(56);
-            int y = header.Bottom + Dpi.S(22);
+            int y = header.Bottom + Dpi.S(20);
 
-            Label prompt = Ui.Eyebrow("Sign in to your account");
-            prompt.Location = new Point(left, y);
-            _card.Controls.Add(prompt);
-            y = prompt.Bottom + Dpi.S(14);
+            _fullName = AddField("Full Name", "e.g. Thabo Mahlangu", left, fieldWidth, ref y, false);
+            _username = AddField("Username", "Used to sign in", left, fieldWidth, ref y, false);
+            _email = AddField("Email (optional)", "name@company.co.za", left, fieldWidth, ref y, false);
+            _password = AddField("Password", null, left, fieldWidth, ref y, true);
 
-            Label userLabel = Ui.FieldLabel("Username");
-            userLabel.Location = new Point(left, y);
-            _card.Controls.Add(userLabel);
-            y = userLabel.Bottom + Dpi.S(5);
+            Label rule = Ui.Wrapped(Auth.PasswordRule, Theme.Tiny, Theme.Slate400, fieldWidth);
+            rule.Location = new Point(left, y);
+            _card.Controls.Add(rule);
+            y = rule.Bottom + Dpi.S(10);
 
-            _username = new TextInput
-            {
-                Location = new Point(left, y),
-                Width = fieldWidth,
-                Height = Dpi.S(36),
-                Placeholder = "e.g. admin"
-            };
-            _username.Submitted += (s, e) => _password.Focus();
-            _card.Controls.Add(_username);
-            y = _username.Bottom + Dpi.S(14);
-
-            Label passLabel = Ui.FieldLabel("Password");
-            passLabel.Location = new Point(left, y);
-            _card.Controls.Add(passLabel);
-            y = passLabel.Bottom + Dpi.S(5);
-
-            _password = new TextInput
-            {
-                Location = new Point(left, y),
-                Width = fieldWidth,
-                Height = Dpi.S(36),
-                UsePasswordChar = true
-            };
-            _password.Submitted += (s, e) => AttemptSignIn();
-            _card.Controls.Add(_password);
-            y = _password.Bottom + Dpi.S(10);
+            _confirm = AddField("Confirm Password", null, left, fieldWidth, ref y, true);
 
             _error = new Label
             {
@@ -177,70 +153,73 @@ namespace MzuApplication.Forms
             _card.Controls.Add(_error);
             y = _error.Bottom + Dpi.S(2);
 
-            FlatButton signIn = new FlatButton
+            FlatButton create = new FlatButton
             {
-                Text = "Sign In",
+                Text = "Create Account",
                 Variant = ButtonVariant.Primary,
                 Width = fieldWidth,
                 Height = Dpi.S(40),
                 Location = new Point(left, y)
             };
-            signIn.Click += (s, e) => AttemptSignIn();
-            _card.Controls.Add(signIn);
-            y = signIn.Bottom + Dpi.S(16);
+            create.Click += (s, e) => AttemptRegister();
+            _card.Controls.Add(create);
+            y = create.Bottom + Dpi.S(14);
 
-            // ---- Register link ----------------------------------------------
-            Panel registerRow = new Panel
+            Panel backRow = new Panel
             {
                 Location = new Point(left, y),
                 Width = fieldWidth,
                 Height = Dpi.S(20),
                 BackColor = Color.Transparent
             };
-
-            Label noAccount = new Label
+            Label have = new Label
             {
                 AutoSize = true,
                 Font = Theme.Small,
                 ForeColor = Theme.Slate600,
-                BackColor = Color.Transparent,
                 Location = new Point(0, 0),
-                Text = "New here?"
+                Text = "Already have an account?"
             };
-            registerRow.Controls.Add(noAccount);
-
-            Label registerLink = new Label
+            backRow.Controls.Add(have);
+            Label backLink = new Label
             {
                 AutoSize = true,
                 Font = Theme.SmallBold,
                 ForeColor = Theme.Navy700,
-                BackColor = Color.Transparent,
-                Location = new Point(noAccount.Right + Dpi.S(4), 0),
-                Text = "Create an account",
+                Location = new Point(have.Right + Dpi.S(4), 0),
+                Text = "Back to sign in",
                 Cursor = Cursors.Hand
             };
-            registerLink.Click += (s, e) =>
-            {
-                RegisterRequested = true;
-                DialogResult = DialogResult.Retry;
-                Close();
-            };
-            registerRow.Controls.Add(registerLink);
+            backLink.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
+            backRow.Controls.Add(backLink);
+            _card.Controls.Add(backRow);
 
-            _card.Controls.Add(registerRow);
-            y = registerRow.Bottom + Dpi.S(14);
-
-            // ---- Demo credentials hint --------------------------------------
-            Label hint = Ui.Wrapped(
-                "Demo accounts — admin / admin123  ·  siteuser / user123",
-                Theme.Tiny, Theme.Slate400, fieldWidth);
-            hint.Location = new Point(left, y);
-            _card.Controls.Add(hint);
-
-            _card.Height = hint.Bottom + Dpi.S(24);
+            _card.Height = backRow.Bottom + Dpi.S(22);
             Controls.Add(_card);
 
-            ActiveControl = _username;
+            ActiveControl = _fullName;
+        }
+
+        private TextInput AddField(string label, string placeholder, int left, int width,
+                                   ref int y, bool password)
+        {
+            Label caption = Ui.FieldLabel(label);
+            caption.Location = new Point(left, y);
+            _card.Controls.Add(caption);
+            y = caption.Bottom + Dpi.S(5);
+
+            TextInput input = new TextInput
+            {
+                Location = new Point(left, y),
+                Width = width,
+                Height = Dpi.S(36),
+                UsePasswordChar = password
+            };
+            if (!string.IsNullOrEmpty(placeholder)) input.Placeholder = placeholder;
+
+            _card.Controls.Add(input);
+            y = input.Bottom + Dpi.S(12);
+            return input;
         }
 
         private void CenterCard()
@@ -250,21 +229,38 @@ namespace MzuApplication.Forms
             _card.Top = Math.Max(Dpi.S(16), (ClientSize.Height - _card.Height) / 2);
         }
 
-        private void AttemptSignIn()
+        private void AttemptRegister()
         {
             _error.Text = string.Empty;
 
-            AuthResult result = Auth.SignIn(_username.Value, _password.Value);
+            if (_password.Value != _confirm.Value)
+            {
+                _error.Text = "The two passwords do not match.";
+                return;
+            }
+
+            UserAccount created;
+            AuthResult result = Auth.Register(
+                _username.Value, _fullName.Value, _email.Value, _password.Value, out created);
+
             if (result == AuthResult.Success)
             {
+                CreatedUsername = created.Username;
+
+                string roleNote = created.Role == UserRole.Admin
+                    ? "You are the first user, so you have been enrolled as an administrator."
+                    : "Your account has been created.";
+
+                MessageBox.Show(this,
+                    roleNote + "\r\n\r\nYou can now sign in with your username and password.",
+                    "Account created", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                 DialogResult = DialogResult.OK;
                 Close();
                 return;
             }
 
             _error.Text = Auth.Describe(result);
-            _password.Value = string.Empty;
-            _password.Focus();
         }
     }
 }

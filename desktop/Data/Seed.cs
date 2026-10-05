@@ -82,8 +82,41 @@ namespace MzuApplication.Data
 
             db.Templates.AddRange(BuildTemplates());
             AddDemoRecords(db, projectId);
+            AddDemoUsers(db);
 
             return db;
+        }
+
+        /// <summary>
+        /// Seeds the two demo accounts as real, password-protected users so the system
+        /// is usable immediately. Credentials are shown on the login screen.
+        /// </summary>
+        private static void AddDemoUsers(Database db)
+        {
+            EnsureDefaultUsers(db);
+        }
+
+        /// <summary>
+        /// Adds the default admin and site-user accounts if they are missing. Safe to
+        /// call on an existing database; it only fills gaps.
+        /// </summary>
+        public static void EnsureDefaultUsers(Database db)
+        {
+            if (db.Users == null) db.Users = new List<UserAccount>();
+
+            if (!db.Users.Exists(u => string.Equals(u.Username, "admin", StringComparison.OrdinalIgnoreCase)))
+            {
+                db.Users.Add(Auth.CreateSeedAccount(
+                    "usr-admin", "admin", "S. Ndlovu", "s.ndlovu@mzukulu.co.za",
+                    "admin123", UserRole.Admin));
+            }
+
+            if (!db.Users.Exists(u => string.Equals(u.Username, "siteuser", StringComparison.OrdinalIgnoreCase)))
+            {
+                db.Users.Add(Auth.CreateSeedAccount(
+                    "usr-user", "siteuser", "T. Mahlangu", "t.mahlangu@mzukulu.co.za",
+                    "user123", UserRole.SiteUser));
+            }
         }
 
         private static List<ChecklistTemplate> BuildTemplates()

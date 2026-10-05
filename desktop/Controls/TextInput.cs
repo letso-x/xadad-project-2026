@@ -15,6 +15,7 @@ namespace MzuApplication.Controls
         private bool _focused;
         private string _placeholder = string.Empty;
         private bool _showingPlaceholder;
+        private bool _usePasswordChar;
         private Glyph _glyph = Glyph.None;
         private bool _rounded;
 
@@ -89,6 +90,26 @@ namespace MzuApplication.Controls
             set { _box.ReadOnly = value; Invalidate(); }
         }
 
+        /// <summary>
+        /// Masks the entered text with dots (for password fields). Masking is suspended
+        /// while the grey placeholder is showing so the hint stays readable.
+        /// </summary>
+        public bool UsePasswordChar
+        {
+            get { return _usePasswordChar; }
+            set
+            {
+                _usePasswordChar = value;
+                ApplyPasswordChar();
+            }
+        }
+
+        private void ApplyPasswordChar()
+        {
+            // Only mask real input, never the placeholder text.
+            _box.UseSystemPasswordChar = _usePasswordChar && !_showingPlaceholder;
+        }
+
         /// <summary>The real value, empty while the placeholder is displayed.</summary>
         public string Value
         {
@@ -98,8 +119,15 @@ namespace MzuApplication.Controls
                 _showingPlaceholder = false;
                 _box.ForeColor = Theme.Slate900;
                 _box.Text = value ?? string.Empty;
+                ApplyPasswordChar();
                 ApplyPlaceholderIfEmpty();
             }
+        }
+
+        /// <summary>Moves keyboard focus into the inner text box.</summary>
+        public new void Focus()
+        {
+            _box.Focus();
         }
 
         public override Font Font
@@ -158,6 +186,7 @@ namespace MzuApplication.Controls
             _showingPlaceholder = false;
             _box.Text = string.Empty;
             _box.ForeColor = Theme.Slate900;
+            ApplyPasswordChar();
         }
 
         private void ApplyPlaceholderIfEmpty()
@@ -166,6 +195,7 @@ namespace MzuApplication.Controls
             _showingPlaceholder = true;
             _box.Text = _placeholder;
             _box.ForeColor = Theme.Slate400;
+            ApplyPasswordChar();
         }
 
         private void OnValueChanged()

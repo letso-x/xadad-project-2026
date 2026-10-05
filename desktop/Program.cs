@@ -37,31 +37,72 @@ namespace MzuApplication
 
             Repository.Load();
 
-            // Loop so "switch user" returns to the login screen instead of exiting.
+            // Outer loop: sign-in / registration cycle. Breaks out only on a
+            // successful authenticated session or when the user quits.
             while (true)
             {
-                using (LoginForm login = new LoginForm())
+                if (!RunAuthentication())
                 {
-                    if (login.ShowDialog() != DialogResult.OK)
+                    return; // user closed the login window
+                }
+
+                // A reset password forces the user to choose a new one before entering.
+                if (Auth.CurrentMustChangePassword)
+                {
+                    using (ChangePasswordForm change = new ChangePasswordForm())
                     {
-                        return;
+                        if (change.ShowDialog() != DialogResult.OK)
+                        {
+                            // Refused to set a new password: sign out and return to login.
+                            Auth.SignOut();
+                            continue;
+                        }
                     }
-
-                    Repository.SignIn(login.SelectedRole, login.DisplayName);
-
-                    Audit.Log(AuditAction.SignedIn, "Session", null, login.DisplayName,
-                        "Signed in as " + Format.RoleName(login.SelectedRole));
-                    Repository.Save();
                 }
 
                 using (MainForm main = new MainForm())
                 {
                     main.ShowDialog();
 
+                    // "Switch user" returns to the login screen; anything else quits.
                     if (main.DialogResult != DialogResult.Retry)
                     {
                         return;
                     }
+
+                    Auth.SignOut();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs the login screen, letting the user flip to registration and back. Returns
+        /// true once a user is authenticated, false if they close the window to quit.
+        /// </summary>
+        private static bool RunAuthentication()
+        {
+            while (true)
+            {
+                using (LoginForm login = new LoginForm())
+                {
+                    DialogResult result = login.ShowDialog();
+
+                    if (result == DialogResult.OK)
+                    {
+                        return true; // Auth.Current is set
+                    }
+
+                    if (login.RegisterRequested)
+                    {
+                        using (RegisterForm register = new RegisterForm())
+                        {
+                            register.ShowDialog();
+                            // Whether they registered or cancelled, loop back to login.
+                        }
+                        continue;
+                    }
+
+                    return false; // closed/cancelled -> quit
                 }
             }
         }
