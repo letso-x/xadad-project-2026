@@ -1,0 +1,10 @@
+# Secrets — the real connection string lives here and must never be committed.
+database.config
+
+# NuGet packages (restored from packages.config)
+packages/
+
+# Build output
+[Bb]in/
+[Oo]bj/
+.vs/

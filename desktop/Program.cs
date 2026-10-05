@@ -37,6 +37,22 @@ namespace MzuApplication
 
             Repository.Load();
 
+            // If configured for Postgres, verify the connection up front. On failure,
+            // tell the user and fall back to the local store so a demo still runs.
+            if (DbConfig.UsePostgres)
+            {
+                string error = PostgresUserStore.Initialise();
+                if (error != null)
+                {
+                    DbConfig.DisablePostgres();
+                    MessageBox.Show(
+                        "Could not connect to the Supabase database:\r\n\r\n" + error
+                        + "\r\n\r\nThe app will use the local offline account store instead.",
+                        "Database connection failed",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+
             // Outer loop: sign-in / registration cycle. Breaks out only on a
             // successful authenticated session or when the user quits.
             while (true)

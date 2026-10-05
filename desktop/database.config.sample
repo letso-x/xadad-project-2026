@@ -1,0 +1,17 @@
+# Mzukulu QMS — database connection
+#
+# Copy this file to "database.config" (same folder as the .exe) and fill in the
+# password. The real database.config is gitignored and must never be committed.
+#
+# Supabase: Project Settings -> Database -> Connection string (choose "Session"
+# or "Transaction" pooler, or the direct connection).
+#
+# Format: a standard Npgsql connection string on a single line after "ConnectionString=".
+
+# --- Direct connection (port 5432) ---
+# ConnectionString=Host=db.epouiaewlzfyvsatmwuy.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YOUR_PASSWORD_HERE;SSL Mode=Require;Trust Server Certificate=true
+
+# --- Session pooler (recommended for desktop apps; port 5432 via pooler host) ---
+# ConnectionString=Host=aws-0-eu-west-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.epouiaewlzfyvsatmwuy;Password=YOUR_PASSWORD_HERE;SSL Mode=Require;Trust Server Certificate=true
+
+ConnectionString=Host=db.epouiaewlzfyvsatmwuy.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YOUR_PASSWORD_HERE;SSL Mode=Require;Trust Server Certificate=true

@@ -102,7 +102,7 @@ namespace MzuApplication.Data
                 rng.GetBytes(salt);
             }
 
-            bool firstAccount = Repository.Db.Users.Count == 0;
+            bool firstAccount = UserCount() == 0;
 
             UserAccount account = new UserAccount
             {
@@ -118,12 +118,10 @@ namespace MzuApplication.Data
                 CreatedAt = DateTime.Now
             };
 
-            Repository.Db.Users.Add(account);
-            Repository.Save();
+            StoreNew(account);
 
             Audit.Log(AuditAction.Created, "User", account.Id, account.Username,
                 "Account enrolled as " + Format.RoleName(account.Role));
-            Repository.Save();
 
             created = account;
             return AuthResult.Success;
@@ -209,14 +207,13 @@ namespace MzuApplication.Data
 
             account.LastLoginAt = DateTime.Now;
             Current = account;
+            StoreUpdate(account);
 
             // Mirror into the Repository session the rest of the app already reads.
             Repository.SignIn(account.Role, account.FullName);
-            Repository.Save();
 
             Audit.Log(AuditAction.SignedIn, "Session", account.Id, account.FullName,
                 "Signed in as " + Format.RoleName(account.Role));
-            Repository.Save();
 
             return AuthResult.Success;
         }
@@ -240,7 +237,9 @@ namespace MzuApplication.Data
         /// <summary>All accounts, administrators first then by name.</summary>
         public static System.Collections.Generic.List<UserAccount> AllUsers()
         {
-            return Repository.Db.Users
+            var source = UsePostgres ? PostgresUserStore.GetAll() : Repository.Db.Users;
+
+            return source
                 .OrderByDescending(u => u.Role == UserRole.Admin)
                 .ThenBy(u => u.FullName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
@@ -252,11 +251,10 @@ namespace MzuApplication.Data
             if (account == null) return;
 
             account.Active = active;
-            Repository.Save();
+            StoreUpdate(account);
 
             Audit.Log(AuditAction.Updated, "User", account.Id, account.Username,
                 active ? "Account re-activated" : "Account deregistered (disabled)");
-            Repository.Save();
         }
 
         /// <summary>
@@ -274,12 +272,10 @@ namespace MzuApplication.Data
                 return false;
             }
 
-            Repository.Db.Users.Remove(account);
-            Repository.Save();
+            StoreDelete(account);
 
             Audit.Log(AuditAction.Deleted, "User", account.Id, account.Username,
                 "Account permanently removed");
-            Repository.Save();
             return true;
         }
 
@@ -293,11 +289,10 @@ namespace MzuApplication.Data
 
             SetPassword(account, temporaryPassword);
             account.MustChangePassword = true;
-            Repository.Save();
+            StoreUpdate(account);
 
             Audit.Log(AuditAction.Updated, "User", account.Id, account.Username,
                 "Password reset by administrator; change required at next sign-in");
-            Repository.Save();
         }
 
         /// <summary>
@@ -311,11 +306,10 @@ namespace MzuApplication.Data
 
             SetPassword(Current, newPassword);
             Current.MustChangePassword = false;
-            Repository.Save();
+            StoreUpdate(Current);
 
             Audit.Log(AuditAction.Updated, "User", Current.Id, Current.Username,
                 "Password changed");
-            Repository.Save();
 
             return AuthResult.Success;
         }
@@ -336,8 +330,9 @@ namespace MzuApplication.Data
 
         private static int CountActiveAdmins(UserAccount exclude)
         {
-            return Repository.Db.Users.Count(u =>
-                u != exclude && u.Role == UserRole.Admin && u.Active);
+            var source = UsePostgres ? PostgresUserStore.GetAll() : Repository.Db.Users;
+            return source.Count(u =>
+                u.Id != exclude.Id && u.Role == UserRole.Admin && u.Active);
         }
 
         /// <summary>Generates a readable temporary password that meets the policy.</summary>
@@ -360,11 +355,72 @@ namespace MzuApplication.Data
 
         #endregion
 
+        #region Storage abstraction (Postgres or local JSON)
+
+        /// <summary>True when the app is configured to use Supabase Postgres.</summary>
+        private static bool UsePostgres
+        {
+            get { return DbConfig.UsePostgres; }
+        }
+
         private static UserAccount FindUser(string username)
         {
+            if (UsePostgres)
+            {
+                return PostgresUserStore.FindByUsername(username);
+            }
+
             return Repository.Db.Users.FirstOrDefault(u =>
                 string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase));
         }
+
+        private static int UserCount()
+        {
+            return UsePostgres
+                ? PostgresUserStore.GetAll().Count
+                : Repository.Db.Users.Count;
+        }
+
+        private static void StoreNew(UserAccount account)
+        {
+            if (UsePostgres)
+            {
+                PostgresUserStore.Insert(account);
+            }
+            else
+            {
+                Repository.Db.Users.Add(account);
+                Repository.Save();
+            }
+        }
+
+        /// <summary>Persists changes to an existing account.</summary>
+        private static void StoreUpdate(UserAccount account)
+        {
+            if (UsePostgres)
+            {
+                PostgresUserStore.Update(account);
+            }
+            else
+            {
+                Repository.Save();
+            }
+        }
+
+        private static void StoreDelete(UserAccount account)
+        {
+            if (UsePostgres)
+            {
+                PostgresUserStore.Delete(account.Id);
+            }
+            else
+            {
+                Repository.Db.Users.Remove(account);
+                Repository.Save();
+            }
+        }
+
+        #endregion
 
         /// <summary>Human-readable message for an auth result.</summary>
         public static string Describe(AuthResult result)
