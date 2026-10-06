@@ -1,17 +1,22 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿namespace MzukuluQMSMobile;
 
-namespace MzukuluQMSMobile
+public partial class App : Application
 {
-    public partial class App : Application
+    public App()
     {
-        public App()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
+    }
 
-        protected override Window CreateWindow(IActivationState? activationState)
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        return new Window(new ContentPage
         {
-            return new Window(new AppShell());
-        }
+            Content = new Label
+            {
+                Text = "Mzukulu QMS Mobile",
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center
+            }
+        });
     }
 }

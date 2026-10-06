@@ -1,24 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\User\\source\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\MzukuluQMSMobile.csproj": {}
+    "C:\\Users\\user-pc\\source\\repos\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\MzukuluQMSMobile.csproj": {}
   },
   "projects": {
-    "C:\\Users\\User\\source\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\MzukuluQMSMobile.csproj": {
+    "C:\\Users\\user-pc\\source\\repos\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\MzukuluQMSMobile.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\MzukuluQMSMobile.csproj",
+        "projectUniqueName": "C:\\Users\\user-pc\\source\\repos\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\MzukuluQMSMobile.csproj",
         "projectName": "MzukuluQMSMobile",
-        "projectPath": "C:\\Users\\User\\source\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\MzukuluQMSMobile.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\obj\\",
+        "projectPath": "C:\\Users\\user-pc\\source\\repos\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\MzukuluQMSMobile.csproj",
+        "packagesPath": "C:\\Users\\user-pc\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user-pc\\source\\repos\\letso-x\\xadad-project-2026\\mobile\\MzukuluQMSMobile\\obj\\",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\user-pc\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -85,6 +85,10 @@
               "target": "Package",
               "version": "[10.0.12, )",
               "autoReferenced": true
+            },
+            "Supabase": {
+              "target": "Package",
+              "version": "[8.3.0, )"
             }
           },
           "imports": [
@@ -402,6 +406,10 @@
               "target": "Package",
               "version": "[10.0.12, )",
               "autoReferenced": true
+            },
+            "Supabase": {
+              "target": "Package",
+              "version": "[8.3.0, )"
             }
           },
           "imports": [
@@ -719,6 +727,10 @@
               "target": "Package",
               "version": "[10.0.12, )",
               "autoReferenced": true
+            },
+            "Supabase": {
+              "target": "Package",
+              "version": "[8.3.0, )"
             }
           },
           "imports": [
@@ -1031,6 +1043,10 @@
             "Microsoft.Maui.Controls": {
               "target": "Package",
               "version": "[10.0.20, )"
+            },
+            "Supabase": {
+              "target": "Package",
+              "version": "[8.3.0, )"
             }
           },
           "imports": [
