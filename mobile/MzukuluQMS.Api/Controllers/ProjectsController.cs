@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MzukuluQMS.Api.Data.Repositories;
+using MzukuluQMS.Api.DTOs;
+using MzukuluQMS.Api.Services;
 
 namespace MzukuluQMS.Api.Controllers;
 
@@ -7,20 +8,62 @@ namespace MzukuluQMS.Api.Controllers;
 [Route("api/projects")]
 public sealed class ProjectsController : ControllerBase
 {
-    private readonly IProjectRepository _projectRepository;
+    private readonly IProjectService _projectService;
 
-    public ProjectsController(IProjectRepository projectRepository)
+    public ProjectsController(IProjectService projectService)
     {
-        _projectRepository = projectRepository;
+        _projectService = projectService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetProjects(
+    [ProducesResponseType(typeof(IReadOnlyList<ProjectDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProjectDto>>> GetProjects(
         CancellationToken cancellationToken)
     {
         var projects =
-            await _projectRepository.GetAllAsync(cancellationToken);
+            await _projectService.GetAllAsync(cancellationToken);
 
         return Ok(projects);
     }
-} 
+
+    [HttpGet("{projectId:long:min(1)}")]
+    [ProducesResponseType(typeof(ProjectDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProjectDto>> GetProject(
+        long projectId,
+        CancellationToken cancellationToken)
+    {
+        var project =
+            await _projectService.GetByIdAsync(
+                projectId,
+                cancellationToken);
+
+        if (project is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(project);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(ProjectDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ProjectDto>> CreateProject(
+    [FromBody] CreateProjectRequest request,
+    CancellationToken cancellationToken)
+    {
+            var project =
+                await _projectService.CreateAsync(
+                    request,
+                    cancellationToken);
+
+            return CreatedAtAction(
+                nameof(GetProject),
+                new { projectId = project.ProjectID },
+                project);
+        
+            
+        
+    }
+}

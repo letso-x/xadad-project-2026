@@ -1,8 +1,8 @@
 ﻿using MzukuluQMS.Api.DTOs;
 
-namespace MzukuluQMS.Api.Data.Repositories;
+namespace MzukuluQMS.Api.Services;
 
-public interface IProjectRepository
+public interface IProjectService
 {
     Task<IReadOnlyList<ProjectDto>> GetAllAsync(
         CancellationToken cancellationToken = default);
@@ -10,7 +10,6 @@ public interface IProjectRepository
     Task<ProjectDto?> GetByIdAsync(
         long projectId,
         CancellationToken cancellationToken = default);
-
     Task<ProjectDto> CreateAsync(
     CreateProjectRequest request,
     CancellationToken cancellationToken = default);

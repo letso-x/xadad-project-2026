@@ -1,5 +1,7 @@
 using MzukuluQMS.Api.Data;
 using MzukuluQMS.Api.Data.Repositories;
+using MzukuluQMS.Api.Exceptions;
+using MzukuluQMS.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,8 +13,12 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<IDbConnectionFactory, NpgsqlConnectionFactory>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
