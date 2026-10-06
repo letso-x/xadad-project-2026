@@ -441,6 +441,20 @@ namespace MzuApplication.Views
             Y = card.Bottom + 12;
         }
 
+        /// <summary>
+        /// Initials of the signed-in user working on the document, stamped into the
+        /// read-only Initials column. Prefers the authenticated account's full name,
+        /// falling back to the repository session name.
+        /// </summary>
+        private static string CurrentUserInitials()
+        {
+            string name = Auth.Current != null && !string.IsNullOrWhiteSpace(Auth.Current.FullName)
+                ? Auth.Current.FullName
+                : Repository.CurrentUserName;
+
+            return Format.FullInitials(name);
+        }
+
         private int AddItemCard(Card parent, TemplateItem item, int number, int y)
         {
             FormItemResult result = _form.Items.FirstOrDefault(i => i.ItemId == item.Id);
@@ -541,14 +555,20 @@ namespace MzuApplication.Views
             initialsLabel.Location = new Point(x, controlsTop);
             itemCard.Controls.Add(initialsLabel);
 
+            // The initials of the person working on the document are stamped
+            // automatically from the signed-in user and cannot be edited, so the
+            // record always reflects who actually completed the line.
+            string stamp = CurrentUserInitials();
+            result.Initials = stamp;
+
             TextInput initials = new TextInput
             {
                 Location = new Point(x, initialsLabel.Bottom + 5),
                 Width = fieldWidth,
                 Height = Dpi.S(34),
-                Value = result.Initials ?? string.Empty
+                Value = stamp,
+                ReadOnlyValue = true
             };
-            initials.ValueChanged += (s, e) => result.Initials = initials.Value;
             itemCard.Controls.Add(initials);
 
             x += fieldWidth + gap;

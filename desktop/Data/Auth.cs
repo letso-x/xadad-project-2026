@@ -197,7 +197,23 @@ namespace MzuApplication.Data
                 return AuthResult.AccountDisabled;
             }
 
-            byte[] salt = Convert.FromBase64String(account.PasswordSalt);
+            // A stored account without a usable salt (e.g. an externally-created row that
+            // predates this app's hashing) can never be verified; treat as invalid.
+            if (string.IsNullOrEmpty(account.PasswordSalt))
+            {
+                return AuthResult.InvalidCredentials;
+            }
+
+            byte[] salt;
+            try
+            {
+                salt = Convert.FromBase64String(account.PasswordSalt);
+            }
+            catch (FormatException)
+            {
+                return AuthResult.InvalidCredentials;
+            }
+
             string attempt = Hash(password, salt, account.HashIterations);
 
             if (!FixedTimeEquals(attempt, account.PasswordHash))
@@ -293,6 +309,34 @@ namespace MzuApplication.Data
 
             Audit.Log(AuditAction.Updated, "User", account.Id, account.Username,
                 "Password reset by administrator; change required at next sign-in");
+        }
+
+        /// <summary>
+        /// Self-service "forgot password" from the login screen. Looks the account up by
+        /// its login name (email), resets it to a freshly generated temporary password,
+        /// and flags it so the user is forced to choose a new password at next sign-in.
+        /// On success, <paramref name="temporaryPassword"/> is the password to show the
+        /// user. Does not reveal whether the account exists via the return value alone —
+        /// callers should show the same confirmation regardless.
+        /// </summary>
+        public static bool ForgotPassword(string loginName, out string temporaryPassword)
+        {
+            temporaryPassword = null;
+            if (string.IsNullOrWhiteSpace(loginName)) return false;
+
+            UserAccount account = FindUser(loginName.Trim());
+            if (account == null) return false;
+
+            string temp = GenerateTemporaryPassword();
+            SetPassword(account, temp);
+            account.MustChangePassword = true;
+            StoreUpdate(account);
+
+            Audit.Log(AuditAction.Updated, "User", account.Id, account.Username,
+                "Password reset via self-service; change required at next sign-in");
+
+            temporaryPassword = temp;
+            return true;
         }
 
         /// <summary>

@@ -29,6 +29,7 @@ namespace MzuApplication.Forms
             DoubleBuffered = true;
             BackColor = Theme.Navy950;
             Font = Theme.Body;
+            AppIcon.Apply(this);
 
             BuildCard();
             Resize += (s, e) => CenterCard();
@@ -187,7 +188,22 @@ namespace MzuApplication.Forms
             };
             signIn.Click += (s, e) => AttemptSignIn();
             _card.Controls.Add(signIn);
-            y = signIn.Bottom + Dpi.S(16);
+            y = signIn.Bottom + Dpi.S(12);
+
+            // ---- Forgot password link ---------------------------------------
+            Label forgotLink = new Label
+            {
+                AutoSize = true,
+                Font = Theme.SmallBold,
+                ForeColor = Theme.Navy700,
+                BackColor = Color.Transparent,
+                Location = new Point(left, y),
+                Text = "Forgot password?",
+                Cursor = Cursors.Hand
+            };
+            forgotLink.Click += (s, e) => ForgotPassword();
+            _card.Controls.Add(forgotLink);
+            y = forgotLink.Bottom + Dpi.S(14);
 
             // ---- Register link ----------------------------------------------
             Panel registerRow = new Panel
@@ -248,6 +264,70 @@ namespace MzuApplication.Forms
             if (_card == null) return;
             _card.Left = (ClientSize.Width - _card.Width) / 2;
             _card.Top = Math.Max(Dpi.S(16), (ClientSize.Height - _card.Height) / 2);
+        }
+
+        /// <summary>
+        /// Self-service password reset. Prompts for the account email, generates a new
+        /// temporary password, and displays it. The user is forced to change it at their
+        /// next sign-in (handled by the must-change-password flow after login).
+        /// </summary>
+        private void ForgotPassword()
+        {
+            string prefill = _username.Value;
+
+            using (Dialog dialog = new Dialog("Reset your password", Dpi.S(380)))
+            {
+                dialog.AddNote(
+                    "Enter the email address for your account. We'll generate a new "
+                    + "temporary password that you'll be asked to change on your next sign-in.");
+
+                TextInput emailField = dialog.AddTextField(
+                    "Account email", prefill, "e.g. you@mzukulu.co.za");
+
+                dialog.AddPrimaryAction("Reset Password", () =>
+                {
+                    string temp;
+                    bool ok = Auth.ForgotPassword(emailField.Value, out temp);
+                    dialog.DialogResult = DialogResult.OK;
+                    dialog.Tag = ok ? temp : null;
+                });
+
+                if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+                string generated = dialog.Tag as string;
+                ShowResetResult(generated, emailField.Value);
+            }
+        }
+
+        /// <summary>Shows the generated temporary password, or a neutral message.</summary>
+        private void ShowResetResult(string temporaryPassword, string email)
+        {
+            using (Dialog result = new Dialog("Password reset", Dpi.S(380)))
+            {
+                if (!string.IsNullOrEmpty(temporaryPassword))
+                {
+                    result.AddReadOnlyField("Your temporary password", temporaryPassword);
+                    result.AddNote(
+                        "Sign in with this temporary password. You will be required to set a "
+                        + "new password immediately. Copy it now — it will not be shown again.");
+
+                    // Pre-fill the login fields so the user can sign in straight away.
+                    _username.Value = email;
+                    _password.Value = temporaryPassword;
+                }
+                else
+                {
+                    result.AddNote(
+                        "If an account exists for that email, a temporary password has been "
+                        + "generated. Please check with your administrator if you cannot sign in.");
+                }
+
+                result.AddPrimaryAction("Done", () => { result.DialogResult = DialogResult.OK; });
+                result.ShowDialog(this);
+            }
+
+            _error.Text = string.Empty;
+            if (!string.IsNullOrEmpty(temporaryPassword)) _password.Focus();
         }
 
         private void AttemptSignIn()

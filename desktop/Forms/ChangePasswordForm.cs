@@ -28,6 +28,7 @@ namespace MzuApplication.Forms
             DoubleBuffered = true;
             BackColor = Theme.Navy950;
             Font = Theme.Body;
+            AppIcon.Apply(this);
 
             // No close box: the change is mandatory.
             ControlBox = false;

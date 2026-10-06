@@ -32,6 +32,7 @@ namespace MzuApplication.Forms
             DoubleBuffered = true;
             BackColor = Theme.Navy950;
             Font = Theme.Body;
+            AppIcon.Apply(this);
 
             BuildCard();
             Resize += (s, e) => CenterCard();

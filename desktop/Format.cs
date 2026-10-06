@@ -110,6 +110,26 @@ namespace MzuApplication
             return (parts[0].Substring(0, 1) + parts[parts.Length - 1].Substring(0, 1)).ToUpperInvariant();
         }
 
+        /// <summary>
+        /// The first letter of every part of a name, e.g.
+        /// "Halalisile Tshireletso Seqeta" -> "HTS". Used to stamp the person working on
+        /// a document into the Initials column of a checklist.
+        /// </summary>
+        public static string FullInitials(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+
+            string[] parts = name.Replace(".", " ")
+                                 .Split(new[] { ' ', '-' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var sb = new System.Text.StringBuilder();
+            foreach (string part in parts)
+            {
+                if (part.Length > 0) sb.Append(char.ToUpperInvariant(part[0]));
+            }
+            return sb.Length > 0 ? sb.ToString() : "?";
+        }
+
         public static string RoleName(UserRole role)
         {
             return role == UserRole.Admin ? "Administrator" : "Site User";

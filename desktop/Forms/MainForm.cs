@@ -62,6 +62,7 @@ namespace MzuApplication.Forms
             BackColor = Theme.Slate25;
             DoubleBuffered = true;
             Font = Theme.Body;
+            AppIcon.Apply(this);
 
             // Final guard: once the frame exists, clamp the whole window (including
             // its border) to the work area so no chrome lands off-screen.

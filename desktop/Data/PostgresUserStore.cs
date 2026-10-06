@@ -6,13 +6,25 @@ using MzuApplication.Models;
 namespace MzuApplication.Data
 {
     /// <summary>
-    /// User account persistence backed by Supabase Postgres via Npgsql. Only the user
-    /// table is in Postgres for now; the rest of the demo data stays in the local JSON
-    /// store. All methods are synchronous to fit the existing synchronous UI flow.
+    /// User account persistence backed by the shared Supabase Postgres <c>"User"</c>
+    /// table (the schema designed by the wider team). Only the user table is in
+    /// Postgres; the rest of the demo data stays in the local JSON store.
+    ///
+    /// The team's table stores a single <c>PasswordHash</c> column, a split
+    /// first/last name, and a text role. To keep the desktop app's PBKDF2 auth working
+    /// without altering the shared schema, the salt and iteration count are packed into
+    /// the <c>PasswordHash</c> value using a self-describing format:
+    /// <code>pbkdf2$&lt;iterations&gt;$&lt;saltBase64&gt;$&lt;hashBase64&gt;</code>
+    /// There is no username column, so the app's login name maps to <c>Email</c>.
+    /// There is no must-change-password column, so that remains a local-session concept.
+    /// All methods are synchronous to fit the existing synchronous UI flow.
     /// </summary>
     internal static class PostgresUserStore
     {
-        private static bool _schemaEnsured;
+        private const string Table = "\"User\"";
+
+        private const string RoleAdmin = "Administrator";
+        private const string RoleSiteUser = "SiteUser";
 
         /// <summary>Opens a connection using the configured string.</summary>
         private static NpgsqlConnection Open()
@@ -23,8 +35,9 @@ namespace MzuApplication.Data
         }
 
         /// <summary>
-        /// Verifies connectivity and that the users table exists, creating it and the
-        /// default accounts on first run. Returns null on success, or an error message.
+        /// Verifies connectivity and that the shared user table is reachable, seeding the
+        /// default admin / site-user accounts only if the table is completely empty.
+        /// Returns null on success, or an error message.
         /// </summary>
         public static string Initialise()
         {
@@ -32,18 +45,14 @@ namespace MzuApplication.Data
             {
                 using (var conn = Open())
                 {
-                    EnsureSchema(conn);
-
-                    // Seed the default admin / site-user accounts if the table is empty,
-                    // so a fresh database is immediately usable.
                     if (CountUsers(conn) == 0)
                     {
                         InsertUser(conn, Auth.CreateSeedAccount(
-                            "usr-admin", "admin", "S. Ndlovu", "s.ndlovu@mzukulu.co.za",
-                            "admin123", UserRole.Admin));
+                            "0", "admin@mzukulu.co.za", "System Administrator",
+                            "admin@mzukulu.co.za", "admin123", UserRole.Admin));
                         InsertUser(conn, Auth.CreateSeedAccount(
-                            "usr-user", "siteuser", "T. Mahlangu", "t.mahlangu@mzukulu.co.za",
-                            "user123", UserRole.SiteUser));
+                            "0", "siteuser@mzukulu.co.za", "Site User",
+                            "siteuser@mzukulu.co.za", "user123", UserRole.SiteUser));
                     }
                 }
                 return null;
@@ -54,38 +63,9 @@ namespace MzuApplication.Data
             }
         }
 
-        private static void EnsureSchema(NpgsqlConnection conn)
-        {
-            if (_schemaEnsured) return;
-
-            const string ddl = @"
-create table if not exists app_users (
-    id text primary key,
-    username text not null unique,
-    full_name text not null,
-    email text,
-    password_hash text not null,
-    password_salt text not null,
-    hash_iterations integer not null default 100000,
-    role integer not null default 2,
-    active boolean not null default true,
-    must_change_password boolean not null default false,
-    created_at timestamptz not null default now(),
-    last_login_at timestamptz
-);
-create unique index if not exists app_users_username_lower_idx on app_users (lower(username));";
-
-            using (var cmd = new NpgsqlCommand(ddl, conn))
-            {
-                cmd.ExecuteNonQuery();
-            }
-
-            _schemaEnsured = true;
-        }
-
         private static int CountUsers(NpgsqlConnection conn)
         {
-            using (var cmd = new NpgsqlCommand("select count(*) from app_users", conn))
+            using (var cmd = new NpgsqlCommand("select count(*) from " + Table, conn))
             {
                 return Convert.ToInt32(cmd.ExecuteScalar());
             }
@@ -98,34 +78,29 @@ create unique index if not exists app_users_username_lower_idx on app_users (low
             var list = new List<UserAccount>();
 
             using (var conn = Open())
+            using (var cmd = new NpgsqlCommand(SelectColumns + " from " + Table + " order by \"UserID\"", conn))
+            using (var reader = cmd.ExecuteReader())
             {
-                EnsureSchema(conn);
-                using (var cmd = new NpgsqlCommand(SelectColumns + " from app_users", conn))
-                using (var reader = cmd.ExecuteReader())
+                while (reader.Read())
                 {
-                    while (reader.Read())
-                    {
-                        list.Add(Map(reader));
-                    }
+                    list.Add(Map(reader));
                 }
             }
 
             return list;
         }
 
+        /// <summary>Looks a user up by login name, which maps to the Email column.</summary>
         public static UserAccount FindByUsername(string username)
         {
             using (var conn = Open())
+            using (var cmd = new NpgsqlCommand(
+                SelectColumns + " from " + Table + " where lower(\"Email\") = lower(@u)", conn))
             {
-                EnsureSchema(conn);
-                using (var cmd = new NpgsqlCommand(
-                    SelectColumns + " from app_users where lower(username) = lower(@u)", conn))
+                cmd.Parameters.AddWithValue("u", username);
+                using (var reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("u", username);
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        return reader.Read() ? Map(reader) : null;
-                    }
+                    return reader.Read() ? Map(reader) : null;
                 }
             }
         }
@@ -134,65 +109,65 @@ create unique index if not exists app_users_username_lower_idx on app_users (low
         {
             using (var conn = Open())
             {
-                EnsureSchema(conn);
                 InsertUser(conn, account);
             }
         }
 
         private static void InsertUser(NpgsqlConnection conn, UserAccount a)
         {
+            // UserID has no default/identity in the shared schema, so allocate the next id.
+            int newId;
+            using (var cmd = new NpgsqlCommand(
+                "select coalesce(max(\"UserID\"), 0) + 1 from " + Table, conn))
+            {
+                newId = Convert.ToInt32(cmd.ExecuteScalar());
+            }
+
             const string sql = @"
-insert into app_users
-    (id, username, full_name, email, password_hash, password_salt,
-     hash_iterations, role, active, must_change_password, created_at, last_login_at)
+insert into ""User""
+    (""UserID"", ""FirstName"", ""LastName"", ""Email"", ""PasswordHash"", ""Role"", ""IsActive"", ""CreatedAt"", ""LastModifiedAt"")
 values
-    (@id, @username, @full_name, @email, @hash, @salt,
-     @iter, @role, @active, @must, @created, @last)";
+    (@id, @first, @last, @email, @hash, @role, @active, @created, @modified)";
 
             using (var cmd = new NpgsqlCommand(sql, conn))
             {
-                BindAll(cmd, a);
+                BindWrite(cmd, a, newId);
                 cmd.ExecuteNonQuery();
             }
+
+            // Reflect the assigned id back onto the model so callers hold the real key.
+            a.Id = newId.ToString();
         }
 
-        /// <summary>Writes mutable fields (password, flags, role, last login) back.</summary>
+        /// <summary>Writes mutable fields (name, email, password, role, active) back.</summary>
         public static void Update(UserAccount a)
         {
             const string sql = @"
-update app_users set
-    full_name = @full_name,
-    email = @email,
-    password_hash = @hash,
-    password_salt = @salt,
-    hash_iterations = @iter,
-    role = @role,
-    active = @active,
-    must_change_password = @must,
-    last_login_at = @last
-where id = @id";
+update ""User"" set
+    ""FirstName"" = @first,
+    ""LastName"" = @last,
+    ""Email"" = @email,
+    ""PasswordHash"" = @hash,
+    ""Role"" = @role,
+    ""IsActive"" = @active,
+    ""LastModifiedAt"" = @modified
+where ""UserID"" = @id";
 
             using (var conn = Open())
+            using (var cmd = new NpgsqlCommand(sql, conn))
             {
-                EnsureSchema(conn);
-                using (var cmd = new NpgsqlCommand(sql, conn))
-                {
-                    BindAll(cmd, a);
-                    cmd.ExecuteNonQuery();
-                }
+                BindWrite(cmd, a, ParseId(a.Id));
+                cmd.ExecuteNonQuery();
             }
         }
 
         public static void Delete(string id)
         {
             using (var conn = Open())
+            using (var cmd = new NpgsqlCommand("delete from " + Table + " where \"UserID\" = @id", conn))
             {
-                EnsureSchema(conn);
-                using (var cmd = new NpgsqlCommand("delete from app_users where id = @id", conn))
-                {
-                    cmd.Parameters.AddWithValue("id", id);
-                    cmd.ExecuteNonQuery();
-                }
+                cmd.Parameters.AddWithValue("id", ParseId(id));
+                cmd.ExecuteNonQuery();
             }
         }
 
@@ -201,42 +176,118 @@ where id = @id";
         #region Mapping
 
         private const string SelectColumns =
-            "select id, username, full_name, email, password_hash, password_salt, "
-            + "hash_iterations, role, active, must_change_password, created_at, last_login_at";
+            "select \"UserID\", \"FirstName\", \"LastName\", \"Email\", "
+            + "\"PasswordHash\", \"Role\", \"IsActive\", \"CreatedAt\", \"LastModifiedAt\"";
 
         private static UserAccount Map(NpgsqlDataReader r)
         {
-            return new UserAccount
+            string first = r.IsDBNull(1) ? string.Empty : r.GetString(1);
+            string last = r.IsDBNull(2) ? string.Empty : r.GetString(2);
+            string email = r.IsDBNull(3) ? string.Empty : r.GetString(3);
+
+            var account = new UserAccount
             {
-                Id = r.GetString(0),
-                Username = r.GetString(1),
-                FullName = r.GetString(2),
-                Email = r.IsDBNull(3) ? string.Empty : r.GetString(3),
-                PasswordHash = r.GetString(4),
-                PasswordSalt = r.GetString(5),
-                HashIterations = r.GetInt32(6),
-                Role = (UserRole)r.GetInt32(7),
-                Active = r.GetBoolean(8),
-                MustChangePassword = r.GetBoolean(9),
-                CreatedAt = r.GetDateTime(10),
-                LastLoginAt = r.IsDBNull(11) ? (DateTime?)null : r.GetDateTime(11)
+                Id = r.GetInt32(0).ToString(),
+                Username = email,
+                FullName = (first + " " + last).Trim(),
+                Email = email,
+                Role = ParseRole(r.IsDBNull(5) ? string.Empty : r.GetString(5)),
+                Active = !r.IsDBNull(6) && r.GetBoolean(6),
+                MustChangePassword = false,
+                CreatedAt = r.IsDBNull(7) ? DateTime.Now : r.GetDateTime(7),
+                LastLoginAt = r.IsDBNull(8) ? (DateTime?)null : r.GetDateTime(8)
             };
+
+            // UnpackHash also restores the must-change-password flag packed in the column.
+            UnpackHash(r.IsDBNull(4) ? string.Empty : r.GetString(4), account);
+            return account;
         }
 
-        private static void BindAll(NpgsqlCommand cmd, UserAccount a)
+        private static void BindWrite(NpgsqlCommand cmd, UserAccount a, int id)
         {
-            cmd.Parameters.AddWithValue("id", a.Id);
-            cmd.Parameters.AddWithValue("username", a.Username);
-            cmd.Parameters.AddWithValue("full_name", a.FullName ?? string.Empty);
-            cmd.Parameters.AddWithValue("email", (object)a.Email ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("hash", a.PasswordHash);
-            cmd.Parameters.AddWithValue("salt", a.PasswordSalt);
-            cmd.Parameters.AddWithValue("iter", a.HashIterations);
-            cmd.Parameters.AddWithValue("role", (int)a.Role);
+            string first, last;
+            SplitName(a.FullName, out first, out last);
+
+            cmd.Parameters.AddWithValue("id", id);
+            cmd.Parameters.AddWithValue("first", first);
+            cmd.Parameters.AddWithValue("last", last);
+            cmd.Parameters.AddWithValue("email", a.Email ?? a.Username ?? string.Empty);
+            cmd.Parameters.AddWithValue("hash", PackHash(a));
+            cmd.Parameters.AddWithValue("role", a.Role == UserRole.Admin ? RoleAdmin : RoleSiteUser);
             cmd.Parameters.AddWithValue("active", a.Active);
-            cmd.Parameters.AddWithValue("must", a.MustChangePassword);
-            cmd.Parameters.AddWithValue("created", a.CreatedAt);
-            cmd.Parameters.AddWithValue("last", (object)a.LastLoginAt ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("created", a.CreatedAt == default(DateTime) ? DateTime.Now : a.CreatedAt);
+            cmd.Parameters.AddWithValue("modified", (object)DateTime.Now);
+        }
+
+        private static int ParseId(string id)
+        {
+            int n;
+            return int.TryParse(id, out n) ? n : 0;
+        }
+
+        private static UserRole ParseRole(string role)
+        {
+            if (!string.IsNullOrEmpty(role)
+                && role.TrimStart().StartsWith("admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return UserRole.Admin;
+            }
+            return UserRole.SiteUser;
+        }
+
+        private static void SplitName(string fullName, out string first, out string last)
+        {
+            fullName = (fullName ?? string.Empty).Trim();
+            int space = fullName.IndexOf(' ');
+            if (space < 0)
+            {
+                first = fullName.Length == 0 ? "User" : fullName;
+                last = string.Empty;
+            }
+            else
+            {
+                first = fullName.Substring(0, space).Trim();
+                last = fullName.Substring(space + 1).Trim();
+            }
+        }
+
+        #endregion
+
+        #region Password hash packing
+
+        // Packs the PBKDF2 parameters AND the must-change-password flag into the single
+        // PasswordHash column, since the shared schema has no columns for them:
+        //   pbkdf2$<iterations>$<saltBase64>$<hashBase64>$<mustChange 0|1>
+        // The trailing flag is optional, so older 4-segment values still parse.
+
+        private static string PackHash(UserAccount a)
+        {
+            return string.Format("pbkdf2${0}${1}${2}${3}",
+                a.HashIterations, a.PasswordSalt, a.PasswordHash,
+                a.MustChangePassword ? "1" : "0");
+        }
+
+        private static void UnpackHash(string packed, UserAccount a)
+        {
+            // Default values for rows not written by this app (e.g. placeholder seeds).
+            a.HashIterations = 100000;
+            a.PasswordSalt = string.Empty;
+            a.PasswordHash = packed ?? string.Empty;
+            a.MustChangePassword = false;
+
+            if (string.IsNullOrEmpty(packed)) return;
+            if (!packed.StartsWith("pbkdf2$", StringComparison.Ordinal)) return;
+
+            string[] parts = packed.Split('$');
+            if (parts.Length < 4) return;
+
+            int iter;
+            if (int.TryParse(parts[1], out iter)) a.HashIterations = iter;
+            a.PasswordSalt = parts[2];
+            a.PasswordHash = parts[3];
+
+            // Optional 5th segment: the must-change-password flag.
+            if (parts.Length >= 5) a.MustChangePassword = parts[4] == "1";
         }
 
         #endregion
