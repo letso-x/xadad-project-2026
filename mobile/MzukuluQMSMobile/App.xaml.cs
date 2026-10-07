@@ -1,22 +1,21 @@
-﻿namespace MzukuluQMSMobile;
+﻿using MzukuluQMSMobile.Pages;
+
+namespace MzukuluQMSMobile;
 
 public partial class App : Application
 {
-    public App()
+    private readonly ProjectsPage _projectsPage;
+
+    public App(ProjectsPage projectsPage)
     {
         InitializeComponent();
+
+        _projectsPage = projectsPage;
     }
 
-    protected override Window CreateWindow(IActivationState? activationState)
+    protected override Window CreateWindow(
+        IActivationState? activationState)
     {
-        return new Window(new ContentPage
-        {
-            Content = new Label
-            {
-                Text = "Mzukulu QMS Mobile",
-                HorizontalOptions = LayoutOptions.Center,
-                VerticalOptions = LayoutOptions.Center
-            }
-        });
+        return new Window(_projectsPage);
     }
 }

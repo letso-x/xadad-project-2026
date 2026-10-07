@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    x:Class="MzukuluQMSMobile.Pages.ProjectsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Projects">
+
+    <Grid
+        Padding="20"
+        RowDefinitions="Auto,Auto,*">
+
+        <VerticalStackLayout
+            Grid.Row="0"
+            Spacing="4">
+
+            <Label
+                FontAttributes="Bold"
+                FontSize="28"
+                Text="Projects" />
+
+            <Label
+                FontSize="14"
+                Text="Projects available from the QMS API" />
+        </VerticalStackLayout>
+
+        <ActivityIndicator
+            Grid.Row="1"
+            Margin="0,16,0,8"
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}" />
+
+        <CollectionView
+            Grid.Row="2"
+            ItemsSource="{Binding Projects}"
+            EmptyView="No projects found.">
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border
+                        Margin="0,0,0,12"
+                        Padding="16"
+                        StrokeShape="RoundRectangle 10">
+
+                        <VerticalStackLayout Spacing="4">
+
+                            <Label
+                                FontAttributes="Bold"
+                                FontSize="18"
+                                Text="{Binding ProjectName}" />
+
+                            <Label
+                                FontSize="14"
+                                Text="{Binding ProjectNumber}" />
+
+                            <Label
+                                FontSize="13"
+                                Text="{Binding Status}" />
+
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+        </CollectionView>
+
+        <Label
+            Grid.Row="2"
+            Margin="0,20"
+            HorizontalOptions="Center"
+            IsVisible="{Binding HasError}"
+            Text="{Binding ErrorMessage}"
+            VerticalOptions="Center" />
+
+    </Grid>
+
+</ContentPage>

@@ -1,5 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using MzukuluQMSMobile.Constants;
+using MzukuluQMSMobile.Data.Remote;
 using MzukuluQMSMobile.Services;
+using MzukuluQMSMobile.ViewModels;
+using MzukuluQMSMobile.Pages;
 
 namespace MzukuluQMSMobile;
 
@@ -17,10 +20,18 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-#if DEBUG
-        builder.Logging.AddDebug();
-#endif
-        builder.Services.AddSingleton<ISupabaseService, SupabaseService>();
+
+        builder.Services.AddHttpClient<IQmsApiClient, QmsApiClient>(
+            client =>
+            {
+                client.BaseAddress = new Uri(ApiConstants.BaseUrl);
+            });
+
+        builder.Services.AddScoped<IProjectService, ProjectService>();
+        builder.Services.AddTransient<ProjectsViewModel>();
+        builder.Services.AddTransient<ProjectsPage>();
+
+
 
         return builder.Build();
     }
