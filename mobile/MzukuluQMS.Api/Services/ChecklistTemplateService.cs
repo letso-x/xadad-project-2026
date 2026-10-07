@@ -19,4 +19,19 @@ public sealed class ChecklistTemplateService
     {
         return _repository.GetAllAsync(cancellationToken);
     }
+    public Task<ChecklistTemplateVersionDefinitionDto?> GetVersionDefinitionAsync(
+    long checklistTemplateVersionId,
+    CancellationToken cancellationToken = default)
+    {
+        if (checklistTemplateVersionId <= 0)
+        {
+            throw new ArgumentException(
+                "ChecklistTemplateVersionID must be greater than zero.",
+                nameof(checklistTemplateVersionId));
+        }
+
+        return _repository.GetVersionDefinitionAsync(
+            checklistTemplateVersionId,
+            cancellationToken);
+    }
 }
