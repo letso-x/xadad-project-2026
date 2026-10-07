@@ -16,6 +16,13 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddScoped<
+    IChecklistTemplateRepository,
+    ChecklistTemplateRepository>();
+
+builder.Services.AddScoped<
+    IChecklistTemplateService,
+    ChecklistTemplateService>();
 
 var app = builder.Build();
 app.UseExceptionHandler();

@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="../MzukuluQMS.Api.Tests/MzukuluQMS.Api.Tests.csproj" />
   <Project Path="../MzukuluQMS.Api/MzukuluQMS.Api.csproj" Id="6aa1f766-9fce-4c97-8d00-f4b12d824ced" />
   <Project Path="MzukuluQMSMobile.csproj">
     <Deploy Solution="Debug|*" />
