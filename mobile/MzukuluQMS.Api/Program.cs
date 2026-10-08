@@ -16,13 +16,11 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddScoped<
-    IChecklistTemplateRepository,
-    ChecklistTemplateRepository>();
-
-builder.Services.AddScoped<
-    IChecklistTemplateService,
-    ChecklistTemplateService>();
+builder.Services.AddScoped<IChecklistTemplateRepository,ChecklistTemplateRepository>();
+builder.Services.AddScoped<IChecklistTemplateService,ChecklistTemplateService>();
+builder.Services.AddScoped<IQCFormRepository,QCFormRepository>();
+builder.Services.AddScoped<IQCFormService,QCFormService>();
+builder.Services.AddSingleton<IFieldValueValidator,FieldValueValidator>();
 
 var app = builder.Build();
 app.UseExceptionHandler();

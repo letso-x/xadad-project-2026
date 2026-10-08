@@ -20,9 +20,20 @@ public sealed class ApiExceptionHandler : IExceptionHandler
     {
         var statusCode = exception switch
         {
-            ArgumentException => StatusCodes.Status400BadRequest,
-            ConflictException => StatusCodes.Status409Conflict,
-            _ => StatusCodes.Status500InternalServerError
+            ArgumentException =>
+                StatusCodes.Status400BadRequest,
+
+            KeyNotFoundException =>
+                StatusCodes.Status404NotFound,
+
+            ConflictException =>
+                StatusCodes.Status409Conflict,
+
+            InvalidOperationException =>
+                StatusCodes.Status409Conflict,
+
+            _ =>
+                StatusCodes.Status500InternalServerError
         };
 
         if (statusCode == StatusCodes.Status500InternalServerError)
@@ -35,10 +46,14 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         var problemDetails = new ProblemDetails
         {
             Status = statusCode,
+
             Title = statusCode switch
             {
                 StatusCodes.Status400BadRequest =>
                     "Invalid request.",
+
+                StatusCodes.Status404NotFound =>
+                    "Resource not found.",
 
                 StatusCodes.Status409Conflict =>
                     "Conflict.",
@@ -46,13 +61,18 @@ public sealed class ApiExceptionHandler : IExceptionHandler
                 _ =>
                     "An unexpected error occurred."
             },
-            Detail = statusCode == StatusCodes.Status500InternalServerError
-                ? "An unexpected error occurred while processing the request."
-                : exception.Message,
+
+            Detail =
+                statusCode ==
+                StatusCodes.Status500InternalServerError
+                    ? "An unexpected error occurred while processing the request."
+                    : exception.Message,
+
             Instance = httpContext.Request.Path
         };
 
-        httpContext.Response.StatusCode = statusCode;
+        httpContext.Response.StatusCode =
+            statusCode;
 
         await httpContext.Response.WriteAsJsonAsync(
             problemDetails,
