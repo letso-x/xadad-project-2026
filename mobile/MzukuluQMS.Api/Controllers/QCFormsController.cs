@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MzukuluQMS.Api.DTOs;
 using MzukuluQMS.Api.Services;
 
 namespace MzukuluQMS.Api.Controllers;
 
+[Authorize(Policy = "QmsUser")]
 [ApiController]
 [Route("api/qc-forms")]
 public sealed class QCFormsController : ControllerBase

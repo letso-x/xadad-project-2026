@@ -1,7 +1,14 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using MzukuluQMS.Api.Configuration;
 using MzukuluQMS.Api.Data;
 using MzukuluQMS.Api.Data.Repositories;
 using MzukuluQMS.Api.Exceptions;
+using MzukuluQMS.Api.Repositories.Users;
 using MzukuluQMS.Api.Services;
+using MzukuluQMS.Api.Services.Users;
+using Microsoft.AspNetCore.Authentication;
+using MzukuluQMS.Api.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +30,81 @@ builder.Services.AddScoped<IQCFormService,QCFormService>();
 builder.Services.AddSingleton<IFieldValueValidator,FieldValueValidator>();
 builder.Services.AddScoped<IClientRepository,ClientRepository>();
 builder.Services.AddScoped<IClientService,ClientService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+builder.Services.AddScoped<
+    IClaimsTransformation,
+    QmsClaimsTransformation>();
+
+
+var supabaseAuthSection =
+    builder.Configuration.GetSection(
+        SupabaseAuthOptions.SectionName);
+
+builder.Services.Configure<SupabaseAuthOptions>(
+    supabaseAuthSection);
+
+var supabaseAuth =
+    supabaseAuthSection.Get<SupabaseAuthOptions>()
+    ?? throw new InvalidOperationException(
+        "Supabase authentication configuration is missing.");
+
+if (string.IsNullOrWhiteSpace(
+        supabaseAuth.MetadataAddress))
+{
+    throw new InvalidOperationException(
+        "SupabaseAuth:MetadataAddress is required.");
+}
+
+builder.Services
+    .AddAuthentication(
+        JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MetadataAddress =
+            supabaseAuth.MetadataAddress;
+
+        options.Audience =
+            supabaseAuth.Audience;
+
+        options.RequireHttpsMetadata = true;
+
+        options.MapInboundClaims = false;
+
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                NameClaimType = "sub"
+            };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        "QmsUser",
+        policy =>
+        {
+            policy.RequireClaim("qms_user_id");
+            policy.RequireClaim("qms_role");
+        });
+
+    options.AddPolicy(
+        "QmsAdmin",
+        policy =>
+        {
+            policy.RequireClaim("qms_role", "Admin");
+        });
+});
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+
 
 var app = builder.Build();
 app.UseExceptionHandler();
@@ -35,6 +117,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

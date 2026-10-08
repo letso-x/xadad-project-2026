@@ -1,5 +1,6 @@
 ﻿using MzukuluQMS.Api.Data.Repositories;
 using MzukuluQMS.Api.DTOs;
+using MzukuluQMS.Api.Services.Users;
 
 namespace MzukuluQMS.Api.Services;
 
@@ -8,12 +9,16 @@ public sealed class QCFormService : IQCFormService
     private readonly IQCFormRepository _repository;
     private readonly IFieldValueValidator _fieldValueValidator;
 
+    private readonly ICurrentUserService _currentUserService;
+
     public QCFormService(
-        IQCFormRepository repository,
-        IFieldValueValidator fieldValueValidator)
+    IQCFormRepository repository,
+    IFieldValueValidator fieldValueValidator,
+    ICurrentUserService currentUserService)
     {
         _repository = repository;
         _fieldValueValidator = fieldValueValidator;
+        _currentUserService = currentUserService;
     }
 
     public async Task<QCFormDto> CreateAsync(
@@ -56,12 +61,16 @@ public sealed class QCFormService : IQCFormService
                 "The checklist template does not have an active version available for use.");
         }
 
+        var currentUser =
+    await _currentUserService.GetCurrentUserAsync(
+        cancellationToken);
+
         return await _repository.CreateAsync(
             request.ProjectID,
             request.ChecklistTemplateID,
             activeVersionId.Value,
-            startedByUserId: null,
-            assignedToUserId: request.AssignedToUserID,
+            currentUser.UserID,
+            request.AssignedToUserID,
             cancellationToken);
     }
     public Task<QCFormDetailsDto?> GetByIdAsync(
@@ -122,11 +131,15 @@ public sealed class QCFormService : IQCFormService
         var valueJson =
             request.Value.GetRawText();
 
+        var currentUser =
+    await _currentUserService.GetCurrentUserAsync(
+        cancellationToken);
+
         await _repository.UpdateResponseAsync(
             qcFormId,
             qcResponseId,
             valueJson,
-            answeredByUserId: null,
+            answeredByUserId: currentUser.UserID,
             cancellationToken);
     }
 
