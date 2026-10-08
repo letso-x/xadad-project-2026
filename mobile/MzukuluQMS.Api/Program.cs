@@ -21,6 +21,8 @@ builder.Services.AddScoped<IChecklistTemplateService,ChecklistTemplateService>()
 builder.Services.AddScoped<IQCFormRepository,QCFormRepository>();
 builder.Services.AddScoped<IQCFormService,QCFormService>();
 builder.Services.AddSingleton<IFieldValueValidator,FieldValueValidator>();
+builder.Services.AddScoped<IClientRepository,ClientRepository>();
+builder.Services.AddScoped<IClientService,ClientService>();
 
 var app = builder.Build();
 app.UseExceptionHandler();

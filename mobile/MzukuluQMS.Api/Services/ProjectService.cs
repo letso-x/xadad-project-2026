@@ -8,10 +8,14 @@ namespace MzukuluQMS.Api.Services;
 public sealed class ProjectService : IProjectService
 {
     private readonly IProjectRepository _projectRepository;
+    private readonly IClientRepository _clientRepository;
 
-    public ProjectService(IProjectRepository projectRepository)
+    public ProjectService(
+        IProjectRepository projectRepository,
+        IClientRepository clientRepository)
     {
         _projectRepository = projectRepository;
+        _clientRepository = clientRepository;
     }
 
     public Task<IReadOnlyList<ProjectDto>> GetAllAsync(
@@ -38,6 +42,22 @@ public sealed class ProjectService : IProjectService
             throw new ArgumentException(
                 "ClientID must be greater than zero.",
                 nameof(request.ClientID));
+        }
+        var client =
+    await _clientRepository.GetByIdAsync(
+        request.ClientID,
+        cancellationToken);
+
+        if (client is null)
+        {
+            throw new KeyNotFoundException(
+                $"Client {request.ClientID} was not found.");
+        }
+
+        if (!client.IsActive)
+        {
+            throw new InvalidOperationException(
+                "Projects cannot be created for an inactive client.");
         }
 
         if (string.IsNullOrWhiteSpace(request.ProjectName))
