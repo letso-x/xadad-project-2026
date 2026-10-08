@@ -9,6 +9,8 @@ using MzukuluQMS.Api.Services;
 using MzukuluQMS.Api.Services.Users;
 using Microsoft.AspNetCore.Authentication;
 using MzukuluQMS.Api.Security;
+using MzukuluQMS.Api.Services.Evidence;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,8 +35,24 @@ builder.Services.AddScoped<IClientService,ClientService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<
+    IEvidenceRepository,
+    EvidenceRepository>();
+
+builder.Services.AddScoped<
+    IEvidenceService,
+    EvidenceService>();
+
+builder.Services.AddScoped<
     IClaimsTransformation,
     QmsClaimsTransformation>();
+
+builder.Services.Configure<SupabaseStorageOptions>(
+    builder.Configuration.GetSection(
+        SupabaseStorageOptions.SectionName));
+
+builder.Services.AddHttpClient<
+    IEvidenceStorage,
+    SupabaseEvidenceStorage>();
 
 
 var supabaseAuthSection =
