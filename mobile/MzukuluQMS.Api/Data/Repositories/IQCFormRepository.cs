@@ -46,4 +46,30 @@ public interface IQCFormRepository
         long qcFormProjectFieldId,
         string valueJson,
         CancellationToken cancellationToken = default);
+
+    Task<string?> GetStatusAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default);
+
+    Task SubmitAsync(
+        long qcFormId,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountMissingRequiredProjectFieldsAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default);
+
+    Task<int> CountMissingRequiredResponsesAsync(
+        long qcFormId,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountMissingRequiredPhotoEvidenceAsync(
+        long qcFormId,
+        CancellationToken cancellationToken = default);
+
+    Task<string> GetSignableContentAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default);
+
+
 }

@@ -9,13 +9,16 @@ public sealed class EvidenceService : IEvidenceService
     private readonly IEvidenceRepository _repository;
     private readonly IEvidenceStorage _storage;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IQCFormRepository _qcFormRepository;
 
     public EvidenceService(
-        IEvidenceRepository repository,
-        IEvidenceStorage storage,
-        ICurrentUserService currentUserService)
+    IEvidenceRepository repository,
+    IQCFormRepository qcFormRepository,
+    IEvidenceStorage storage,
+    ICurrentUserService currentUserService)
     {
         _repository = repository;
+        _qcFormRepository = qcFormRepository;
         _storage = storage;
         _currentUserService = currentUserService;
     }
@@ -37,6 +40,45 @@ public sealed class EvidenceService : IEvidenceService
                 qcFormId,
                 cancellationToken);
 
+        var status =
+    await _qcFormRepository.GetStatusAsync(
+        qcFormId,
+        cancellationToken);
+
+        var isDraftOrInProgress =
+            string.Equals(
+                status,
+                "Draft",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            string.Equals(
+                status,
+                "InProgress",
+                StringComparison.OrdinalIgnoreCase);
+
+        var isSubmitted =
+            string.Equals(
+                status,
+                "Submitted",
+                StringComparison.OrdinalIgnoreCase);
+
+        var isSignatureEvidence =
+            string.Equals(
+                request.EvidenceType,
+                "Signature",
+                StringComparison.OrdinalIgnoreCase);
+
+        var evidenceAllowed =
+            isDraftOrInProgress
+            ||
+            (isSubmitted && isSignatureEvidence);
+
+        if (!evidenceAllowed)
+        {
+            throw new InvalidOperationException(
+                $"Evidence type '{request.EvidenceType}' cannot be added while QC form status is '{status}'.");
+        }
+
         if (!formExists)
         {
             throw new KeyNotFoundException(
@@ -52,16 +94,35 @@ public sealed class EvidenceService : IEvidenceService
                     nameof(request.QCFormFieldID));
             }
 
-            var fieldBelongsToForm =
-                await _repository.QCFormFieldBelongsToFormAsync(
+            var fieldRules =
+                await _repository.GetFieldEvidenceRulesAsync(
                     qcFormId,
                     request.QCFormFieldID.Value,
                     cancellationToken);
 
-            if (!fieldBelongsToForm)
+            if (fieldRules is null)
             {
                 throw new KeyNotFoundException(
                     "The QC form field was not found for this form.");
+            }
+
+            if (string.Equals(
+                    request.EvidenceType,
+                    "Photo",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var acceptsPhoto =
+                    string.Equals(
+                        fieldRules.FieldType,
+                        "Photo",
+                        StringComparison.OrdinalIgnoreCase)
+                    || fieldRules.RequiresPhoto;
+
+                if (!acceptsPhoto)
+                {
+                    throw new ArgumentException(
+                        "Photo evidence cannot be attached to this QC form field.");
+                }
             }
         }
 
@@ -77,6 +138,22 @@ public sealed class EvidenceService : IEvidenceService
         {
             throw new ArgumentException(
                 "EvidenceType is required.",
+                nameof(request.EvidenceType));
+        }
+
+        var allowedEvidenceTypes = new[]
+{
+    "Photo",
+    "Signature",
+    "Document"
+};
+
+        if (!allowedEvidenceTypes.Contains(
+                request.EvidenceType,
+                StringComparer.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                $"Unsupported EvidenceType '{request.EvidenceType}'.",
                 nameof(request.EvidenceType));
         }
 
@@ -97,21 +174,33 @@ public sealed class EvidenceService : IEvidenceService
                 cancellationToken);
 
         DateTimeOffset? capturedAtUtc =
-    request.CapturedAt?.ToUniversalTime();
+     request.CapturedAt?.ToUniversalTime();
 
-        return await _repository.CreateAsync(
-            qcFormId,
-            request.QCFormFieldID,
-            request.EvidenceType,
-            storageResult.Bucket,
-            storageResult.Path,
-            request.File.FileName,
-            request.File.ContentType,
-            request.File.Length,
-            request.Latitude,
-            request.Longitude,
-            capturedAtUtc,
-            currentUser.UserID,
-            cancellationToken);
+        try
+        {
+            return await _repository.CreateAsync(
+                qcFormId,
+                request.QCFormFieldID,
+                request.EvidenceType,
+                storageResult.Bucket,
+                storageResult.Path,
+                request.File.FileName,
+                request.File.ContentType,
+                request.File.Length,
+                request.Latitude,
+                request.Longitude,
+                capturedAtUtc,
+                currentUser.UserID,
+                cancellationToken);
+        }
+        catch
+        {
+            await _storage.DeleteAsync(
+                storageResult.Bucket,
+                storageResult.Path,
+                cancellationToken);
+
+            throw;
+        }
     }
 }

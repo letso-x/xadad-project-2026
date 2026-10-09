@@ -115,6 +115,10 @@ public sealed class QCFormService : IQCFormService
                 qcResponseId,
                 cancellationToken);
 
+        await EnsureFormIsEditableAsync(
+    qcFormId,
+    cancellationToken);
+
         if (validation is null)
         {
             throw new KeyNotFoundException(
@@ -169,6 +173,10 @@ public sealed class QCFormService : IQCFormService
                 qcFormProjectFieldId,
                 cancellationToken);
 
+        await EnsureFormIsEditableAsync(
+        qcFormId,
+        cancellationToken);
+
         if (validation is null)
         {
             throw new KeyNotFoundException(
@@ -190,5 +198,112 @@ public sealed class QCFormService : IQCFormService
             qcFormProjectFieldId,
             valueJson,
             cancellationToken);
+    }
+
+    public async Task SubmitAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        if (qcFormId <= 0)
+        {
+            throw new ArgumentException(
+                "QCFormID must be greater than zero.",
+                nameof(qcFormId));
+        }
+
+        var status =
+            await _repository.GetStatusAsync(
+                qcFormId,
+                cancellationToken);
+
+        if (status is null)
+        {
+            throw new KeyNotFoundException(
+                $"QC form {qcFormId} was not found.");
+        }
+
+        if (!string.Equals(
+                status,
+                "Draft",
+                StringComparison.OrdinalIgnoreCase)
+            &&
+            !string.Equals(
+                status,
+                "InProgress",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"QC form cannot be submitted from status '{status}'.");
+        }
+
+        var missingProjectFields =
+            await _repository.CountMissingRequiredProjectFieldsAsync(
+                qcFormId,
+                cancellationToken);
+
+        if (missingProjectFields > 0)
+        {
+            throw new InvalidOperationException(
+                $"QC form cannot be submitted because {missingProjectFields} required project field(s) are incomplete.");
+        }
+
+        var missingResponses =
+            await _repository.CountMissingRequiredResponsesAsync(
+                qcFormId,
+                cancellationToken);
+
+        if (missingResponses > 0)
+        {
+            throw new InvalidOperationException(
+                $"QC form cannot be submitted because {missingResponses} required response(s) are incomplete.");
+        }
+
+        var missingPhotoEvidence =
+            await _repository.CountMissingRequiredPhotoEvidenceAsync(
+                qcFormId,
+                cancellationToken);
+
+        if (missingPhotoEvidence > 0)
+        {
+            throw new InvalidOperationException(
+                $"QC form cannot be submitted because {missingPhotoEvidence} required photo evidence item(s) are missing.");
+        }
+
+        await _repository.SubmitAsync(
+            qcFormId,
+            cancellationToken);
+    }
+
+    private async Task EnsureFormIsEditableAsync(
+    long qcFormId,
+    CancellationToken cancellationToken)
+    {
+        var status =
+            await _repository.GetStatusAsync(
+                qcFormId,
+                cancellationToken);
+
+        if (status is null)
+        {
+            throw new KeyNotFoundException(
+                $"QC form {qcFormId} was not found.");
+        }
+
+        var editable =
+            string.Equals(
+                status,
+                "Draft",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            string.Equals(
+                status,
+                "InProgress",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (!editable)
+        {
+            throw new InvalidOperationException(
+                $"QC form cannot be edited while its status is '{status}'.");
+        }
     }
 }

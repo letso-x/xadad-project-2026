@@ -23,4 +23,7 @@ public interface IQCFormService
         long qcFormProjectFieldId,
         UpdateQCFormProjectFieldRequest request,
         CancellationToken cancellationToken = default);
+    Task SubmitAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default);
 }

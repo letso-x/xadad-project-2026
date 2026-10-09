@@ -97,4 +97,51 @@ public sealed class SupabaseEvidenceStorage : IEvidenceStorage
             Path = storagePath
         };
     }
+
+    public async Task DeleteAsync(
+    string bucket,
+    string path,
+    CancellationToken cancellationToken = default)
+    {
+        var encodedPath = string.Join(
+            "/",
+            path
+                .Split('/')
+                .Select(Uri.EscapeDataString));
+
+        var url =
+            $"{_options.BaseUrl.TrimEnd('/')}" +
+            $"/storage/v1/object/{Uri.EscapeDataString(bucket)}/{encodedPath}";
+
+        using var request =
+            new HttpRequestMessage(
+                HttpMethod.Delete,
+                url);
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue(
+                "Bearer",
+                _options.SecretKey);
+
+        request.Headers.Add(
+            "apikey",
+            _options.SecretKey);
+
+        using var response =
+            await _httpClient.SendAsync(
+                request,
+                cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error =
+                await response.Content.ReadAsStringAsync(
+                    cancellationToken);
+
+            throw new InvalidOperationException(
+                $"Supabase Storage delete failed. " +
+                $"Status: {(int)response.StatusCode}. " +
+                $"Response: {error}");
+        }
+    }
 }

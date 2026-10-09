@@ -647,6 +647,269 @@ public sealed class QCFormRepository : IQCFormRepository
         }
     }
 
+    public async Task<string?> GetStatusAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT "Status"::text
+        FROM public."QCForm"
+        WHERE "QCFormID" = @QCFormID;
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        return await connection
+            .QuerySingleOrDefaultAsync<string>(
+                command);
+    }
+    public async Task SubmitAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        UPDATE public."QCForm"
+        SET
+            "Status" = CAST('Submitted' AS public.form_status),
+            "SubmittedAt" = now(),
+            "UpdatedAt" = now()
+        WHERE "QCFormID" = @QCFormID;
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        var affectedRows =
+            await connection.ExecuteAsync(
+                command);
+
+        if (affectedRows == 0)
+        {
+            throw new KeyNotFoundException(
+                $"QC form {qcFormId} was not found.");
+        }
+    }
+    public async Task<int> CountMissingRequiredProjectFieldsAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT COUNT(*)
+        FROM public."QCFormProjectField"
+        WHERE "QCFormID" = @QCFormID
+          AND "IsRequired" = true
+          AND (
+                "Value" IS NULL
+                OR "Value" = 'null'::jsonb
+              );
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new { QCFormID = qcFormId },
+            cancellationToken: cancellationToken);
+
+        return await connection.ExecuteScalarAsync<int>(
+            command);
+    }
+    public async Task<int> CountMissingRequiredResponsesAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT COUNT(*)
+        FROM public."QCFormField" f
+        INNER JOIN public."QCFormSection" s
+            ON s."QCFormSectionID" = f."QCFormSectionID"
+        LEFT JOIN public."QCResponse" r
+            ON r."QCFormFieldID" = f."QCFormFieldID"
+           AND r."QCFormID" = s."QCFormID"
+        WHERE s."QCFormID" = @QCFormID
+          AND f."IsRequired" = true
+          AND f."FieldType"::text NOT IN ('Photo', 'Signature')
+          AND (
+                r."QCResponseID" IS NULL
+                OR r."IsAnswered" = false
+                OR r."Value" IS NULL
+                OR r."Value" = 'null'::jsonb
+              );
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new { QCFormID = qcFormId },
+            cancellationToken: cancellationToken);
+
+        return await connection.ExecuteScalarAsync<int>(
+            command);
+    }
+   
+    public async Task<int> CountMissingRequiredPhotoEvidenceAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT COUNT(*)
+        FROM public."QCFormField" f
+        INNER JOIN public."QCFormSection" s
+            ON s."QCFormSectionID" = f."QCFormSectionID"
+        WHERE s."QCFormID" = @QCFormID
+          AND (
+                f."FieldType"::text = 'Photo'
+                OR f."RequiresPhoto" = true
+              )
+          AND NOT EXISTS (
+                SELECT 1
+                FROM public."Evidence" e
+                WHERE e."QCFormID" = @QCFormID
+                  AND e."QCFormFieldID" = f."QCFormFieldID"
+                  AND e."EvidenceType" = CAST('Photo' AS public.evidence_type)
+              );
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new { QCFormID = qcFormId },
+            cancellationToken: cancellationToken);
+
+        return await connection.ExecuteScalarAsync<int>(
+            command);
+    }
+    public async Task<string> GetSignableContentAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT jsonb_build_object(
+            'qcForm', (
+                SELECT jsonb_build_object(
+                    'qcFormID', q."QCFormID",
+                    'projectID', q."ProjectID",
+                    'checklistTemplateID', q."ChecklistTemplateID",
+                    'checklistTemplateVersionID', q."ChecklistTemplateVersionID",
+                    'formNumber', q."FormNumber",
+                    'status', q."Status"::text,
+                    'submittedAt', q."SubmittedAt"
+                )
+                FROM public."QCForm" q
+                WHERE q."QCFormID" = @QCFormID
+            ),
+
+            'projectFields', (
+                SELECT COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'qcFormProjectFieldID', pf."QCFormProjectFieldID",
+                            'fieldKey', pf."FieldKey",
+                            'value', pf."Value"
+                        )
+                        ORDER BY pf."QCFormProjectFieldID"
+                    ),
+                    '[]'::jsonb
+                )
+                FROM public."QCFormProjectField" pf
+                WHERE pf."QCFormID" = @QCFormID
+            ),
+
+            'responses', (
+                SELECT COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'qcResponseID', r."QCResponseID",
+                            'qcFormFieldID', r."QCFormFieldID",
+                            'value', r."Value",
+                            'isAnswered', r."IsAnswered"
+                        )
+                        ORDER BY r."QCResponseID"
+                    ),
+                    '[]'::jsonb
+                )
+                FROM public."QCResponse" r
+                WHERE r."QCFormID" = @QCFormID
+            ),
+
+            'evidence', (
+                SELECT COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'evidenceID', e."EvidenceID",
+                            'qcFormFieldID', e."QCFormFieldID",
+                            'evidenceType', e."EvidenceType"::text,
+                            'storageBucket', e."StorageBucket",
+                            'storagePath', e."StoragePath",
+                            'fileName', e."FileName",
+                            'contentType', e."ContentType",
+                            'fileSizeBytes', e."FileSizeBytes",
+                            'capturedAt', e."CapturedAt",
+                            'uploadedByUserID', e."UploadedByUserID"
+                        )
+                        ORDER BY e."EvidenceID"
+                    ),
+                    '[]'::jsonb
+                )
+                FROM public."Evidence" e
+                WHERE e."QCFormID" = @QCFormID
+                  AND e."EvidenceType" <> CAST('Signature' AS public.evidence_type)
+            )
+        )::text;
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        var content =
+            await connection.QuerySingleOrDefaultAsync<string>(
+                command);
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new KeyNotFoundException(
+                $"QC form {qcFormId} was not found.");
+        }
+
+        return content;
+    }
+
 
     private sealed class QCFormRow
     {

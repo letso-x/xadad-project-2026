@@ -104,4 +104,20 @@ public sealed class QCFormsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{qcFormId:long}/submit")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SubmitQCForm(
+    long qcFormId,
+    CancellationToken cancellationToken)
+    {
+        await _service.SubmitAsync(
+            qcFormId,
+            cancellationToken);
+
+        return NoContent();
+    }
+
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MzukuluQMS.Api.Configuration;
@@ -5,11 +6,11 @@ using MzukuluQMS.Api.Data;
 using MzukuluQMS.Api.Data.Repositories;
 using MzukuluQMS.Api.Exceptions;
 using MzukuluQMS.Api.Repositories.Users;
-using MzukuluQMS.Api.Services;
-using MzukuluQMS.Api.Services.Users;
-using Microsoft.AspNetCore.Authentication;
 using MzukuluQMS.Api.Security;
+using MzukuluQMS.Api.Services;
 using MzukuluQMS.Api.Services.Evidence;
+using MzukuluQMS.Api.Services.SignOffs;
+using MzukuluQMS.Api.Services.Users;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,6 +54,18 @@ builder.Services.Configure<SupabaseStorageOptions>(
 builder.Services.AddHttpClient<
     IEvidenceStorage,
     SupabaseEvidenceStorage>();
+
+builder.Services.AddScoped<
+    IQCSignOffRepository,
+    QCSignOffRepository>();
+
+builder.Services.AddScoped<
+    IQCSignOffService,
+    QCSignOffService>();
+
+builder.Services.AddScoped<
+    IQCFormContentHashService,
+    QCFormContentHashService>();
 
 
 var supabaseAuthSection =

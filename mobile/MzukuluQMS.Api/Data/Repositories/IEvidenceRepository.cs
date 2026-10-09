@@ -27,4 +27,8 @@ public interface IEvidenceRepository
         DateTimeOffset? capturedAt,
         Guid uploadedByUserId,
         CancellationToken cancellationToken = default);
+    Task<QCFormFieldEvidenceRules?> GetFieldEvidenceRulesAsync(
+    long qcFormId,
+    long qcFormFieldId,
+    CancellationToken cancellationToken = default);
 }

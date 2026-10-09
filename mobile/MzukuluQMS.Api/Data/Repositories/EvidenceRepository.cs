@@ -163,4 +163,40 @@ public sealed class EvidenceRepository : IEvidenceRepository
         return await connection
             .QuerySingleAsync<EvidenceDto>(command);
     }
+
+    public async Task<QCFormFieldEvidenceRules?> GetFieldEvidenceRulesAsync(
+    long qcFormId,
+    long qcFormFieldId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT
+            f."QCFormFieldID",
+            f."FieldType"::text AS "FieldType",
+            f."RequiresPhoto",
+            f."RequiresSignature"
+        FROM public."QCFormField" f
+        INNER JOIN public."QCFormSection" s
+            ON s."QCFormSectionID" = f."QCFormSectionID"
+        WHERE f."QCFormFieldID" = @QCFormFieldID
+          AND s."QCFormID" = @QCFormID;
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId,
+                QCFormFieldID = qcFormFieldId
+            },
+            cancellationToken: cancellationToken);
+
+        return await connection
+            .QuerySingleOrDefaultAsync<QCFormFieldEvidenceRules>(
+                command);
+    }
 }
