@@ -26,4 +26,12 @@ public interface IQCFormService
     Task SubmitAsync(
     long qcFormId,
     CancellationToken cancellationToken = default);
+
+    Task ApproveAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default);
+
+    Task ReturnForCorrectionAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default);
 }

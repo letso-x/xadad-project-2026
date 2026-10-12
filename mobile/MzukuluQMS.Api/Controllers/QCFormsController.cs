@@ -120,4 +120,36 @@ public sealed class QCFormsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{qcFormId:long}/approve")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ApproveQCForm(
+    long qcFormId,
+    CancellationToken cancellationToken)
+    {
+        await _service.ApproveAsync(
+            qcFormId,
+            cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("{qcFormId:long}/return-for-correction")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ReturnForCorrection(
+    long qcFormId,
+    CancellationToken cancellationToken)
+    {
+        await _service.ReturnForCorrectionAsync(
+            qcFormId,
+            cancellationToken);
+
+        return NoContent();
+    }
+
 }

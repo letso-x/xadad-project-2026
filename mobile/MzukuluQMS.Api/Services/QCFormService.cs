@@ -222,15 +222,23 @@ public sealed class QCFormService : IQCFormService
                 $"QC form {qcFormId} was not found.");
         }
 
-        if (!string.Equals(
-                status,
-                "Draft",
-                StringComparison.OrdinalIgnoreCase)
-            &&
-            !string.Equals(
-                status,
-                "InProgress",
-                StringComparison.OrdinalIgnoreCase))
+        var canSubmit =
+    string.Equals(
+        status,
+        "Draft",
+        StringComparison.OrdinalIgnoreCase)
+    ||
+    string.Equals(
+        status,
+        "InProgress",
+        StringComparison.OrdinalIgnoreCase)
+    ||
+    string.Equals(
+        status,
+        "ReturnedForCorrection",
+        StringComparison.OrdinalIgnoreCase);
+
+        if (!canSubmit)
         {
             throw new InvalidOperationException(
                 $"QC form cannot be submitted from status '{status}'.");
@@ -290,20 +298,89 @@ public sealed class QCFormService : IQCFormService
         }
 
         var editable =
-            string.Equals(
-                status,
-                "Draft",
-                StringComparison.OrdinalIgnoreCase)
-            ||
-            string.Equals(
-                status,
-                "InProgress",
-                StringComparison.OrdinalIgnoreCase);
+            string.Equals(status, "Draft", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(status, "InProgress", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(
+        status,
+        "ReturnedForCorrection",
+        StringComparison.OrdinalIgnoreCase);
 
         if (!editable)
         {
             throw new InvalidOperationException(
                 $"QC form cannot be edited while its status is '{status}'.");
         }
+    }
+
+    public async Task ApproveAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        if (qcFormId <= 0)
+        {
+            throw new ArgumentException(
+                "QCFormID must be greater than zero.",
+                nameof(qcFormId));
+        }
+
+        var status =
+            await _repository.GetStatusAsync(
+                qcFormId,
+                cancellationToken);
+
+        if (status is null)
+        {
+            throw new KeyNotFoundException(
+                $"QC form {qcFormId} was not found.");
+        }
+
+        if (!string.Equals(
+                status,
+                "Submitted",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"QC form cannot be approved from status '{status}'.");
+        }
+
+        await _repository.ApproveAsync(
+            qcFormId,
+            cancellationToken);
+    }
+
+    public async Task ReturnForCorrectionAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        if (qcFormId <= 0)
+        {
+            throw new ArgumentException(
+                "QCFormID must be greater than zero.",
+                nameof(qcFormId));
+        }
+
+        var status =
+            await _repository.GetStatusAsync(
+                qcFormId,
+                cancellationToken);
+
+        if (status is null)
+        {
+            throw new KeyNotFoundException(
+                $"QC form {qcFormId} was not found.");
+        }
+
+        if (!string.Equals(
+                status,
+                "Submitted",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"QC form cannot be returned for correction from status '{status}'.");
+        }
+
+        await _repository.ReturnForCorrectionAsync(
+            qcFormId,
+            cancellationToken);
     }
 }

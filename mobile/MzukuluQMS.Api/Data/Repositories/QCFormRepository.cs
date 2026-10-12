@@ -910,6 +910,80 @@ public sealed class QCFormRepository : IQCFormRepository
         return content;
     }
 
+    public async Task ApproveAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        UPDATE public."QCForm"
+        SET
+            "Status" = CAST('Approved' AS public.form_status),
+            "UpdatedAt" = now()
+        WHERE "QCFormID" = @QCFormID
+          AND "Status" = CAST('Submitted' AS public.form_status);
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        var affectedRows =
+            await connection.ExecuteAsync(command);
+
+        if (affectedRows == 0)
+        {
+            throw new InvalidOperationException(
+                "QC form could not be approved because it is not currently Submitted.");
+        }
+    }
+
+    public async Task ReturnForCorrectionAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        UPDATE public."QCForm"
+        SET
+            "Status" = CAST(
+                'ReturnedForCorrection'
+                AS public.form_status),
+            "UpdatedAt" = now()
+        WHERE "QCFormID" = @QCFormID
+          AND "Status" = CAST(
+              'Submitted'
+              AS public.form_status);
+        """;
+
+        await using var connection =
+            await _connectionFactory.CreateOpenConnectionAsync(
+                cancellationToken);
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        var affectedRows =
+            await connection.ExecuteAsync(command);
+
+        if (affectedRows == 0)
+        {
+            throw new InvalidOperationException(
+                "QC form could not be returned for correction because it is not currently Submitted.");
+        }
+    }
+
 
     private sealed class QCFormRow
     {
