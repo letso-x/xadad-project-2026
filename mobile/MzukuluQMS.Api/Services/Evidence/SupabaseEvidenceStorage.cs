@@ -26,7 +26,7 @@ public sealed class SupabaseEvidenceStorage : IEvidenceStorage
         CancellationToken cancellationToken = default)
     {
         var extension =
-            Path.GetExtension(fileName);
+            contentType == "image/png" ? ".png" : ".jpg";
 
         var storedFileName =
             $"{Guid.NewGuid():N}{extension}";
@@ -81,14 +81,11 @@ public sealed class SupabaseEvidenceStorage : IEvidenceStorage
 
         if (!response.IsSuccessStatusCode)
         {
-            var error =
-                await response.Content.ReadAsStringAsync(
-                    cancellationToken);
+
 
             throw new InvalidOperationException(
                 $"Supabase Storage upload failed. " +
-                $"Status: {(int)response.StatusCode}. " +
-                $"Response: {error}");
+                $"Status: {(int)response.StatusCode}.");
         }
 
         return new EvidenceStorageResult
@@ -134,14 +131,11 @@ public sealed class SupabaseEvidenceStorage : IEvidenceStorage
 
         if (!response.IsSuccessStatusCode)
         {
-            var error =
-                await response.Content.ReadAsStringAsync(
-                    cancellationToken);
+
 
             throw new InvalidOperationException(
                 $"Supabase Storage delete failed. " +
-                $"Status: {(int)response.StatusCode}. " +
-                $"Response: {error}");
+                $"Status: {(int)response.StatusCode}.");
         }
     }
 }

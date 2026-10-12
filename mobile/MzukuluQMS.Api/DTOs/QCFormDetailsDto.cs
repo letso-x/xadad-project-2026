@@ -2,6 +2,8 @@
 
 public sealed class QCFormDetailsDto
 {
+    public long Revision { get; init; }
+
     public long QCFormID { get; init; }
 
     public long ProjectID { get; init; }

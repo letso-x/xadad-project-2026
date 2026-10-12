@@ -5,12 +5,12 @@ namespace MzukuluQMS.Api.Data.Repositories;
 
 public sealed class EvidenceRepository : IEvidenceRepository
 {
-    private readonly IDbConnectionFactory _connectionFactory;
+    private readonly QmsDbSession _session;
 
     public EvidenceRepository(
-        IDbConnectionFactory connectionFactory)
+        QmsDbSession session)
     {
-        _connectionFactory = connectionFactory;
+        _session = session;
     }
 
     public async Task<bool> QCFormExistsAsync(
@@ -25,9 +25,8 @@ public sealed class EvidenceRepository : IEvidenceRepository
             );
             """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -57,9 +56,8 @@ public sealed class EvidenceRepository : IEvidenceRepository
             );
             """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -137,9 +135,8 @@ public sealed class EvidenceRepository : IEvidenceRepository
                 "CreatedAt";
             """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -182,9 +179,8 @@ public sealed class EvidenceRepository : IEvidenceRepository
           AND s."QCFormID" = @QCFormID;
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,

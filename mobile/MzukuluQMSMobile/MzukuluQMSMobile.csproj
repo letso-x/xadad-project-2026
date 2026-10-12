@@ -84,4 +84,5 @@
 	  </MauiXaml>
 	</ItemGroup>
 
+  <ItemGroup><ProjectReference Include="../MzukuluQMS.Mobile.Core/MzukuluQMS.Mobile.Core.csproj" GlobalPropertiesToRemove="TargetFrameworks" /></ItemGroup>
 </Project>

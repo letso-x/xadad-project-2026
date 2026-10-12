@@ -19,8 +19,7 @@ public sealed class NpgsqlConnectionFactory : IDbConnectionFactory
     {
         var connection = new NpgsqlConnection(_connectionString);
 
-        await connection.OpenAsync(cancellationToken);
-
-        return connection;
+        try {await connection.OpenAsync(cancellationToken);return connection;}
+        catch {await connection.DisposeAsync();throw;}
     }
 }

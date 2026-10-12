@@ -1,12 +1,17 @@
 ﻿using MzukuluQMS.Api.Data.Repositories;
 using MzukuluQMS.Api.DTOs;
 using MzukuluQMS.Api.Services.Users;
+using MzukuluQMS.Api.Services.Workflow;
+using MzukuluQMS.Api.Services.SignOffs;
 
 namespace MzukuluQMS.Api.Services;
 
 public sealed class QCFormService : IQCFormService
 {
     private readonly IQCFormRepository _repository;
+    private readonly IQCWorkflow _workflow;
+    private readonly NcrService _ncr;
+    private readonly IQCFormContentHashService _hash;
     private readonly IFieldValueValidator _fieldValueValidator;
 
     private readonly ICurrentUserService _currentUserService;
@@ -14,9 +19,12 @@ public sealed class QCFormService : IQCFormService
     public QCFormService(
     IQCFormRepository repository,
     IFieldValueValidator fieldValueValidator,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService, IQCWorkflow workflow, IQCFormContentHashService hash, NcrService ncr)
     {
         _repository = repository;
+        _workflow = workflow;
+        _hash = hash;
+        _ncr = ncr;
         _fieldValueValidator = fieldValueValidator;
         _currentUserService = currentUserService;
     }
@@ -25,6 +33,8 @@ public sealed class QCFormService : IQCFormService
         CreateQCFormRequest request,
         CancellationToken cancellationToken = default)
     {
+        await using var operation = await _workflow.BeginAsync(null, request.ProjectID, "PerformInspection", cancellationToken);
+
         if (request.ProjectID <= 0)
         {
             throw new ArgumentException(
@@ -61,19 +71,25 @@ public sealed class QCFormService : IQCFormService
                 "The checklist template does not have an active version available for use.");
         }
 
+        if (request.ChecklistTemplateVersionID.HasValue && request.ChecklistTemplateVersionID.Value != activeVersionId.Value)
+            throw new MzukuluQMS.Api.Exceptions.ConflictException("The cached template version is no longer active. Preserve local work and reconcile the snapshot.");
+
         var currentUser =
     await _currentUserService.GetCurrentUserAsync(
         cancellationToken);
 
-        return await _repository.CreateAsync(
+        var form = await _repository.CreateAsync(
             request.ProjectID,
             request.ChecklistTemplateID,
             activeVersionId.Value,
             currentUser.UserID,
             request.AssignedToUserID,
             cancellationToken);
-    }
-    public Task<QCFormDetailsDto?> GetByIdAsync(
+
+        await operation.CompleteAsync("QCFormCreated", form.QCFormID, null, cancellationToken, form);
+        return form;
+}
+    public async Task<QCFormDetailsDto?> GetByIdAsync(
     long qcFormId,
     CancellationToken cancellationToken = default)
     {
@@ -84,7 +100,8 @@ public sealed class QCFormService : IQCFormService
                 nameof(qcFormId));
         }
 
-        return _repository.GetByIdAsync(
+        await using var access = await _workflow.BeginAsync(qcFormId, null, "ReadInspection", cancellationToken);
+        return await _repository.GetByIdAsync(
             qcFormId,
             cancellationToken);
     }
@@ -95,6 +112,8 @@ public sealed class QCFormService : IQCFormService
     UpdateQCResponseRequest request,
     CancellationToken cancellationToken = default)
     {
+        await using var operation = await _workflow.BeginAsync(qcFormId, null, "PerformInspection", cancellationToken);
+
         if (qcFormId <= 0)
         {
             throw new ArgumentException(
@@ -145,7 +164,13 @@ public sealed class QCFormService : IQCFormService
             valueJson,
             answeredByUserId: currentUser.UserID,
             cancellationToken);
-    }
+
+        if (validation.FieldType.Equals("Dropdown", StringComparison.OrdinalIgnoreCase)
+            && request.Value.ValueKind==System.Text.Json.JsonValueKind.String
+            && request.Value.GetString()!.Equals("Fail",StringComparison.OrdinalIgnoreCase))
+            await _ncr.RecordFailureAsync(qcFormId,qcResponseId,cancellationToken);
+        await operation.CompleteAsync("QCResponseUpdated", qcFormId, new { qcResponseId }, cancellationToken);
+}
 
     public async Task UpdateProjectFieldAsync(
     long qcFormId,
@@ -153,6 +178,8 @@ public sealed class QCFormService : IQCFormService
     UpdateQCFormProjectFieldRequest request,
     CancellationToken cancellationToken = default)
     {
+        await using var operation = await _workflow.BeginAsync(qcFormId, null, "PerformInspection", cancellationToken);
+
         if (qcFormId <= 0)
         {
             throw new ArgumentException(
@@ -198,12 +225,16 @@ public sealed class QCFormService : IQCFormService
             qcFormProjectFieldId,
             valueJson,
             cancellationToken);
-    }
+
+        await operation.CompleteAsync("QCFormProjectFieldUpdated", qcFormId, new { qcFormProjectFieldId }, cancellationToken);
+}
 
     public async Task SubmitAsync(
     long qcFormId,
     CancellationToken cancellationToken = default)
     {
+        await using var operation = await _workflow.BeginAsync(qcFormId, null, "SubmitInspection", cancellationToken);
+
         if (qcFormId <= 0)
         {
             throw new ArgumentException(
@@ -280,7 +311,9 @@ public sealed class QCFormService : IQCFormService
         await _repository.SubmitAsync(
             qcFormId,
             cancellationToken);
-    }
+
+        await operation.CompleteAsync("QCFormSubmitted", qcFormId, null, cancellationToken);
+}
 
     private async Task EnsureFormIsEditableAsync(
     long qcFormId,
@@ -316,6 +349,8 @@ public sealed class QCFormService : IQCFormService
     long qcFormId,
     CancellationToken cancellationToken = default)
     {
+        await using var operation = await _workflow.BeginAsync(qcFormId, null, "ApproveInspection", cancellationToken);
+
         if (qcFormId <= 0)
         {
             throw new ArgumentException(
@@ -343,15 +378,25 @@ public sealed class QCFormService : IQCFormService
                 $"QC form cannot be approved from status '{status}'.");
         }
 
+        await _workflow.EnsureCurrentSignaturesAsync(qcFormId, await _hash.GenerateHashAsync(qcFormId, cancellationToken), cancellationToken);
+
         await _repository.ApproveAsync(
             qcFormId,
             cancellationToken);
-    }
+
+        await operation.CompleteAsync("QCFormApproved", qcFormId, null, cancellationToken);
+}
 
     public async Task ReturnForCorrectionAsync(
     long qcFormId,
+    string reason,
     CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 2000) throw new ArgumentException("Correction reason is required (maximum 2000 characters).");
+        reason = reason.Trim();
+
+        await using var operation = await _workflow.BeginAsync(qcFormId, null, "ReviewInspection", cancellationToken);
+
         if (qcFormId <= 0)
         {
             throw new ArgumentException(
@@ -382,5 +427,7 @@ public sealed class QCFormService : IQCFormService
         await _repository.ReturnForCorrectionAsync(
             qcFormId,
             cancellationToken);
-    }
+
+        await operation.CompleteAsync("QCFormReturnedForCorrection", qcFormId, new { reason }, cancellationToken);
+}
 }

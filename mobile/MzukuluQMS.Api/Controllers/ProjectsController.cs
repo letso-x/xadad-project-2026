@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 ﻿using Microsoft.AspNetCore.Mvc;
 using MzukuluQMS.Api.DTOs;
 using MzukuluQMS.Api.Services;
 
 namespace MzukuluQMS.Api.Controllers;
 
+[Authorize(Policy = "QmsUser")]
+[Authorize(Policy = "ReadProjects")]
 [ApiController]
 [Route("api/projects")]
 public sealed class ProjectsController : ControllerBase
@@ -47,6 +50,7 @@ public sealed class ProjectsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "ManageProjects")]
     [ProducesResponseType(typeof(ProjectDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ProjectDto>> CreateProject(

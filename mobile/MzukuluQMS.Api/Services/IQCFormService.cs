@@ -33,5 +33,6 @@ public interface IQCFormService
 
     Task ReturnForCorrectionAsync(
     long qcFormId,
+    string reason,
     CancellationToken cancellationToken = default);
 }

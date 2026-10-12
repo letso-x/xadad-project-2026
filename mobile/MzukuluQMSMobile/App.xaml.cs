@@ -4,18 +4,18 @@ namespace MzukuluQMSMobile;
 
 public partial class App : Application
 {
-    private readonly ProjectsPage _projectsPage;
+    private readonly FieldLoginPage _loginPage;
 
-    public App(ProjectsPage projectsPage)
+    public App(FieldLoginPage loginPage)
     {
         InitializeComponent();
 
-        _projectsPage = projectsPage;
+        _loginPage = loginPage;
     }
 
     protected override Window CreateWindow(
         IActivationState? activationState)
     {
-        return new Window(_projectsPage);
+        return new Window(new NavigationPage(_loginPage));
     }
 }

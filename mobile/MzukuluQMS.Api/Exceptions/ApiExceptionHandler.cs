@@ -18,8 +18,19 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
+        if (exception is OperationReplayException replay)
+        {
+            httpContext.Response.StatusCode=replay.Status;
+            httpContext.Response.Headers.ETag="\""+replay.Revision+"\"";
+            httpContext.Response.Headers["Idempotency-Replayed"]="true";
+            if(replay.Status==201) httpContext.Response.Headers.Location="/api/qc-forms/"+replay.FormId;
+            if(replay.Status!=204) {httpContext.Response.ContentType="application/json";await httpContext.Response.WriteAsync(replay.Json,cancellationToken);}
+            return true;
+        }
         var statusCode = exception switch
         {
+            ForbiddenException => StatusCodes.Status403Forbidden,
+            UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
             ArgumentException =>
                 StatusCodes.Status400BadRequest,
 
@@ -49,6 +60,8 @@ public sealed class ApiExceptionHandler : IExceptionHandler
 
             Title = statusCode switch
             {
+                StatusCodes.Status401Unauthorized => "Authentication required.",
+                StatusCodes.Status403Forbidden => "Permission denied.",
                 StatusCodes.Status400BadRequest =>
                     "Invalid request.",
 

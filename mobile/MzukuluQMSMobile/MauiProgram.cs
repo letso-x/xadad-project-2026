@@ -27,6 +27,9 @@ public static class MauiProgram
                 client.BaseAddress = new Uri(ApiConstants.BaseUrl);
             });
 
+        builder.Services.AddSingleton<FieldSession>();
+        builder.Services.AddSingleton<InspectionWorkspace>();
+        builder.Services.AddTransient<FieldLoginPage>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
         builder.Services.AddTransient<ProjectsViewModel>();
         builder.Services.AddTransient<ProjectsPage>();

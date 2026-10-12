@@ -5,12 +5,12 @@ namespace MzukuluQMS.Api.Data.Repositories;
 
 public sealed class QCSignOffRepository : IQCSignOffRepository
 {
-    private readonly IDbConnectionFactory _connectionFactory;
+    private readonly QmsDbSession _session;
 
     public QCSignOffRepository(
-        IDbConnectionFactory connectionFactory)
+        QmsDbSession session)
     {
-        _connectionFactory = connectionFactory;
+        _session = session;
     }
 
     public async Task<bool> QCFormExistsAsync(
@@ -25,9 +25,8 @@ public sealed class QCSignOffRepository : IQCSignOffRepository
             );
             """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -50,17 +49,19 @@ public sealed class QCSignOffRepository : IQCSignOffRepository
         const string sql = """
             SELECT EXISTS (
                 SELECT 1
-                FROM public."Evidence"
-                WHERE "EvidenceID" = @EvidenceID
-                  AND "QCFormID" = @QCFormID
+                FROM public."Evidence" e
+                JOIN public."QCForm" q ON q."QCFormID"=e."QCFormID"
+                WHERE e."EvidenceID" = @EvidenceID
+                  AND e."QCFormID" = @QCFormID
                   AND "UploadedByUserID" = @UserID
                   AND "EvidenceType" = 'Signature'::public.evidence_type
+                  AND e."CreatedAt" >= q."SubmittedAt"
+                  AND NOT EXISTS (SELECT 1 FROM public."QCSignOff" old WHERE old."SignatureEvidenceID"=e."EvidenceID")
             );
             """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -95,7 +96,8 @@ public sealed class QCSignOffRepository : IQCSignOffRepository
                 "SignatureEvidenceID",
                 "SignedAt",
                 "Comments",
-                "ContentHash"
+                "ContentHash",
+                "HashVersion"
             )
             VALUES
             (
@@ -103,9 +105,10 @@ public sealed class QCSignOffRepository : IQCSignOffRepository
                 @UserID,
                 CAST(@SignOffType AS public.signoff_type),
                 @SignatureEvidenceID,
-                @SignedAt,
+                clock_timestamp(),
                 @Comments,
-                @ContentHash
+                @ContentHash,
+                2
             )
             RETURNING
                 "QCSignOffID",
@@ -115,12 +118,12 @@ public sealed class QCSignOffRepository : IQCSignOffRepository
                 "SignatureEvidenceID",
                 "SignedAt",
                 "Comments",
-                "ContentHash";
+                "ContentHash",
+                "HashVersion";
             """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,

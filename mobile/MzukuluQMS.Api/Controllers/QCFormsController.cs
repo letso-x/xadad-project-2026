@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MzukuluQMS.Api.DTOs;
 using MzukuluQMS.Api.Services;
+using MzukuluQMS.Api.Services.Workflow;
 
 namespace MzukuluQMS.Api.Controllers;
 
@@ -11,12 +12,26 @@ namespace MzukuluQMS.Api.Controllers;
 public sealed class QCFormsController : ControllerBase
 {
     private readonly IQCFormService _service;
+    private readonly QCFormQueries _queries;
 
     public QCFormsController(
-        IQCFormService service)
+        IQCFormService service, QCFormQueries queries)
     {
         _service = service;
+        _queries = queries;
     }
+
+    [HttpGet]
+    public async Task<IActionResult> List([FromQuery] long projectId, CancellationToken cancellationToken, [FromQuery] int page=1, [FromQuery] int pageSize=50, [FromQuery] string? status=null) =>
+        Ok(await _queries.ListAsync(projectId,page,pageSize,status,cancellationToken));
+
+    [HttpGet("{qcFormId:long}/sign-offs")]
+    public async Task<IActionResult> SignOffHistory(long qcFormId,CancellationToken cancellationToken) =>
+        Ok(await _queries.SignOffsAsync(qcFormId,cancellationToken));
+
+    [HttpGet("{qcFormId:long}/audit")]
+    public async Task<IActionResult> AuditHistory(long qcFormId,CancellationToken cancellationToken,[FromQuery] long afterId=0,[FromQuery] int limit=50) =>
+        Ok(await _queries.AuditAsync(qcFormId,afterId,limit,cancellationToken));
 
     [HttpPost]
     [ProducesResponseType(
@@ -64,6 +79,7 @@ public sealed class QCFormsController : ControllerBase
             return NotFound();
         }
 
+        Response.Headers.ETag = "\"" + form.Revision + "\"";
         return Ok(form);
     }
     [HttpPut("{qcFormId:long}/responses/{qcResponseId:long}")]
@@ -143,10 +159,12 @@ public sealed class QCFormsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ReturnForCorrection(
     long qcFormId,
+    [FromBody] ReturnForCorrectionRequest request,
     CancellationToken cancellationToken)
     {
         await _service.ReturnForCorrectionAsync(
             qcFormId,
+            request.Reason,
             cancellationToken);
 
         return NoContent();

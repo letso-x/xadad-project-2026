@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 ﻿using Microsoft.AspNetCore.Mvc;
 using MzukuluQMS.Api.DTOs;
 using MzukuluQMS.Api.Services;
 
 namespace MzukuluQMS.Api.Controllers;
 
+[Authorize(Policy = "QmsUser")]
+[Authorize(Policy = "ReadTemplates")]
 [ApiController]
 [Route("api/checklist-templates")]
 public sealed class ChecklistTemplatesController : ControllerBase

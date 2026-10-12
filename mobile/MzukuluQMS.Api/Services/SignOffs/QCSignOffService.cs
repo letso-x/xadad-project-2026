@@ -1,6 +1,7 @@
 ﻿using MzukuluQMS.Api.Data.Repositories;
 using MzukuluQMS.Api.DTOs.SignOffs;
 using MzukuluQMS.Api.Services.Users;
+using MzukuluQMS.Api.Services.Workflow;
 
 namespace MzukuluQMS.Api.Services.SignOffs;
 
@@ -16,6 +17,7 @@ public sealed class QCSignOffService : IQCSignOffService
             "Supervisor",
             "Client"
         };
+    private readonly IQCWorkflow _workflow;
     private readonly IQCFormRepository _qcFormRepository;
     private readonly IQCFormContentHashService _contentHashService;
     private readonly IQCSignOffRepository _repository;
@@ -25,9 +27,10 @@ public sealed class QCSignOffService : IQCSignOffService
     IQCSignOffRepository repository,
     IQCFormRepository qcFormRepository,
     ICurrentUserService currentUserService,
-    IQCFormContentHashService contentHashService)
+    IQCFormContentHashService contentHashService, IQCWorkflow workflow)
     {
         _repository = repository;
+        _workflow = workflow;
         _qcFormRepository = qcFormRepository;
         _currentUserService = currentUserService;
         _contentHashService = contentHashService;
@@ -38,6 +41,8 @@ public sealed class QCSignOffService : IQCSignOffService
         CreateQCSignOffRequest request,
         CancellationToken cancellationToken = default)
     {
+        await using var operation = await _workflow.BeginAsync(qcFormId, null, "SignInspection", cancellationToken);
+
         if (qcFormId <= 0)
         {
             throw new ArgumentException(
@@ -66,6 +71,8 @@ public sealed class QCSignOffService : IQCSignOffService
                 "SignatureEvidenceID must be greater than zero.",
                 nameof(request.SignatureEvidenceID));
         }
+        var signOffType = AllowedSignOffTypes.Single(t => t.Equals(request.SignOffType, StringComparison.OrdinalIgnoreCase));
+        await _workflow.EnsureSigningAuthorityAsync(qcFormId, signOffType, cancellationToken);
         var contentHash =
     await _contentHashService.GenerateHashAsync(
         qcFormId,
@@ -122,14 +129,17 @@ public sealed class QCSignOffService : IQCSignOffService
                 ? null
                 : request.Comments.Trim();
 
-        return await _repository.CreateAsync(
+        var signoff = await _repository.CreateAsync(
     qcFormId,
     currentUser.UserID,
-    request.SignOffType,
+    signOffType,
     request.SignatureEvidenceID,
     comments,
     signedAt,
     contentHash,
     cancellationToken);
-    }
+
+        await operation.CompleteAsync("QCFormSigned", qcFormId, new { signoff.QCSignOffID, HashVersion = 2 }, cancellationToken, signoff);
+        return signoff;
+}
 }

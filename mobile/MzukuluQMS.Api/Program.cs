@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -11,6 +13,7 @@ using MzukuluQMS.Api.Services;
 using MzukuluQMS.Api.Services.Evidence;
 using MzukuluQMS.Api.Services.SignOffs;
 using MzukuluQMS.Api.Services.Users;
+using MzukuluQMS.Api.Services.Workflow;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +31,11 @@ builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IChecklistTemplateRepository,ChecklistTemplateRepository>();
 builder.Services.AddScoped<IChecklistTemplateService,ChecklistTemplateService>();
+builder.Services.AddScoped<QmsDbSession>();
+builder.Services.AddScoped<IQCWorkflow, QCWorkflow>();
+builder.Services.AddScoped<QCFormQueries>();
+builder.Services.AddScoped<NcrService>();
+builder.Services.AddScoped<QualityReporting>();
 builder.Services.AddScoped<IQCFormRepository,QCFormRepository>();
 builder.Services.AddScoped<IQCFormService,QCFormService>();
 builder.Services.AddSingleton<IFieldValueValidator,FieldValueValidator>();
@@ -72,53 +80,40 @@ var supabaseAuthSection =
     builder.Configuration.GetSection(
         SupabaseAuthOptions.SectionName);
 
-builder.Services.Configure<SupabaseAuthOptions>(
-    supabaseAuthSection);
+builder.Services.AddOptions<SupabaseAuthOptions>()
+    .Bind(supabaseAuthSection)
+    .Validate(options => Uri.TryCreate(options.MetadataAddress, UriKind.Absolute, out var metadata) && metadata.Scheme == Uri.UriSchemeHttps,
+        "SupabaseAuth:MetadataAddress must be an absolute HTTPS URL.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Audience), "SupabaseAuth:Audience is required.")
+    .ValidateOnStart();
 
-var supabaseAuth =
-    supabaseAuthSection.Get<SupabaseAuthOptions>()
-    ?? throw new InvalidOperationException(
-        "Supabase authentication configuration is missing.");
-
-if (string.IsNullOrWhiteSpace(
-        supabaseAuth.MetadataAddress))
-{
-    throw new InvalidOperationException(
-        "SupabaseAuth:MetadataAddress is required.");
-}
-
-builder.Services
-    .AddAuthentication(
-        JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<SupabaseAuthOptions>>((options, configured) =>
     {
-        options.MetadataAddress =
-            supabaseAuth.MetadataAddress;
-
-        options.Audience =
-            supabaseAuth.Audience;
-
-        options.RequireHttpsMetadata = true;
-
-        options.MapInboundClaims = false;
-
-        options.TokenValidationParameters =
-            new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                NameClaimType = "sub"
-            };
+        var auth=configured.Value;
+        options.MetadataAddress=auth.MetadataAddress;
+        options.Audience=auth.Audience;
+        options.RequireHttpsMetadata=true;
+        options.MapInboundClaims=false;
+        options.TokenValidationParameters=new TokenValidationParameters
+        {
+            ValidateIssuer=true, ValidateAudience=true, ValidateLifetime=true, ValidateIssuerSigningKey=true,
+            ValidAlgorithms=new[] {SecurityAlgorithms.EcdsaSha256}, NameClaimType="sub"
+        };
     });
 
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 builder.Services.AddAuthorization(options =>
 {
+    foreach (var permission in new[] { "ReadProjects", "ManageProjects", "ReadClients", "ReadTemplates", "ManageTemplates", "DatabaseHealth" })
+        options.AddPolicy(permission, policy => policy.RequireAuthenticatedUser().AddRequirements(new PermissionRequirement(permission)));
+
     options.AddPolicy(
         "QmsUser",
         policy =>
         {
+            policy.RequireAuthenticatedUser();
             policy.RequireClaim("qms_user_id");
             policy.RequireClaim("qms_role");
         });
@@ -150,7 +145,11 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<OperationFingerprintMiddleware>();
 
 app.MapControllers();
 
 app.Run();
+
+// Expose the real startup pipeline to in-process HTTP/DI verification.
+public partial class Program { }

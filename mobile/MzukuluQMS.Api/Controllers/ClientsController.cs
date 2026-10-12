@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 ﻿using Microsoft.AspNetCore.Mvc;
 using MzukuluQMS.Api.DTOs;
 using MzukuluQMS.Api.Services;
 
 namespace MzukuluQMS.Api.Controllers;
 
+[Authorize(Policy = "QmsUser")]
+[Authorize(Policy = "ReadClients")]
 [ApiController]
 [Route("api/clients")]
 public sealed class ClientsController : ControllerBase
@@ -55,6 +58,7 @@ public sealed class ClientsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "ManageProjects")]
     [ProducesResponseType(
     typeof(ClientDto),
     StatusCodes.Status201Created)]
@@ -76,6 +80,7 @@ public sealed class ClientsController : ControllerBase
     }
 
     [HttpPut("{clientId:long}")]
+    [Authorize(Policy = "ManageProjects")]
     [ProducesResponseType(
     typeof(ClientDto),
     StatusCodes.Status200OK)]

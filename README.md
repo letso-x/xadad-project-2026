@@ -1,4 +1,6 @@
 # xadad-project-2026
+
+**Implementation status (12 October 2026): under development, NOT READY.** The module descriptions below are design goals, not verification evidence. See [current status](docs/codex/IMPLEMENTATION_STATUS.md), [acceptance evidence](docs/codex/ACCEPTANCE_TESTS.md), and [actual setup/recovery instructions](docs/codex/SETUP_AND_RECOVERY.md). Encrypted SQLite, full offline/mobile workflows and several mandatory modules remain incomplete.
 An enterprise-grade, digital Quality Management System designed to transition industrial control systems and automation environments away from slow, paper-based records and spreadsheets. 
 
 This project is being engineered over a **5-Week Work Integrated Learning (WIL) placement** by a team of five Information Technology students.
@@ -14,7 +16,7 @@ Traditional paper-and-spreadsheet quality regimes suffer from delayed evidence c
 ## 🛠️ Technology Stack
 
 Our system uses a highly maintainable, robust, single-language ecosystem to ensure ease of long-term support:
-*   **Backend & Core Logic:** .NET 8 (C#)
+*   **Backend & Core Logic:** .NET 10 ASP.NET Core (C#), Dapper/Npgsql
 *   **Desktop Client:** WPF / WinForms / MAUI (Blazor Hybrid) for Windows Desktop
 *   **Mobile Client:** .NET MAUI (Android / iOS) for cross-platform native capability
 *   **Database:** PostgreSQL (Central Hub) & SQLite (Encrypted Local Mobile Storage)
@@ -104,25 +106,13 @@ Code **cannot** be merged if it fails our Quality Gate:
 ## 🚀 Local Development Setup
 
 ### Prerequisites
-*   [.NET 8 SDK](https://microsoft.com)
+*   [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 *   [PostgreSQL 16+](https://postgresql.org)
 *   [Visual Studio 2022](https://microsoft.com) (with .NET MAUI and Desktop workloads installed)
 
 ### Quick Start
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com
-   cd xadad-project-2026
-   ```
 
-    **Update Local Connection Strings**
-   Configure your database variables inside `appsettings.json` within the Desktop/API projects.
-
-4. **Run Automated Test Suite**
-   Ensure your local setup passes code rules before writing code:
-   ```bash
-   dotnet test
-   ```
+Follow [setup and recovery](docs/codex/SETUP_AND_RECOVERY.md) for exact project paths, sequential restore/build/test commands, server User Secrets, unapplied migrations and denied-by-default permission bootstrap. Never place database/service-role credentials in source-controlled appsettings or mobile code.
 
 ---
 

@@ -6,13 +6,13 @@ namespace MzukuluQMS.Api.Data.Repositories;
 
 public sealed class QCFormRepository : IQCFormRepository
 {
-    private readonly IDbConnectionFactory _connectionFactory;
+    private readonly QmsDbSession _session;
 
 
     public QCFormRepository(
-        IDbConnectionFactory connectionFactory)
+        QmsDbSession session)
     {
-        _connectionFactory = connectionFactory;
+        _session = session;
     }
 
     public async Task<bool> ProjectExistsAsync(
@@ -28,9 +28,8 @@ public sealed class QCFormRepository : IQCFormRepository
             );
             """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -58,12 +57,11 @@ public sealed class QCFormRepository : IQCFormRepository
                 v."EffectiveDate" DESC NULLS LAST,
                 v."IssueDate" DESC NULLS LAST,
                 v."ChecklistTemplateVersionID" DESC
-            LIMIT 1;
+            LIMIT 1 FOR SHARE OF v, t;
             """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -129,6 +127,7 @@ public sealed class QCFormRepository : IQCFormRepository
 
         const string selectSql = """
         SELECT
+            "Revision",
             "QCFormID",
             "ProjectID",
             "ChecklistTemplateID",
@@ -145,16 +144,19 @@ public sealed class QCFormRepository : IQCFormRepository
         WHERE "QCFormID" = @QCFormID;
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
-        await using var transaction =
-            await connection.BeginTransactionAsync(
-                cancellationToken);
+        var transaction = _session.Transaction
+            ?? throw new InvalidOperationException("Form creation requires a workflow transaction.");
 
         try
         {
+            if(assignedToUserId.HasValue && !await connection.ExecuteScalarAsync<bool>(new CommandDefinition("""
+                SELECT EXISTS(SELECT 1 FROM public."User" u JOIN qms_security."ProjectAccess" pa ON pa."UserID"=u."UserID"
+                 WHERE u."UserID"=@userId AND u."IsActive" AND pa."ProjectID"=@projectId)
+                """,new {userId=assignedToUserId.Value,projectId},transaction,cancellationToken:cancellationToken)))
+                throw new ArgumentException("Assigned user must be active and have project access.");
             var temporaryFormNumber =
                 $"TEMP-{Guid.NewGuid():N}";
 
@@ -222,6 +224,12 @@ public sealed class QCFormRepository : IQCFormRepository
             await connection.ExecuteAsync(
                 generateCommand);
 
+            await connection.ExecuteAsync(new CommandDefinition("""
+                INSERT INTO qms_security."FormSignatureRequirement" ("QCFormID","SignOffType")
+                SELECT @QCFormID,"SignOffType" FROM qms_security."TemplateSignatureRequirement"
+                WHERE "ChecklistTemplateVersionID"=@VersionID
+                """, new { QCFormID = qcFormId, VersionID = checklistTemplateVersionId }, transaction, cancellationToken: cancellationToken));
+
             var selectCommand =
                 new CommandDefinition(
                     selectSql,
@@ -237,15 +245,10 @@ public sealed class QCFormRepository : IQCFormRepository
                 await connection.QuerySingleAsync<QCFormDto>(
                     selectCommand);
 
-            await transaction.CommitAsync(
-                cancellationToken);
-
             return form;
         }
         catch
         {
-            await transaction.RollbackAsync(
-                cancellationToken);
 
             throw;
         }
@@ -256,6 +259,7 @@ public sealed class QCFormRepository : IQCFormRepository
     {
         const string sql = """
         SELECT
+            "Revision",
             "QCFormID",
             "ProjectID",
             "ChecklistTemplateID",
@@ -336,9 +340,8 @@ public sealed class QCFormRepository : IQCFormRepository
             f."QCFormFieldID";
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -443,6 +446,7 @@ public sealed class QCFormRepository : IQCFormRepository
 
         return new QCFormDetailsDto
         {
+            Revision = form.Revision,
             QCFormID =
                 form.QCFormID,
 
@@ -581,9 +585,8 @@ public sealed class QCFormRepository : IQCFormRepository
           AND "QCFormID" = @QCFormID;
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -622,9 +625,8 @@ public sealed class QCFormRepository : IQCFormRepository
           AND "QCFormID" = @QCFormID;
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -657,9 +659,8 @@ public sealed class QCFormRepository : IQCFormRepository
         WHERE "QCFormID" = @QCFormID;
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -683,12 +684,11 @@ public sealed class QCFormRepository : IQCFormRepository
             "Status" = CAST('Submitted' AS public.form_status),
             "SubmittedAt" = now(),
             "UpdatedAt" = now()
-        WHERE "QCFormID" = @QCFormID;
+        WHERE "QCFormID" = @QCFormID AND "Status"::text IN ('Draft','InProgress','ReturnedForCorrection');
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -704,7 +704,7 @@ public sealed class QCFormRepository : IQCFormRepository
 
         if (affectedRows == 0)
         {
-            throw new KeyNotFoundException(
+            throw new InvalidOperationException(
                 $"QC form {qcFormId} was not found.");
         }
     }
@@ -720,12 +720,13 @@ public sealed class QCFormRepository : IQCFormRepository
           AND (
                 "Value" IS NULL
                 OR "Value" = 'null'::jsonb
+                OR "Value" = '[]'::jsonb
+                OR (jsonb_typeof("Value")='string' AND btrim("Value"#>>'{}')='')
               );
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -755,12 +756,13 @@ public sealed class QCFormRepository : IQCFormRepository
                 OR r."IsAnswered" = false
                 OR r."Value" IS NULL
                 OR r."Value" = 'null'::jsonb
+                OR r."Value" = '[]'::jsonb
+                OR (jsonb_typeof(r."Value")='string' AND btrim(r."Value"#>>'{}')='')
               );
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -782,7 +784,7 @@ public sealed class QCFormRepository : IQCFormRepository
             ON s."QCFormSectionID" = f."QCFormSectionID"
         WHERE s."QCFormID" = @QCFormID
           AND (
-                f."FieldType"::text = 'Photo'
+                (f."FieldType"::text = 'Photo' AND f."IsRequired"=true)
                 OR f."RequiresPhoto" = true
               )
           AND NOT EXISTS (
@@ -794,9 +796,8 @@ public sealed class QCFormRepository : IQCFormRepository
               );
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -826,14 +827,23 @@ public sealed class QCFormRepository : IQCFormRepository
                 WHERE q."QCFormID" = @QCFormID
             ),
 
+            'requiredSignoffs', (
+                SELECT COALESCE(jsonb_agg(r."SignOffType" ORDER BY r."SignOffType"),'[]'::jsonb)
+                FROM qms_security."FormSignatureRequirement" r WHERE r."QCFormID"=@QCFormID
+            ),
+            'snapshotSections', (
+                SELECT COALESCE(jsonb_agg(to_jsonb(s) - 'CreatedAt' - 'UpdatedAt' ORDER BY s."QCFormSectionID"),'[]'::jsonb)
+                FROM public."QCFormSection" s WHERE s."QCFormID"=@QCFormID
+            ),
+            'snapshotFields', (
+                SELECT COALESCE(jsonb_agg(to_jsonb(f) - 'CreatedAt' - 'UpdatedAt' ORDER BY f."QCFormFieldID"),'[]'::jsonb)
+                FROM public."QCFormField" f JOIN public."QCFormSection" s ON s."QCFormSectionID"=f."QCFormSectionID"
+                WHERE s."QCFormID"=@QCFormID
+            ),
             'projectFields', (
                 SELECT COALESCE(
                     jsonb_agg(
-                        jsonb_build_object(
-                            'qcFormProjectFieldID', pf."QCFormProjectFieldID",
-                            'fieldKey', pf."FieldKey",
-                            'value', pf."Value"
-                        )
+                        to_jsonb(pf) - 'CreatedAt' - 'UpdatedAt'
                         ORDER BY pf."QCFormProjectFieldID"
                     ),
                     '[]'::jsonb
@@ -885,9 +895,8 @@ public sealed class QCFormRepository : IQCFormRepository
         )::text;
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -923,9 +932,8 @@ public sealed class QCFormRepository : IQCFormRepository
           AND "Status" = CAST('Submitted' AS public.form_status);
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -962,9 +970,8 @@ public sealed class QCFormRepository : IQCFormRepository
               AS public.form_status);
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -987,6 +994,7 @@ public sealed class QCFormRepository : IQCFormRepository
 
     private sealed class QCFormRow
     {
+        public long Revision { get; init; }
         public long QCFormID { get; init; }
         public long ProjectID { get; init; }
         public long ChecklistTemplateID { get; init; }
@@ -1103,9 +1111,8 @@ public sealed class QCFormRepository : IQCFormRepository
           AND s."QCFormID" = @QCFormID;
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,
@@ -1127,6 +1134,7 @@ public sealed class QCFormRepository : IQCFormRepository
     {
         const string sql = """
         SELECT
+            "Revision",
             "QCFormID",
             "QCFormProjectFieldID",
             "FieldType"::text AS "FieldType",
@@ -1139,9 +1147,8 @@ public sealed class QCFormRepository : IQCFormRepository
               @QCFormProjectFieldID;
         """;
 
-        await using var connection =
-            await _connectionFactory.CreateOpenConnectionAsync(
-                cancellationToken);
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
 
         var command = new CommandDefinition(
             sql,

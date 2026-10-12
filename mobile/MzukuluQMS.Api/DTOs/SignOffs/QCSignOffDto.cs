@@ -2,6 +2,8 @@
 
 public sealed class QCSignOffDto
 {
+    public int HashVersion { get; init; }
+
     public long QCSignOffID { get; init; }
 
     public long QCFormID { get; init; }

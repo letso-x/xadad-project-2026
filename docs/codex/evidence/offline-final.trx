@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="f6282bca-8920-4fb0-bcd6-71c469a684fe" name="User@DESKTOP-LA3KJ7R 2026-10-12 23:06:38" runUser="DESKTOP-LA3KJ7R\CodexSandboxOffline" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-12T23:06:38.4871141+02:00" queuing="2026-10-12T23:06:38.4871156+02:00" start="2026-10-12T23:06:30.7623245+02:00" finish="2026-10-12T23:06:39.0542594+02:00" />
+  <TestSettings name="default" id="6df4b185-f965-4f85-9a4a-17d46934b06f">
+    <Deployment runDeploymentRoot="User_DESKTOP-LA3KJ7R_2026-10-12_23_06_38" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="6991b468-67f3-49f4-831a-92dbeeb0367d" testId="f7e1a271-8fbb-6471-e913-7f120c843451" testName="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Completed_operations_stop_retrying_and_dependencies_preserve_order" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.1471318" startTime="2026-10-12T23:06:38.0101450+02:00" endTime="2026-10-12T23:06:38.1333707+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6991b468-67f3-49f4-831a-92dbeeb0367d" />
+    <UnitTestResult executionId="38a8492a-b8f3-4f4a-ae7c-851d76cb59cf" testId="32a982ee-8cbf-c474-f3f0-78415ec6eff2" testName="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 409, expected: &quot;Conflict&quot;, state: &quot;Conflict&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.2042881" startTime="2026-10-12T23:06:37.9894592+02:00" endTime="2026-10-12T23:06:38.0909783+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="38a8492a-b8f3-4f4a-ae7c-851d76cb59cf" />
+    <UnitTestResult executionId="dccc4f25-2f37-4c84-a35d-78aa5d47588d" testId="44d5f6db-9b48-e34f-444b-e485087cf836" testName="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Another_account_never_transmits_prior_owners_queue" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0736610" startTime="2026-10-12T23:06:38.3748147+02:00" endTime="2026-10-12T23:06:38.4269437+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dccc4f25-2f37-4c84-a35d-78aa5d47588d" />
+    <UnitTestResult executionId="748a1a33-ebfb-44aa-abf6-978c9bf521c5" testId="4a5efb8f-45f5-073a-9815-a4638d3b8402" testName="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Dirty_values_outbox_and_interrupted_processing_survive_reopen" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.5935770" startTime="2026-10-12T23:06:37.5214470+02:00" endTime="2026-10-12T23:06:37.9902118+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="748a1a33-ebfb-44aa-abf6-978c9bf521c5" />
+    <UnitTestResult executionId="46b4dfc2-ddd7-4ada-8d43-5fe91aef9f55" testId="197bb3b3-4a62-536f-c3cb-3fb6acfb38ec" testName="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Evidence_survives_reopen_and_is_encrypted_on_disk" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.3078396" startTime="2026-10-12T23:06:38.2399288+02:00" endTime="2026-10-12T23:06:38.5722994+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="46b4dfc2-ddd7-4ada-8d43-5fe91aef9f55" />
+    <UnitTestResult executionId="6ad77a1d-ec92-4a1e-be3e-c439e670d5e3" testId="49612ac5-2c23-6e46-cc21-bc2859d9b37a" testName="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 500, expected: &quot;Pending sync&quot;, state: &quot;Pending&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.5314904" startTime="2026-10-12T23:06:37.5321925+02:00" endTime="2026-10-12T23:06:37.8780265+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6ad77a1d-ec92-4a1e-be3e-c439e670d5e3" />
+    <UnitTestResult executionId="1c30dd86-30aa-449e-b69b-b9354d5b535e" testId="42492a01-8883-046c-4c48-f654e56def1a" testName="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 200, expected: &quot;Synced&quot;, state: &quot;Completed&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0993137" startTime="2026-10-12T23:06:38.0922472+02:00" endTime="2026-10-12T23:06:38.1907058+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1c30dd86-30aa-449e-b69b-b9354d5b535e" />
+    <UnitTestResult executionId="ba08ada5-93d5-47eb-a5d4-cc98aefc70ae" testId="5ca14bcd-fc01-3865-4c2f-def8a0819bba" testName="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 403, expected: &quot;Sync failed&quot;, state: &quot;Failed&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0731103" startTime="2026-10-12T23:06:38.3726231+02:00" endTime="2026-10-12T23:06:38.3732141+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ba08ada5-93d5-47eb-a5d4-cc98aefc70ae" />
+    <UnitTestResult executionId="2ff66ddb-ef9a-4d44-83c5-06349fa5bf79" testId="48753b67-811b-1ea5-e899-432e4e1c80f9" testName="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Conflicts_preserve_both_versions_across_restart" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.1048322" startTime="2026-10-12T23:06:38.1351307+02:00" endTime="2026-10-12T23:06:38.2384462+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2ff66ddb-ef9a-4d44-83c5-06349fa5bf79" />
+    <UnitTestResult executionId="17a944a5-8708-49ae-b7ca-cc68e867192c" testId="3e3469db-f537-6135-b223-ea09feaa5318" testName="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Owners_cannot_read_each_others_data" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0640181" startTime="2026-10-12T23:06:38.0070950+02:00" endTime="2026-10-12T23:06:38.0078998+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="17a944a5-8708-49ae-b7ca-cc68e867192c" />
+    <UnitTestResult executionId="bca628e7-eade-417f-a360-8e4e47a4b925" testId="4acebf57-6a9c-525f-4711-27d1e2799284" testName="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 401, expected: &quot;Authentication required&quot;, state: &quot;Pending&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0884008" startTime="2026-10-12T23:06:38.2066920+02:00" endTime="2026-10-12T23:06:38.2794599+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bca628e7-eade-417f-a360-8e4e47a4b925" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 401, expected: &quot;Authentication required&quot;, state: &quot;Pending&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="4acebf57-6a9c-525f-4711-27d1e2799284">
+      <Execution id="bca628e7-eade-417f-a360-8e4e47a4b925" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests" name="Statuses_preserve_or_acknowledge_operations_correctly" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Conflicts_preserve_both_versions_across_restart" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="48753b67-811b-1ea5-e899-432e4e1c80f9">
+      <Execution id="2ff66ddb-ef9a-4d44-83c5-06349fa5bf79" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests" name="Conflicts_preserve_both_versions_across_restart" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Owners_cannot_read_each_others_data" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="3e3469db-f537-6135-b223-ea09feaa5318">
+      <Execution id="17a944a5-8708-49ae-b7ca-cc68e867192c" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests" name="Owners_cannot_read_each_others_data" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 403, expected: &quot;Sync failed&quot;, state: &quot;Failed&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="5ca14bcd-fc01-3865-4c2f-def8a0819bba">
+      <Execution id="ba08ada5-93d5-47eb-a5d4-cc98aefc70ae" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests" name="Statuses_preserve_or_acknowledge_operations_correctly" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Completed_operations_stop_retrying_and_dependencies_preserve_order" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="f7e1a271-8fbb-6471-e913-7f120c843451">
+      <Execution id="6991b468-67f3-49f4-831a-92dbeeb0367d" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests" name="Completed_operations_stop_retrying_and_dependencies_preserve_order" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Another_account_never_transmits_prior_owners_queue" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="44d5f6db-9b48-e34f-444b-e485087cf836">
+      <Execution id="dccc4f25-2f37-4c84-a35d-78aa5d47588d" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests" name="Another_account_never_transmits_prior_owners_queue" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Dirty_values_outbox_and_interrupted_processing_survive_reopen" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="4a5efb8f-45f5-073a-9815-a4638d3b8402">
+      <Execution id="748a1a33-ebfb-44aa-abf6-978c9bf521c5" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests" name="Dirty_values_outbox_and_interrupted_processing_survive_reopen" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests.Evidence_survives_reopen_and_is_encrypted_on_disk" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="197bb3b3-4a62-536f-c3cb-3fb6acfb38ec">
+      <Execution id="46b4dfc2-ddd7-4ada-8d43-5fe91aef9f55" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.OfflineStoreTests" name="Evidence_survives_reopen_and_is_encrypted_on_disk" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 500, expected: &quot;Pending sync&quot;, state: &quot;Pending&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="49612ac5-2c23-6e46-cc21-bc2859d9b37a">
+      <Execution id="6ad77a1d-ec92-4a1e-be3e-c439e670d5e3" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests" name="Statuses_preserve_or_acknowledge_operations_correctly" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 409, expected: &quot;Conflict&quot;, state: &quot;Conflict&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="32a982ee-8cbf-c474-f3f0-78415ec6eff2">
+      <Execution id="38a8492a-b8f3-4f4a-ae7c-851d76cb59cf" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests" name="Statuses_preserve_or_acknowledge_operations_correctly" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests.Statuses_preserve_or_acknowledge_operations_correctly(code: 200, expected: &quot;Synced&quot;, state: &quot;Completed&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.mobile.core.tests\bin\debug\net10.0\mzukuluqms.mobile.core.tests.dll" id="42492a01-8883-046c-4c48-f654e56def1a">
+      <Execution id="1c30dd86-30aa-449e-b69b-b9354d5b535e" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Mobile.Core.Tests\bin\Debug\net10.0\MzukuluQMS.Mobile.Core.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Mobile.Core.Tests.SyncEngineTests" name="Statuses_preserve_or_acknowledge_operations_correctly" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="f7e1a271-8fbb-6471-e913-7f120c843451" executionId="6991b468-67f3-49f4-831a-92dbeeb0367d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="32a982ee-8cbf-c474-f3f0-78415ec6eff2" executionId="38a8492a-b8f3-4f4a-ae7c-851d76cb59cf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="44d5f6db-9b48-e34f-444b-e485087cf836" executionId="dccc4f25-2f37-4c84-a35d-78aa5d47588d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4a5efb8f-45f5-073a-9815-a4638d3b8402" executionId="748a1a33-ebfb-44aa-abf6-978c9bf521c5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="197bb3b3-4a62-536f-c3cb-3fb6acfb38ec" executionId="46b4dfc2-ddd7-4ada-8d43-5fe91aef9f55" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="49612ac5-2c23-6e46-cc21-bc2859d9b37a" executionId="6ad77a1d-ec92-4a1e-be3e-c439e670d5e3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="42492a01-8883-046c-4c48-f654e56def1a" executionId="1c30dd86-30aa-449e-b69b-b9354d5b535e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5ca14bcd-fc01-3865-4c2f-def8a0819bba" executionId="ba08ada5-93d5-47eb-a5d4-cc98aefc70ae" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="48753b67-811b-1ea5-e899-432e4e1c80f9" executionId="2ff66ddb-ef9a-4d44-83c5-06349fa5bf79" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3e3469db-f537-6135-b223-ea09feaa5318" executionId="17a944a5-8708-49ae-b7ca-cc68e867192c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4acebf57-6a9c-525f-4711-27d1e2799284" executionId="bca628e7-eade-417f-a360-8e4e47a4b925" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="11" executed="11" passed="11" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.02] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:02.01]   Discovering: MzukuluQMS.Mobile.Core.Tests&#xD;
+[xUnit.net 00:00:02.47]   Discovered:  MzukuluQMS.Mobile.Core.Tests&#xD;
+[xUnit.net 00:00:02.68]   Starting:    MzukuluQMS.Mobile.Core.Tests&#xD;
+[xUnit.net 00:00:04.18]   Finished:    MzukuluQMS.Mobile.Core.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

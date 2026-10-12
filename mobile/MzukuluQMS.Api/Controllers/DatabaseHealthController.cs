@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 ﻿using Microsoft.AspNetCore.Mvc;
 using MzukuluQMS.Api.Data;
 using Npgsql;
 
 namespace MzukuluQMS.Api.Controllers;
 
+[Authorize(Policy = "QmsUser")]
+[Authorize(Policy = "DatabaseHealth")]
 [ApiController]
 [Route("api/health")]
 public class DatabaseHealthController : ControllerBase
