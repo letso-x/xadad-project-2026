@@ -62,6 +62,13 @@ namespace MzuApplication
                     return; // user closed the login window
                 }
 
+                // Second factor: email a one-time code and require it before entering.
+                if (!RunMfaIfRequired())
+                {
+                    Auth.SignOut();
+                    continue; // verification failed/cancelled -> back to login
+                }
+
                 // A reset password forces the user to choose a new one before entering.
                 if (Auth.CurrentMustChangePassword)
                 {
@@ -88,6 +95,38 @@ namespace MzuApplication
 
                     Auth.SignOut();
                 }
+            }
+        }
+
+        /// <summary>
+        /// If the organisation requires MFA and email is configured, issues a one-time
+        /// code to the signed-in user and shows the verification dialog. Returns true to
+        /// allow entry (verified, or MFA not applicable), false to send them back to login.
+        /// </summary>
+        private static bool RunMfaIfRequired()
+        {
+            if (Auth.Current == null) return false;
+
+            bool required = Repository.Db.Settings.RequireMfa && EmailConfig.IsConfigured;
+            if (!required) return true; // MFA off or email not set up on this machine
+
+            // If this machine was verified by the same user within the trust window
+            // (14 days), skip the code entirely — like a remembered Windows device.
+            if (DeviceTrust.IsTrusted(Auth.Current)) return true;
+
+            // The form appears immediately and sends the code in the background, so there
+            // is no blank freeze while the mail server is contacted.
+            using (MfaForm mfa = new MfaForm(Auth.Current))
+            {
+                if (mfa.ShowDialog() != DialogResult.OK) return false;
+
+                // Only trust this device if the user ticked "Don't ask again". Otherwise
+                // a fresh code is required at every sign-in.
+                if (mfa.TrustThisDevice)
+                {
+                    DeviceTrust.Trust(Auth.Current);
+                }
+                return true;
             }
         }
 

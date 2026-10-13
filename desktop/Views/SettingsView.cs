@@ -36,7 +36,108 @@ namespace MzuApplication.Views
 
             AddOrganisationCard(settings);
             AddPolicyCard(settings);
+            AddSecurityCard(settings);
             AddDataCard();
+        }
+
+        private void AddSecurityCard(OrgSettings settings)
+        {
+            Card card = new Card
+            {
+                Location = new Point(Left1, Y),
+                Width = InnerWidth,
+                Fill = Color.White,
+                BorderTint = Theme.Slate150,
+                Radius = Theme.Radius
+            };
+
+            Card bar = Ui.SectionBar("Security & Sessions", InnerWidth);
+            card.Controls.Add(bar);
+
+            int y = bar.Bottom + Dpi.S(16);
+
+            CheckBox requireMfa = AddPolicySwitch(card, ref y,
+                "Require email two-step verification at sign-in",
+                "After the password, a one-time code is emailed to the user. Takes effect only "
+                + "when email is configured on the machine. Trusted devices skip the code within "
+                + "the trust window below.",
+                settings.RequireMfa);
+
+            int gap = Dpi.S(16);
+            int colWidth = (InnerWidth - Dpi.S(40) - gap) / 2;
+
+            Label idleLabel = Ui.FieldLabel("Inactivity timeout (minutes)");
+            idleLabel.Location = new Point(Dpi.S(20), y);
+            card.Controls.Add(idleLabel);
+
+            TextInput idle = new TextInput
+            {
+                Location = new Point(Dpi.S(20), idleLabel.Bottom + Dpi.S(5)),
+                Width = colWidth,
+                Height = Dpi.S(34),
+                Value = settings.IdleTimeoutMinutes.ToString()
+            };
+            card.Controls.Add(idle);
+
+            Label trustLabel = Ui.FieldLabel("Trust this device for (days)");
+            trustLabel.Location = new Point(Dpi.S(20) + colWidth + gap, y);
+            card.Controls.Add(trustLabel);
+
+            TextInput trustDays = new TextInput
+            {
+                Location = new Point(Dpi.S(20) + colWidth + gap, trustLabel.Bottom + Dpi.S(5)),
+                Width = colWidth,
+                Height = Dpi.S(34),
+                Value = settings.DeviceTrustDays.ToString()
+            };
+            card.Controls.Add(trustDays);
+
+            Label help = Ui.Wrapped(
+                "Inactivity timeout prompts the user and signs them out when idle (set 0 to "
+                + "disable). Device trust controls how long a verified machine can skip the "
+                + "two-step code.",
+                Theme.Tiny, Theme.Slate500, InnerWidth - Dpi.S(40));
+            help.Location = new Point(Dpi.S(20), idle.Bottom + Dpi.S(10));
+            card.Controls.Add(help);
+
+            FlatButton save = new FlatButton
+            {
+                Text = "Save Security",
+                Variant = ButtonVariant.Primary,
+                Width = Dpi.S(150),
+                Height = Dpi.S(34),
+                Location = new Point(Dpi.S(20), help.Bottom + Dpi.S(12))
+            };
+            save.Click += (s, e) =>
+            {
+                int idleMin, days;
+                if (!int.TryParse(idle.Value, out idleMin) || idleMin < 0 || idleMin > 240)
+                {
+                    Notify("Inactivity timeout must be between 0 and 240 minutes.", true);
+                    return;
+                }
+                if (!int.TryParse(trustDays.Value, out days) || days < 1 || days > 365)
+                {
+                    Notify("Device trust must be between 1 and 365 days.", true);
+                    return;
+                }
+
+                settings.RequireMfa = requireMfa.Checked;
+                settings.IdleTimeoutMinutes = idleMin;
+                settings.DeviceTrustDays = days;
+
+                Audit.Log(AuditAction.Updated, "Settings", null, "Security",
+                    "MFA " + (requireMfa.Checked ? "on" : "off")
+                    + " · idle " + idleMin + "m · trust " + days + "d");
+                Repository.Save();
+
+                Notify("Security settings saved.");
+            };
+            card.Controls.Add(save);
+
+            card.Height = save.Bottom + Dpi.S(16);
+            Controls.Add(card);
+            Y = card.Bottom + Dpi.S(18);
         }
 
         private void AddOrganisationCard(OrgSettings settings)

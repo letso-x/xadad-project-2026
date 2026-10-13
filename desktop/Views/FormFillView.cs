@@ -26,6 +26,12 @@ namespace MzuApplication.Views
         private Pill _statusPill;
         private TextInput _ncrInput;
 
+        // Autosave: periodically persist the in-progress form so work is never lost on
+        // an inactivity sign-out, crash or power cut. Submitted forms are not autosaved.
+        private const int AutosaveSeconds = 30;
+        private System.Windows.Forms.Timer _autosaveTimer;
+        private Label _autosaveStatus;
+
         public FormFillView(MainForm shell, string formId) : base(shell)
         {
             _formId = formId;
@@ -74,7 +80,59 @@ namespace MzuApplication.Views
             AddSignoffCard();
             AddAuditLine();
             AddBottomActions();
+
+            StartAutosave();
         }
+
+        #region Autosave
+
+        /// <summary>
+        /// Starts the periodic autosave for an in-progress form. Idempotent across the
+        /// view's rebuilds (resize re-runs BuildContent), and a no-op for submitted forms.
+        /// </summary>
+        private void StartAutosave()
+        {
+            if (_form.Status != RecordStatus.InProgress) return;
+            if (_autosaveTimer != null) return; // already running
+
+            _autosaveTimer = new System.Windows.Forms.Timer { Interval = AutosaveSeconds * 1000 };
+            _autosaveTimer.Tick += (s, e) => Autosave();
+            _autosaveTimer.Start();
+        }
+
+        private void Autosave()
+        {
+            // Don't autosave a form that has since been submitted.
+            if (_form == null || _form.Status != RecordStatus.InProgress) return;
+
+            _form.UpdatedAt = DateTime.Now;
+            Repository.Save();
+
+            if (_autosaveStatus != null && !_autosaveStatus.IsDisposed)
+            {
+                _autosaveStatus.Text = "Draft autosaved " + DateTime.Now.ToString("HH:mm");
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _autosaveTimer != null)
+            {
+                _autosaveTimer.Stop();
+                _autosaveTimer.Dispose();
+                _autosaveTimer = null;
+
+                // Final save on leaving the view, so nothing in-progress is lost.
+                if (_form != null && _form.Status == RecordStatus.InProgress)
+                {
+                    _form.UpdatedAt = DateTime.Now;
+                    Repository.Save();
+                }
+            }
+            base.Dispose(disposing);
+        }
+
+        #endregion
 
         #region Header bar
 
@@ -125,6 +183,23 @@ namespace MzuApplication.Views
             _statusPill.ApplyStatus(_form.Status);
             _statusPill.Location = new Point(InnerWidth - _statusPill.Width - 18, 16);
             bar.Controls.Add(_statusPill);
+
+            // Autosave indicator (only meaningful while the form is in progress).
+            _autosaveStatus = new Label
+            {
+                AutoSize = false,
+                Font = Theme.Tiny,
+                ForeColor = Theme.Slate400,
+                BackColor = Color.Transparent,
+                TextAlign = ContentAlignment.MiddleRight,
+                Location = new Point(InnerWidth - Dpi.S(220), _statusPill.Bottom + Dpi.S(4)),
+                Width = Dpi.S(202),
+                Height = Dpi.S(16),
+                Text = _form.Status == RecordStatus.InProgress
+                    ? "Changes autosave every " + AutosaveSeconds + "s"
+                    : string.Empty
+            };
+            bar.Controls.Add(_autosaveStatus);
 
             // Progress row.
             int progressTop = project.Bottom + 14;

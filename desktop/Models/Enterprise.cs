@@ -116,6 +116,18 @@ namespace MzuApplication.Models
         /// <summary>Default number of days allowed to close out a new NCR.</summary>
         public int NcrDueDays { get; set; }
 
+        /// <summary>
+        /// Require email-based two-step verification at sign-in. Only takes effect when
+        /// SMTP email is configured on the machine (email.config).
+        /// </summary>
+        public bool RequireMfa { get; set; }
+
+        /// <summary>Minutes of inactivity before the user is prompted and signed out.</summary>
+        public int IdleTimeoutMinutes { get; set; }
+
+        /// <summary>Days a device stays trusted after passing MFA before a code is needed again.</summary>
+        public int DeviceTrustDays { get; set; }
+
         public OrgSettings()
         {
             CompanyName = "Mzukulu Technologies (Pty) Ltd";
@@ -123,6 +135,9 @@ namespace MzuApplication.Models
             RequireDualSignoff = false;
             EnforceNcrOnReject = true;
             NcrDueDays = 14;
+            RequireMfa = true;
+            IdleTimeoutMinutes = 2;
+            DeviceTrustDays = 14;
         }
     }
 }

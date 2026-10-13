@@ -252,9 +252,14 @@ namespace MzuApplication.Forms
                     ? "You are the first user, so you have been enrolled as an administrator."
                     : "Your account has been created.";
 
-                MessageBox.Show(this,
-                    roleNote + "\r\n\r\nYou can now sign in with your username and password.",
-                    "Account created", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                using (Dialog done = new Dialog("Account created", Dpi.S(380)))
+                {
+                    done.AddNote(roleNote
+                        + "\r\n\r\nYou can now sign in with your email and password.");
+                    done.AddPrimaryAction("Continue to sign in",
+                        () => done.DialogResult = DialogResult.OK);
+                    done.ShowDialog(this);
+                }
 
                 DialogResult = DialogResult.OK;
                 Close();

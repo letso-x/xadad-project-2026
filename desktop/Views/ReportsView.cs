@@ -25,6 +25,13 @@ namespace MzuApplication.Views
 
         protected override void BuildContent()
         {
+            // Administrator-only: reports are a supervisory roll-up across all projects.
+            if (!Repository.IsAdmin)
+            {
+                TemplatesView.AddAccessDenied(this);
+                return;
+            }
+
             AddPageHeader("Insight", "Quality Reports",
                 "Roll-up measures across every project, client and checklist.");
 

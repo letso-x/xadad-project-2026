@@ -37,6 +37,14 @@ namespace MzuApplication.Forms
         private ViewBase _currentView;
         private bool _collapsed;
 
+        // Inactivity handling: after a period with no mouse/keyboard input anywhere in
+        // the app, the user is prompted to confirm they are still present; if they do
+        // not respond they are signed out. The window is admin-configurable in Settings.
+        private Timer _idleTimer;
+        private DateTime _lastActivityUtc;
+        private IdleFilter _idleFilter;
+        private bool _idlePromptOpen;
+
         public MainForm()
         {
             Text = "Mzukulu QMS — Quality Management System";
@@ -76,7 +84,143 @@ namespace MzuApplication.Forms
             BuildSidebar();
 
             Navigate(new DashboardView(this));
+
+            StartIdleMonitor();
+
+            // Ctrl+K opens the quick-navigation command palette.
+            KeyPreview = true;
+            KeyDown += (s, e) =>
+            {
+                if (e.Control && e.KeyCode == Keys.K)
+                {
+                    e.Handled = true;
+                    OpenCommandPalette();
+                }
+            };
         }
+
+        /// <summary>Shows the Ctrl+K command palette for fast navigation.</summary>
+        private void OpenCommandPalette()
+        {
+            var commands = new List<CommandPaletteForm.Command>
+            {
+                new CommandPaletteForm.Command { Label = "Dashboard", Keywords = "home overview", Route = "dashboard" },
+                new CommandPaletteForm.Command { Label = "Clients", Keywords = "customers companies", Route = "clients" },
+                new CommandPaletteForm.Command { Label = "Projects", Keywords = "jobs sites", Route = "projects" },
+                new CommandPaletteForm.Command { Label = "Form Library", Keywords = "checklists templates forms", Route = "library" },
+                new CommandPaletteForm.Command { Label = "Search Records", Keywords = "find lookup", Route = "search" },
+                new CommandPaletteForm.Command { Label = "Non-Conformance (NCR)", Keywords = "ncr defects issues", Route = "ncr" }
+            };
+
+            if (Repository.IsAdmin)
+            {
+                commands.Add(new CommandPaletteForm.Command { Label = "Reports", Keywords = "insight kpi analytics", Route = "reports" });
+                commands.Add(new CommandPaletteForm.Command { Label = "Checklist Builder", Keywords = "templates editor", Route = "templates" });
+                commands.Add(new CommandPaletteForm.Command { Label = "Audit Trail", Keywords = "log history security", Route = "audit" });
+                commands.Add(new CommandPaletteForm.Command { Label = "Users", Keywords = "accounts people admin", Route = "users" });
+                commands.Add(new CommandPaletteForm.Command { Label = "Settings", Keywords = "configuration policy security", Route = "settings" });
+            }
+
+            using (CommandPaletteForm palette = new CommandPaletteForm(commands))
+            {
+                if (palette.ShowDialog(this) == DialogResult.OK
+                    && !string.IsNullOrEmpty(palette.ChosenRoute))
+                {
+                    NavigateRoute(palette.ChosenRoute);
+                }
+            }
+        }
+
+        #region Inactivity monitor
+
+        /// <summary>
+        /// Begins watching for user inactivity. An application-wide message filter
+        /// records the time of the last mouse/keyboard input; a one-second timer checks
+        /// how long it has been and prompts once the idle threshold is crossed.
+        /// </summary>
+        private void StartIdleMonitor()
+        {
+            _lastActivityUtc = DateTime.UtcNow;
+
+            _idleFilter = new IdleFilter(() => _lastActivityUtc = DateTime.UtcNow);
+            Application.AddMessageFilter(_idleFilter);
+
+            _idleTimer = new Timer { Interval = 1000 };
+            _idleTimer.Tick += (s, e) => CheckIdle();
+            _idleTimer.Start();
+
+            FormClosed += (s, e) =>
+            {
+                _idleTimer.Stop();
+                Application.RemoveMessageFilter(_idleFilter);
+            };
+        }
+
+        private void CheckIdle()
+        {
+            if (_idlePromptOpen) return;
+
+            int minutes = Repository.Db.Settings.IdleTimeoutMinutes;
+            if (minutes < 1) return; // 0/negative disables the inactivity lock
+            double timeoutSeconds = minutes * 60.0;
+
+            double idle = (DateTime.UtcNow - _lastActivityUtc).TotalSeconds;
+            if (idle < timeoutSeconds) return;
+
+            _idlePromptOpen = true;
+            _idleTimer.Stop();
+
+            bool stayed;
+            using (IdlePromptForm prompt = new IdlePromptForm())
+            {
+                stayed = prompt.ShowDialog(this) == DialogResult.OK;
+            }
+
+            _idlePromptOpen = false;
+
+            if (stayed)
+            {
+                // User confirmed presence: reset the clock and resume monitoring.
+                _lastActivityUtc = DateTime.UtcNow;
+                _idleTimer.Start();
+            }
+            else
+            {
+                // Timed out or chose to sign out: end the session and return to login.
+                DialogResult = DialogResult.Retry;
+                Close();
+            }
+        }
+
+        /// <summary>
+        /// Application-wide message filter that fires a callback on any mouse or keyboard
+        /// message, used to detect user activity regardless of which control has focus.
+        /// </summary>
+        private sealed class IdleFilter : IMessageFilter
+        {
+            private readonly Action _onActivity;
+
+            public IdleFilter(Action onActivity) { _onActivity = onActivity; }
+
+            public bool PreFilterMessage(ref Message m)
+            {
+                switch (m.Msg)
+                {
+                    case 0x0100: // WM_KEYDOWN
+                    case 0x0101: // WM_KEYUP
+                    case 0x0200: // WM_MOUSEMOVE
+                    case 0x0201: // WM_LBUTTONDOWN
+                    case 0x0204: // WM_RBUTTONDOWN
+                    case 0x0207: // WM_MBUTTONDOWN
+                    case 0x020A: // WM_MOUSEWHEEL
+                        _onActivity();
+                        break;
+                }
+                return false; // never swallow the message
+            }
+        }
+
+        #endregion
 
         /// <summary>Shows a transient notification in the bottom-right corner.</summary>
         public void Notify(string message, bool isError = false)
@@ -332,15 +476,16 @@ namespace MzuApplication.Forms
             // Quality is visible to everyone: site users raise and work NCRs.
             y = AddNavGroup(navHost, "Quality", y + Dpi.S(6), new[]
             {
-                Tuple.Create("ncr", "Non-Conformance", Glyph.Alert),
-                Tuple.Create("reports", "Reports", Glyph.BarChart)
+                Tuple.Create("ncr", "Non-Conformance", Glyph.Alert)
             });
 
             // Administration group is admin-only, matching the route guards.
+            // Reports lives here now: it is a supervisory roll-up, not a site-user tool.
             if (Repository.IsAdmin)
             {
                 AddNavGroup(navHost, "Administration", y + Dpi.S(6), new[]
                 {
+                    Tuple.Create("reports", "Reports", Glyph.BarChart),
                     Tuple.Create("templates", "Checklist Builder", Glyph.Tool),
                     Tuple.Create("audit", "Audit Trail", Glyph.Shield),
                     Tuple.Create("users", "Users", Glyph.Users),
