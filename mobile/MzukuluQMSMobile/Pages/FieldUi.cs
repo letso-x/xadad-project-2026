@@ -24,7 +24,7 @@ internal static class FieldUi
   button.Clicked+=async(_,_)=>{if(!button.IsEnabled)return;button.IsEnabled=false;try{await action();}finally{button.IsEnabled=true;}};return button;
  }
  public static View Warning(string text)=>new Border{Stroke=Accent,BackgroundColor=Color.FromArgb("#FCF0EC"),Padding=14,Content=Text(text)};
- public static Entry Entry(string placeholder,Keyboard? keyboard=null)=>new(){Placeholder=placeholder,Keyboard=keyboard??Keyboard.Default,TextColor=Navy,BackgroundColor=Colors.White,MinimumHeightRequest=48};
+ public static Entry Entry(string placeholder,Keyboard? keyboard=null)=>new(){Placeholder=placeholder,Keyboard=keyboard??Keyboard.Default,TextColor=Navy,BackgroundColor=Colors.White,PlaceholderColor=Muted,MinimumHeightRequest=48};
 }
 // A keyboard-accessible, in-page dropdown with explicit contrast on Windows and mobile.
 internal sealed class FieldChoice : VerticalStackLayout

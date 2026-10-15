@@ -10,12 +10,12 @@ public sealed class FieldNcrPage:FieldScreen
  public FieldNcrPage(InspectionWorkspace workspace,long formId,JsonNode ncr):this(workspace,new NcrViewModel(workspace,formId,ncr["ncrID"]?.GetValue<long>()??0,ncr["publicNCRID"]?.GetValue<long>())){}
  private FieldNcrPage(InspectionWorkspace workspace,NcrViewModel model):base("Non-conformance",model)
  {this.workspace=workspace;this.model=model;model.PropertyChanged+=(_,e)=>{if(e.PropertyName==nameof(FieldViewModel.Busy))Rows.IsEnabled=!model.Busy;};ToolbarItems.Add(new ToolbarItem("Sync",null,async()=>{if(await model.SyncAsync())Render();}));}
- protected override async void OnAppearing(){base.OnAppearing();if(await model.LoadAsync())Render();else{Rows.Clear();Heading("Non-conformance","Case unavailable");Rows.Add(Status);}}
+ protected override async void OnAppearing(){base.OnAppearing();if(await model.LoadAsync())Render();else{Rows.Clear();Heading("Non-conformance","Case unavailable");}}
  private void Detail(string label,string? value)=>Rows.Add(FieldUi.Card(FieldUi.Text(label.ToUpperInvariant(),11,true),FieldUi.Text(string.IsNullOrWhiteSpace(value)?"Not recorded":value)));
  private void Render()
  {
   var n=model.Ncr!;Rows.Clear();Heading("Non-conformance",n["ncrNumber"]?.ToString()??"Historical NCR");
-  Rows.Add(FieldUi.Badge(NcrInteraction.IsClosed(n)?"Closed":"Open"));Rows.Add(FieldUi.Text(NcrInteraction.Status(n),16,true));Rows.Add(Status);
+  Rows.Add(FieldUi.Badge(NcrInteraction.IsClosed(n)?"Closed":"Open"));Rows.Add(FieldUi.Text(NcrInteraction.Status(n),16,true));
   Detail("Project",n["projectName"]?.ToString()??model.Form?["documentSnapshot"]?["project"]?.ToString());
   Detail("Project number",n["projectNumber"]?.ToString()??model.Form?["documentSnapshot"]?["projectNumber"]?.ToString());
   Detail("QC record",n["qcFormNumber"]?.ToString()??model.Form?["formNumber"]?.ToString());
@@ -64,7 +64,7 @@ public sealed class FieldNcrPage:FieldScreen
  private void AddText(string key,string label,bool multiline=false)
  {
   Rows.Add(FieldUi.Text(label,12,true));
-  if(multiline){var input=new Editor{Text=model.Correction[key]?.ToString()??"",AutoSize=EditorAutoSizeOption.TextChanges,MinimumHeightRequest=100,MaxLength=4000};input.TextChanged+=async(_,_)=>{model.Correction[key]=input.Text??"";await model.RetainDraftAsync();};Rows.Add(input);}
+  if(multiline){var input=new Editor{TextColor=FieldUi.Navy,BackgroundColor=Colors.White,PlaceholderColor=FieldUi.Muted,Text=model.Correction[key]?.ToString()??"",AutoSize=EditorAutoSizeOption.TextChanges,MinimumHeightRequest=100,MaxLength=4000};input.TextChanged+=async(_,_)=>{model.Correction[key]=input.Text??"";await model.RetainDraftAsync();};Rows.Add(input);}
   else{var input=FieldUi.Entry(label);input.Text=model.Correction[key]?.ToString()??"";input.MaxLength=4000;input.TextChanged+=async(_,_)=>{model.Correction[key]=input.Text??"";await model.RetainDraftAsync();};Rows.Add(input);}
  }
  private void AddVerification()
@@ -74,7 +74,7 @@ public sealed class FieldNcrPage:FieldScreen
   if(problem is not null){Rows.Add(FieldUi.Warning(problem));return;}
   Rows.Add(FieldUi.Text("Review the saved corrective action and evidence before making a decision. Failed verification keeps this NCR open."));
   var decision=new FieldChoice("Verification decision",new[]{("pass","Pass — close NCR"),("fail","Fail — keep NCR open")});Rows.Add(decision);
-  var comments=new Editor{Placeholder="Verification comments (required)",MaxLength=2000,AutoSize=EditorAutoSizeOption.TextChanges,MinimumHeightRequest=100};Rows.Add(comments);
+  var comments=new Editor{TextColor=FieldUi.Navy,BackgroundColor=Colors.White,PlaceholderColor=FieldUi.Muted,Placeholder="Verification comments (required)",MaxLength=2000,AutoSize=EditorAutoSizeOption.TextChanges,MinimumHeightRequest=100};Rows.Add(comments);
   Rows.Add(FieldUi.Action("Verify corrective action",async()=>{
    if(decision.SelectedValue is null){model.Message="Choose Pass or Fail before verification.";return;}
    if(!await DisplayAlertAsync("Verify corrective action",decision.SelectedValue=="pass"?"Confirm independent verification and close this NCR?":"Record failed verification and leave this NCR open?","Confirm","Cancel"))return;
@@ -86,5 +86,28 @@ public sealed class FieldNcrPage:FieldScreen
 public sealed class FieldEvidencePreviewPage:ContentPage
 {
  public FieldEvidencePreviewPage(byte[] bytes)
- {Title="Evidence photo";BackgroundColor=FieldUi.Background;Content=new ScrollView{Content=new Image{Source=ImageSource.FromStream(()=>new MemoryStream(bytes)),Aspect=Aspect.AspectFit,MinimumHeightRequest=300}};}
+ {
+  Title="Evidence photo";BackgroundColor=FieldUi.Background;
+  var unavailable=FieldUi.Text("This photo cannot be displayed on this device. The saved attachment is retained. Go back to continue reviewing the NCR.");unavailable.IsVisible=false;
+  var image=new Image{Aspect=Aspect.AspectFit,MinimumHeightRequest=300};
+#if WINDOWS
+  image.HandlerChanged+=(_,_)=>{
+   if(image.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Image native)
+    native.ImageFailed+=(_,_)=>{image.IsVisible=false;unavailable.IsVisible=true;};
+  };
+#endif
+  var loaded=false;
+  image.Loaded+=(_,_)=>{
+   if(loaded)return;loaded=true;
+   try{image.Source=ImageSource.FromStream(()=>new MemoryStream(bytes));}
+   catch(System.Runtime.InteropServices.COMException error)
+   {
+#if WINDOWS
+    WinUI.StartupTrace.Mark("Optional evidence preview failed HRESULT "+error.HResult.ToString("X8")+Environment.NewLine+error.StackTrace);
+#endif
+    image.IsVisible=false;unavailable.IsVisible=true;
+   }
+  };
+  Content=new ScrollView{Content=new VerticalStackLayout{Padding=18,Children={image,unavailable}}};
+ }
 }

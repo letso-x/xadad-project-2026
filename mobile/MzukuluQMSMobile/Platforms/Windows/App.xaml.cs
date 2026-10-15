@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -17,7 +17,7 @@ namespace MzukuluQMSMobile.WinUI
         public App()
         {
             StartupTrace.Mark("WinUI constructor");
-            UnhandledException+=(_,e)=>StartupTrace.Mark("Unhandled "+e.Exception.GetType().Name+" HRESULT "+e.Exception.HResult);
+            UnhandledException+=(_,e)=>StartupTrace.Mark("Unhandled "+e.Exception.GetType().Name+" HRESULT "+e.Exception.HResult.ToString("X8")+Environment.NewLine+e.Exception.StackTrace);
             this.InitializeComponent();
             StartupTrace.Mark("WinUI XAML initialised");
         }
