@@ -21,6 +21,13 @@ public sealed class QCFormsController : ControllerBase
         _queries = queries;
     }
 
+    [HttpGet("{qcFormId:long}/evidence")]
+    public async Task<IActionResult> Evidence(long qcFormId,CancellationToken ct)=>Ok(await _queries.EvidenceAsync(qcFormId,ct));
+    [HttpPut("{qcFormId:long}/remarks")]
+    public async Task<IActionResult> Remarks(long qcFormId,[FromBody] RemarksRequest request,CancellationToken ct)
+    {await _queries.UpdateRemarksAsync(qcFormId,request.Remarks,ct);return NoContent();}
+    public sealed record RemarksRequest(string Remarks);
+
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] long projectId, CancellationToken cancellationToken, [FromQuery] int page=1, [FromQuery] int pageSize=50, [FromQuery] string? status=null) =>
         Ok(await _queries.ListAsync(projectId,page,pageSize,status,cancellationToken));
@@ -28,6 +35,9 @@ public sealed class QCFormsController : ControllerBase
     [HttpGet("{qcFormId:long}/sign-offs")]
     public async Task<IActionResult> SignOffHistory(long qcFormId,CancellationToken cancellationToken) =>
         Ok(await _queries.SignOffsAsync(qcFormId,cancellationToken));
+
+    [HttpGet("{qcFormId:long}/audit-history")]
+    public async Task<IActionResult> PublicAuditHistory(long qcFormId,CancellationToken ct)=>Ok(await _queries.PublicAuditAsync(qcFormId,ct));
 
     [HttpGet("{qcFormId:long}/audit")]
     public async Task<IActionResult> AuditHistory(long qcFormId,CancellationToken cancellationToken,[FromQuery] long afterId=0,[FromQuery] int limit=50) =>

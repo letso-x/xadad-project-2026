@@ -5,6 +5,43 @@ using MzukuluQMS.Api.Services.Users;
 namespace MzukuluQMS.Api.Services.Workflow;
 public sealed class QualityReporting(QmsDbSession session,IQCWorkflow workflow,IQCFormContentHashService hash,ICurrentUserService users)
 {
+ public async Task<System.Text.Json.JsonElement> PortfolioAsync(CancellationToken ct)
+ {
+  var actor=await users.GetCurrentUserAsync(ct);await using var lease=await session.OpenAsync(ct);
+  var json=await lease.Connection.QuerySingleAsync<string>(new CommandDefinition("""
+   WITH permissions AS (
+    SELECT rp."Permission" FROM public."User" u JOIN qms_security."RolePermission" rp ON rp."RoleName"=u."Role"::text
+    WHERE u."UserID"=@id AND u."IsActive"
+   ), projects AS (
+    SELECT p.* FROM public."Project" p JOIN qms_security."ProjectAccess" pa ON pa."ProjectID"=p."ProjectID" AND pa."UserID"=@id
+    WHERE EXISTS(SELECT 1 FROM permissions WHERE "Permission"='ReadProjects')
+   ), forms AS (
+    SELECT q.* FROM public."QCForm" q JOIN projects p ON p."ProjectID"=q."ProjectID"
+    WHERE EXISTS(SELECT 1 FROM permissions WHERE "Permission"='ReadInspection')
+   )
+   SELECT jsonb_build_object(
+    'asOf',clock_timestamp(),
+    'totalProjects',(SELECT count(*) FROM projects),'activeProjects',(SELECT count(*) FROM projects WHERE "IsActive" AND "Status"='Active'),
+    'totalQcRecords',CASE WHEN EXISTS(SELECT 1 FROM permissions WHERE "Permission"='ReadInspection') THEN (SELECT count(*) FROM forms) END,
+    'formsInProgress',(SELECT count(*) FROM forms WHERE "Status"::text IN('Draft','InProgress','ReturnedForCorrection')),
+    'approvedForms',(SELECT count(*) FROM forms WHERE "Status"::text='Approved'),
+    'openNcrCount',CASE WHEN EXISTS(SELECT 1 FROM permissions WHERE "Permission"='ReadNcr') THEN
+      ((SELECT count(*) FROM qms_core."Ncr" n JOIN projects p ON p."ProjectID"=n."ProjectID" WHERE n."ClosedAt" IS NULL)
+      +(SELECT count(*) FROM public."NCR" legacy JOIN public."QCForm" q ON q."QCFormID"=legacy."QCFormID" JOIN projects p ON p."ProjectID"=q."ProjectID"
+        WHERE legacy."ClosedAt" IS NULL AND (NOT EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID")
+          OR EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID" AND n."ClosedAt" IS NOT NULL)))) END,
+    'clients',CASE WHEN EXISTS(SELECT 1 FROM permissions WHERE "Permission"='ReadClients') THEN
+      (SELECT count(DISTINCT "ClientID") FROM projects) END,
+    'activeTemplates',CASE WHEN EXISTS(SELECT 1 FROM permissions WHERE "Permission"='ReadTemplates') THEN
+      (SELECT count(*) FROM public."ChecklistTemplate" t WHERE t."IsActive" AND EXISTS(
+        SELECT 1 FROM public."ChecklistTemplateVersion" v WHERE v."ChecklistTemplateID"=t."ChecklistTemplateID" AND v."Status"::text='Active')) END,
+    'recentActivity',COALESCE((SELECT jsonb_agg(to_jsonb(recent)) FROM (
+      SELECT "QCFormID" AS "qcFormID","FormNumber" AS "formNumber","Status"::text AS "status","UpdatedAt" AS "updatedAt"
+      FROM forms ORDER BY "UpdatedAt" DESC,"QCFormID" DESC LIMIT 10) recent),'[]'::jsonb)
+   )::text
+   """,new {id=actor.UserID},cancellationToken:ct));
+  using var document=System.Text.Json.JsonDocument.Parse(json);return document.RootElement.Clone();
+ }
  public async Task<object> DashboardAsync(long projectId,CancellationToken ct)
  {
   await using var access=await workflow.BeginAsync(null,projectId,"ReadReports",ct);
@@ -12,7 +49,10 @@ public sealed class QualityReporting(QmsDbSession session,IQCWorkflow workflow,I
    SELECT "Status"::text AS "Status",COUNT(*) AS "Count" FROM public."QCForm" WHERE "ProjectID"=@projectId GROUP BY "Status" ORDER BY "Status"::text
    """,new {projectId},session.Transaction,cancellationToken:ct))).AsList();
   var ncrs=await session.Connection!.ExecuteScalarAsync<int>(new CommandDefinition("""
-   SELECT COUNT(*) FROM qms_core."Ncr" WHERE "ProjectID"=@projectId AND "ClosedAt" IS NULL
+   SELECT (SELECT COUNT(*) FROM qms_core."Ncr" WHERE "ProjectID"=@projectId AND "ClosedAt" IS NULL)
+     +(SELECT COUNT(*) FROM public."NCR" legacy JOIN public."QCForm" q ON q."QCFormID"=legacy."QCFormID" WHERE q."ProjectID"=@projectId AND legacy."ClosedAt" IS NULL
+      AND (NOT EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID")
+        OR EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID" AND n."ClosedAt" IS NOT NULL)))
    """,new {projectId},session.Transaction,cancellationToken:ct));
   return new {projectId,asOf=DateTimeOffset.UtcNow,qcStatusCounts=forms,openNcrCount=ncrs,limitations=new[]{"ITP, Hold, calibration, training and portfolio metrics are not implemented."}};
  }
@@ -39,6 +79,13 @@ public sealed class QualityReporting(QmsDbSession session,IQCWorkflow workflow,I
   var blocking=await session.Connection!.ExecuteScalarAsync<int>(new CommandDefinition("""
    SELECT COUNT(*) FROM qms_core."Ncr" WHERE "ProjectID"=@projectId AND "ClosedAt" IS NULL AND COALESCE("IsBlocking",true)
    """,new {projectId},session.Transaction,cancellationToken:ct));
+  var historical=await session.Connection!.ExecuteScalarAsync<int>(new CommandDefinition("""
+   SELECT count(*) FROM public."NCR" legacy JOIN public."QCForm" q ON q."QCFormID"=legacy."QCFormID"
+   WHERE q."ProjectID"=@projectId AND legacy."ClosedAt" IS NULL
+    AND (NOT EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID")
+      OR EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID" AND n."ClosedAt" IS NOT NULL))
+   """,new {projectId},session.Transaction,cancellationToken:ct));
+  if(historical>0)reasons.Add(historical+" historical/unreconciled or inconsistent NCR(s).");
   if(blocking>0)reasons.Add(blocking+" unresolved blocking/unclassified NCR(s).");
   // Fail closed until every mandatory module's completeness gate is integrated.
   reasons.Add("ITP, controlled-document, calibration, training and evidence completeness gates are incomplete; final dossier release is unavailable.");

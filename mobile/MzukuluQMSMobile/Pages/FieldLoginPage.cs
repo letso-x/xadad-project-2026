@@ -1,33 +1,37 @@
 using MzukuluQMSMobile.Services;
+using MzukuluQMSMobile.ViewModels;
 namespace MzukuluQMSMobile.Pages;
-public sealed class FieldLoginPage : ContentPage
+public sealed class FieldLoginPage : FieldScreen
 {
- private readonly FieldSession session;private readonly InspectionWorkspace workspace;
- private readonly Entry email=new(){Placeholder="Email",Keyboard=Keyboard.Email};private readonly Entry password=new(){Placeholder="Password",IsPassword=true};
- private readonly Label message=new();private bool busy;
- public FieldLoginPage(FieldSession session,InspectionWorkspace workspace)
+ private readonly FieldSession session;private readonly InspectionWorkspace workspace;private readonly FieldLoginViewModel model;
+ private bool entering;
+ public FieldLoginPage(FieldSession session,InspectionWorkspace workspace):this(session,workspace,new FieldLoginViewModel(session)){}
+ private FieldLoginPage(FieldSession session,InspectionWorkspace workspace,FieldLoginViewModel model):base("Mzukulu QC",model)
  {
-  this.session=session;this.workspace=workspace;Title="Mzukulu QMS";
-  var login=new Button{Text="Sign in"};login.Clicked+=async(_,_)=>{if(busy)return;busy=true;login.IsEnabled=false;try{await session.LoginAsync(email.Text??"",password.Text??"");password.Text="";await EnterAsync();}catch(Exception){message.Text="Unable to sign in. Check your credentials, linked QMS account and API connection.";}finally{busy=false;login.IsEnabled=true;}};
-  Content=new VerticalStackLayout{Padding=24,Spacing=16,Children={new Label{Text="Field inspections",FontSize=28},email,password,login,message}};
+  this.session=session;this.workspace=workspace;this.model=model;BackgroundColor=FieldUi.Navy;
+  var email=FieldUi.Entry("Email",Keyboard.Email);email.SetBinding(Entry.TextProperty,nameof(model.Email));
+  var password=FieldUi.Entry("Password");password.IsPassword=true;password.SetBinding(Entry.TextProperty,nameof(model.Password));
+  Rows.Add(new BoxView{HeightRequest=60,Color=Colors.Transparent});
+  Rows.Add(FieldUi.Section("MZUKULU QC · QUALITY CONTROL"));
+  Rows.Add(FieldUi.Card(FieldUi.Category("Field access"),FieldUi.Text("Sign in",28,true),FieldUi.Text("Use your linked QMS account to access authorised projects."),email,password,
+   FieldUi.Action("Sign in",async()=>{if(await model.LoginAsync())await EnterAsync();}),Status));
  }
- protected override async void OnAppearing(){base.OnAppearing();try{if(await session.RestoreAsync())await EnterAsync();}catch{message.Text="Saved session could not be restored. Local work is retained.";}}
- private async Task EnterAsync(){var page=new FieldProjectsPage(session,workspace);Navigation.InsertPageBefore(page,this);await Navigation.PopAsync();}
-}
-public sealed class FieldProjectsPage : ContentPage
-{
- private readonly FieldSession session;private readonly InspectionWorkspace workspace;private readonly VerticalStackLayout rows=new(){Spacing=12,Padding=20};private readonly Label status=new();
- public FieldProjectsPage(FieldSession session,InspectionWorkspace workspace)
+ protected override async void OnAppearing()
  {
-  this.session=session;this.workspace=workspace;Title="Projects";Content=new ScrollView{Content=rows};
-  ToolbarItems.Add(new ToolbarItem("Sync",null,async()=>{try{status.Text=await workspace.SyncAsync();}catch{status.Text="Sync unavailable; work retained.";}}));
-  ToolbarItems.Add(new ToolbarItem("Sign out",null,async()=>{await workspace.DisposeAsync();session.Logout();var login=new FieldLoginPage(session,workspace);Navigation.InsertPageBefore(login,this);await Navigation.PopAsync();}));
+  base.OnAppearing();
+#if WINDOWS
+  MzukuluQMSMobile.WinUI.StartupTrace.Mark("Login OnAppearing begin");
+#endif
+  if(entering)return;await model.RunAsync(async()=>{if(await model.RestoreAsync())await EnterAsync();});
+#if WINDOWS
+  MzukuluQMSMobile.WinUI.StartupTrace.Mark("Login OnAppearing complete");
+#endif
  }
- protected override async void OnAppearing(){base.OnAppearing();try{rows.Clear();rows.Add(status);var projects=await workspace.ProjectsAsync();foreach(var project in projects.AsArray()){var id=project!["projectID"]!.GetValue<long>();var button=new Button{Text=project["projectName"]!.GetValue<string>()};button.Clicked+=async(_,_)=>await Navigation.PushAsync(new FieldFormsPage(workspace,id));rows.Add(button);}if(rows.Count==1)rows.Add(new Label{Text="No accessible projects are cached or available."});}catch{status.Text="Unable to load projects. Check your session, permissions and API connection.";}}
-}
-public sealed class FieldFormsPage : ContentPage
-{
- private readonly InspectionWorkspace workspace;private readonly long projectId;private readonly VerticalStackLayout rows=new(){Padding=20,Spacing=12};
- public FieldFormsPage(InspectionWorkspace workspace,long projectId){this.workspace=workspace;this.projectId=projectId;Title="Inspection records";Content=new ScrollView{Content=rows};}
- protected override async void OnAppearing(){base.OnAppearing();try{rows.Clear();var forms=await workspace.FormsAsync(projectId);foreach(var form in forms.AsArray()){var id=form!["qcFormID"]!.GetValue<long>();var button=new Button{Text=form["formNumber"]+" · "+form["status"]};button.Clicked+=async(_,_)=>await Navigation.PushAsync(new FieldFormPage(workspace,id));rows.Add(button);}if(rows.Count==0)rows.Add(new Label{Text="No inspection records available. Start inspections through the authorised API client."});}catch{rows.Add(new Label{Text="Unable to load records. Cached work is retained."});}}
+ private async Task EnterAsync()
+ {
+  if(entering)return;entering=true;
+  try{if(!session.IsMfaVerified){if(session.HasPendingSignIn)await Navigation.PushAsync(new FieldMfaPage(session,workspace,OpenHomeAsync));return;}await OpenHomeAsync();}
+  finally{entering=false;}
+ }
+ private async Task OpenHomeAsync(){if(!session.IsMfaVerified)throw new InvalidOperationException("Complete two-step verification to continue.");await workspace.LoadPermissionsAsync();if(Window is not null)Window.Page=new FieldHomePage(session,workspace);}
 }

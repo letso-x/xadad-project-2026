@@ -2,6 +2,7 @@
 
 public sealed class QCFormSectionDto
 {
+    public bool? IsRequired {get;init;}
     public long QCFormSectionID { get; init; }
 
     public long? ChecklistSectionID { get; init; }

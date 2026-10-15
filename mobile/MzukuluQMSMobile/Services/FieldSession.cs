@@ -1,62 +1,98 @@
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using MzukuluQMS.Mobile.Core;
 using MzukuluQMSMobile.Constants;
 namespace MzukuluQMSMobile.Services;
 public sealed class FieldSession : ISyncSession, ILocalKeyStore
 {
  private sealed record Session(Guid Owner,string AccessToken,string RefreshToken,DateTimeOffset ExpiresAt);
- private Session? current;
- public Guid? Owner=>current?.Owner;
+ private readonly SupabaseMfaAuth auth;
+ private readonly SemaphoreSlim persistence=new(1,1);
+ private Guid? owner;private int generation;private string? validatedToken,persistedToken;
+ public FieldSession()
+ {
+  var client=new HttpClient{Timeout=TimeSpan.FromSeconds(30),MaxResponseContentBufferSize=1024*1024};
+  if(Uri.TryCreate(SupabaseConstants.Url,UriKind.Absolute,out var url)&&url.Scheme=="https")client.BaseAddress=new Uri(url.ToString().TrimEnd('/')+"/auth/v1/");
+  auth=new SupabaseMfaAuth(client,SupabaseConstants.AnonKey);
+ }
+ public Guid? Owner=>IsMfaVerified?owner:null;
+ public bool IsMfaVerified=>owner.HasValue&&auth.IsAssured;
+ public bool HasPendingSignIn=>auth.Tokens is not null;
+ public IReadOnlyList<AuthenticatorFactor> Factors=>auth.Factors;
+ public AuthenticatorSetup? Setup=>auth.Setup;
  public async Task LoginAsync(string email,string password,CancellationToken ct=default)
  {
-  using var client=new HttpClient {BaseAddress=new Uri(SupabaseConstants.Url.TrimEnd('/')+"/"),Timeout=TimeSpan.FromSeconds(30)};
-  client.DefaultRequestHeaders.Add("apikey",SupabaseConstants.AnonKey);
-  using var response=await client.PostAsJsonAsync("auth/v1/token?grant_type=password",new {email,password},ct);
-  if(!response.IsSuccessStatusCode)throw new InvalidOperationException("Login failed. Check your credentials and connection.");
-  using var json=JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
-  var token=json.RootElement.GetProperty("access_token").GetString()!;
-  using var api=new HttpClient {BaseAddress=new Uri(ApiConstants.BaseUrl),Timeout=TimeSpan.FromSeconds(30)};
-  api.DefaultRequestHeaders.Authorization=new AuthenticationHeaderValue("Bearer",token);
-  using var identityResponse=await api.GetAsync("api/auth/me",ct);
-  if(!identityResponse.IsSuccessStatusCode)throw new InvalidOperationException("Your account is not linked to an active QMS user, or the API is unavailable.");
-  using var identity=JsonDocument.Parse(await identityResponse.Content.ReadAsStringAsync(ct));
-  var id=identity.RootElement.GetProperty("userID").GetGuid();
-  current=new(id,token,json.RootElement.GetProperty("refresh_token").GetString()!,DateTimeOffset.UtcNow.AddSeconds(json.RootElement.GetProperty("expires_in").GetInt32()));
-  await SecureStorage.Default.SetAsync("qms-session",JsonSerializer.Serialize(current));
+  var attempt=++generation;owner=null;validatedToken=null;persistedToken=null;await RemoveSavedSessionAsync();auth.Clear();
+  try{await auth.SignInAsync(email,password);owner=await IdentityAsync(auth.Tokens!.AccessToken,ct);validatedToken=auth.Tokens.AccessToken;if(attempt!=generation)throw new InvalidOperationException("Your session changed. Sign in again.");if(IsMfaVerified)await PersistAsync(attempt);}
+  catch{if(attempt==generation){owner=null;auth.Clear();}throw;}
  }
  public async Task<bool> RestoreAsync()
  {
-  var saved=await SecureStorage.Default.GetAsync("qms-session");
-  if(saved is null)return false;
-  current=JsonSerializer.Deserialize<Session>(saved);
-  // Conservative offline access: previous linked session must still be unexpired.
-  return current is not null && current.ExpiresAt>DateTimeOffset.UtcNow;
+  if(HasPendingSignIn)return true;
+  var saved=await SecureStorage.Default.GetAsync("qms-session");if(saved is null)return false;
+  try
+  {
+   var session=JsonSerializer.Deserialize<Session>(saved);if(session is null)return false;
+   var tokens=SupabaseMfaAuth.ReadTokens(new JsonObject{["access_token"]=session.AccessToken,["refresh_token"]=session.RefreshToken});
+   owner=session.Owner;auth.Restore(tokens);validatedToken=tokens.AccessToken;persistedToken=tokens.AccessToken;
+   if(tokens.ExpiresAt<=DateTimeOffset.UtcNow){await auth.GetProtectedTokenAsync();if(auth.Tokens!.ExpiresAt<=DateTimeOffset.UtcNow)return false;var linked=await IdentityAsync(auth.Tokens.AccessToken,default);if(linked!=session.Owner)throw new InvalidOperationException("Your session changed. Sign in again.");validatedToken=auth.Tokens.AccessToken;if(IsMfaVerified)await PersistAsync(generation);}
+   return true;
+  }
+  catch(Exception e) when(e is JsonException or InvalidOperationException or HttpRequestException or TaskCanceledException){owner=null;auth.Clear();return false;}
+ }
+ public Task<IReadOnlyList<AuthenticatorFactor>> LoadFactorsAsync()=>auth.ListFactorsAsync();
+ public Task<AuthenticatorSetup> EnrollAsync(bool backup=false)=>auth.EnrollAsync(SupabaseMfaAuth.EnrollmentNamePrefix+(backup?"backup ":"primary ")+Guid.NewGuid().ToString("N")[..8],backup);
+ public Task ChallengeAsync(string factor)=>auth.ChallengeAsync(factor);
+ public void ClearSetupSecret()=>auth.ClearSetupSecret();
+ public async Task VerifyMfaAsync(string factor,string code)
+ {
+  var attempt=generation;var expected=owner??throw new InvalidOperationException("Sign in again to continue.");
+  if(!auth.IsAssured||auth.Setup is not null)await auth.VerifyAsync(factor,code);
+  var linked=await IdentityAsync(auth.Tokens!.AccessToken,default);
+  if(linked!=expected||owner!=expected||attempt!=generation)throw new InvalidOperationException("Your session changed. Sign in again to continue.");
+  validatedToken=auth.Tokens.AccessToken;await PersistAsync(attempt);
  }
  public async Task<string?> GetAccessTokenAsync(CancellationToken ct)
  {
-  if(current is null)return null;
-  if(current.ExpiresAt>DateTimeOffset.UtcNow.AddMinutes(1))return current.AccessToken;
-  using var client=new HttpClient {BaseAddress=new Uri(SupabaseConstants.Url.TrimEnd('/')+"/"),Timeout=TimeSpan.FromSeconds(30)};
-  client.DefaultRequestHeaders.Add("apikey",SupabaseConstants.AnonKey);
-  using var response=await client.PostAsJsonAsync("auth/v1/token?grant_type=refresh_token",new {refresh_token=current.RefreshToken},ct);
-  if(!response.IsSuccessStatusCode)return null;
-  using var json=JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
-  var refreshedToken=json.RootElement.GetProperty("access_token").GetString()!;
-  using var api=new HttpClient {BaseAddress=new Uri(ApiConstants.BaseUrl),Timeout=TimeSpan.FromSeconds(30)};
-  api.DefaultRequestHeaders.Authorization=new AuthenticationHeaderValue("Bearer",refreshedToken);
-  using var identityResponse=await api.GetAsync("api/auth/me",ct);
-  if(!identityResponse.IsSuccessStatusCode)return null;
-  using var identity=JsonDocument.Parse(await identityResponse.Content.ReadAsStringAsync(ct));
-  if(identity.RootElement.GetProperty("userID").GetGuid()!=current.Owner)return null;
-  current=current with {AccessToken=json.RootElement.GetProperty("access_token").GetString()!,RefreshToken=json.RootElement.GetProperty("refresh_token").GetString()!,ExpiresAt=DateTimeOffset.UtcNow.AddSeconds(json.RootElement.GetProperty("expires_in").GetInt32())};
-  await SecureStorage.Default.SetAsync("qms-session",JsonSerializer.Serialize(current));return current.AccessToken;
+  if(!owner.HasValue)return null;var attempt=generation;var expected=owner.Value;
+  var token=await auth.GetProtectedTokenAsync();
+  if(token is null){await RemoveSavedSessionAsync();return null;}
+  if(token!=validatedToken){if(await IdentityAsync(token,ct)!=expected)return null;validatedToken=token;}if(generation!=attempt||owner!=expected)return null;
+  if(token!=persistedToken)await PersistAsync(attempt);return token;
  }
- public void Logout(){current=null;SecureStorage.Default.Remove("qms-session");}
+ private async Task<Guid> IdentityAsync(string token,CancellationToken ct)
+ {
+  using var api=new HttpClient{BaseAddress=new Uri(ApiConstants.BaseUrl),Timeout=TimeSpan.FromSeconds(30)};
+  using var request=new HttpRequestMessage(HttpMethod.Get,"api/auth/me");request.Headers.Authorization=new AuthenticationHeaderValue("Bearer",token);
+  using var response=await api.SendAsync(request,ct);
+  if(!response.IsSuccessStatusCode)throw new InvalidOperationException(response.StatusCode switch{
+   System.Net.HttpStatusCode.NotFound=>"Your sign-in account is not linked to a QMS user. Ask your administrator to link it.",
+   System.Net.HttpStatusCode.Forbidden=>"Your QMS account is inactive. Ask your administrator for help.",
+   System.Net.HttpStatusCode.Unauthorized=>"Your session could not be verified. Sign in again.",
+   _=>"We couldn't connect to the service. Your saved work is retained."});
+  using var identity=JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));return identity.RootElement.GetProperty("userID").GetGuid();
+ }
+ private async Task PersistAsync(int attempt)
+ {
+  await persistence.WaitAsync();
+  try
+  {
+   if(attempt!=generation||!IsMfaVerified)throw new InvalidOperationException("Complete two-step verification to continue.");
+   var tokens=auth.Tokens!;await SecureStorage.Default.SetAsync("qms-session",JsonSerializer.Serialize(new Session(owner!.Value,tokens.AccessToken,tokens.RefreshToken,tokens.ExpiresAt)));
+   persistedToken=tokens.AccessToken;if(attempt!=generation){SecureStorage.Default.Remove("qms-session");throw new InvalidOperationException("Your session changed. Sign in again.");}
+  }
+  finally{persistence.Release();}
+ }
+ private async Task RemoveSavedSessionAsync(){await persistence.WaitAsync();try{SecureStorage.Default.Remove("qms-session");}finally{persistence.Release();}}
+ public async Task LogoutAsync()
+ {
+  ++generation;owner=null;validatedToken=null;persistedToken=null;await RemoveSavedSessionAsync();
+  try{await auth.LogoutAsync();}catch(InvalidOperationException){}finally{auth.Clear();await RemoveSavedSessionAsync();}
+ }
  public async Task<byte[]> GetKeyAsync(Guid owner,CancellationToken ct)
  {
-  if(Owner!=owner)throw new InvalidOperationException("Local data is locked to its owner.");
+  if(Owner!=owner)throw new InvalidOperationException("Complete sign-in to unlock your saved work.");
   var name="qms-local-key-"+owner.ToString("N");var encoded=await SecureStorage.Default.GetAsync(name);
   if(encoded is null)
   {

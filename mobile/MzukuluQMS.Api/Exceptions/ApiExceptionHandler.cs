@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MzukuluQMS.Api.Exceptions;
@@ -29,6 +29,7 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         }
         var statusCode = exception switch
         {
+            Npgsql.NpgsqlException {InnerException:System.Net.Sockets.SocketException} => StatusCodes.Status503ServiceUnavailable,
             ForbiddenException => StatusCodes.Status403Forbidden,
             UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
             ArgumentException =>
@@ -49,10 +50,11 @@ public sealed class ApiExceptionHandler : IExceptionHandler
 
         if (statusCode == StatusCodes.Status500InternalServerError)
         {
-            _logger.LogError(
-                exception,
-                "An unhandled exception occurred.");
+            _logger.LogError("Unhandled request failure ({ExceptionType}); cause {CauseType}; SQLSTATE {SqlState}; trace {TraceId}.",
+                exception.GetType().Name,exception.GetBaseException().GetType().Name,(exception as Npgsql.PostgresException)?.SqlState??"none",httpContext.TraceIdentifier);
         }
+
+        if(statusCode==StatusCodes.Status503ServiceUnavailable)_logger.LogWarning("Database connection unavailable ({ExceptionType}); trace {TraceId}.",exception.InnerException?.GetType().Name??exception.GetType().Name,httpContext.TraceIdentifier);
 
         var problemDetails = new ProblemDetails
         {
@@ -60,6 +62,7 @@ public sealed class ApiExceptionHandler : IExceptionHandler
 
             Title = statusCode switch
             {
+                StatusCodes.Status503ServiceUnavailable => "Database temporarily unavailable.",
                 StatusCodes.Status401Unauthorized => "Authentication required.",
                 StatusCodes.Status403Forbidden => "Permission denied.",
                 StatusCodes.Status400BadRequest =>
@@ -75,11 +78,12 @@ public sealed class ApiExceptionHandler : IExceptionHandler
                     "An unexpected error occurred."
             },
 
-            Detail =
-                statusCode ==
-                StatusCodes.Status500InternalServerError
-                    ? "An unexpected error occurred while processing the request."
-                    : exception.Message,
+            Detail = statusCode switch
+            {
+                StatusCodes.Status500InternalServerError => "An unexpected error occurred while processing the request.",
+                StatusCodes.Status503ServiceUnavailable => "The database is temporarily unavailable. Check connectivity and retry after service is restored.",
+                _ => exception.Message
+            },
 
             Instance = httpContext.Request.Path
         };

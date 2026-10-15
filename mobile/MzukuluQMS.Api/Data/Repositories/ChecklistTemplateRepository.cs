@@ -19,14 +19,13 @@ public sealed class ChecklistTemplateRepository
         CancellationToken cancellationToken = default)
     {
         const string sql = """
-            SELECT
-                "ChecklistTemplateID",
-                "TemplateNumber",
-                "TemplateName",
-                "Subtitle",
-                "IsActive"
-            FROM public."ChecklistTemplate"
-            ORDER BY "TemplateName";
+            SELECT t."ChecklistTemplateID",t."TemplateNumber",t."TemplateName",t."Subtitle",t."IsActive",
+                v."ChecklistTemplateVersionID" AS "ActiveVersionID",v."Revision"
+            FROM public."ChecklistTemplate" t
+            LEFT JOIN LATERAL (SELECT "ChecklistTemplateVersionID","Revision" FROM public."ChecklistTemplateVersion"
+              WHERE "ChecklistTemplateID"=t."ChecklistTemplateID" AND "Status"::text='Active'
+              ORDER BY "EffectiveDate" DESC NULLS LAST,"IssueDate" DESC NULLS LAST,"ChecklistTemplateVersionID" DESC LIMIT 1) v ON true
+            ORDER BY t."TemplateName",t."ChecklistTemplateID";
             """;
 
         await using var connection =

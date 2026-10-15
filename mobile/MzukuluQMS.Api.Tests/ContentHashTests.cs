@@ -20,5 +20,8 @@ public sealed class ContentHashTests
         Assert.Equal(Hash("""{"qcForm":{},"responses":[{"b":false,"a":0}]}"""),Hash("""{"responses":[{"a":0,"b":false}],"qcForm":{}}"""));
         Assert.NotEqual(Hash("""{"qcForm":{},"value":false}"""),Hash("""{"qcForm":{},"value":"false"}"""));
     }
+    [Theory][InlineData("executionHeader")][InlineData("remarks")]
+    public void Captured_header_and_remarks_are_signable(string key)
+    {Assert.NotEqual(Hash("{\"qcForm\":{},\""+key+"\":\"before\"}"),Hash("{\"qcForm\":{},\""+key+"\":\"after\"}"));}
     [Fact] public void Nonexistent_form_is_not_signed()=>Assert.Throws<KeyNotFoundException>(()=>Hash("""{"qcForm":null}"""));
 }

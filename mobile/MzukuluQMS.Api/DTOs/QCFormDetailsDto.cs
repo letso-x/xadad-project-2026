@@ -2,6 +2,9 @@
 
 public sealed class QCFormDetailsDto
 {
+    public System.Text.Json.JsonElement? DocumentSnapshot { get; init; }
+    public IReadOnlyList<string> RequiredSignOffTypes {get;init;}=[];
+    public string? Remarks { get; init; }
     public long Revision { get; init; }
 
     public long QCFormID { get; init; }

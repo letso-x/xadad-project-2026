@@ -21,7 +21,7 @@
 
             <Label
                 FontSize="14"
-                Text="Projects available from the QMS API" />
+                Text="Your accessible projects" />
         </VerticalStackLayout>
 
         <ActivityIndicator

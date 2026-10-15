@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Data.Sqlite;
@@ -5,7 +7,8 @@ namespace MzukuluQMS.Mobile.Core;
 
 public sealed record PendingOperation(Guid OperationId, Guid EntityId, string Kind, string Payload, long? ExpectedRevision, int Attempts, Guid? DependsOn);
 public sealed record LocalRecord(Guid LocalId, long? ServerId, string Json, bool Dirty);
-public sealed record SyncConflict(Guid OperationId,string LocalJson,string ServerJson,string Reason);
+public sealed record OutboxEntry(PendingOperation Operation,string Status,string? LastError,string? FailureJson=null);
+public sealed record SyncConflict(Guid OperationId,string LocalJson,string ServerJson,string Reason,string Status="Conflict");
 public interface ILocalKeyStore { Task<byte[]> GetKeyAsync(Guid owner, CancellationToken ct); }
 
 // SQLite metadata is NOT encrypted. Payload/file encryption is a defence in depth;
@@ -26,18 +29,21 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
             Directory.CreateDirectory(directory);
             key=await keys.GetKeyAsync(owner,ct);
             if(key.Length!=32) throw new InvalidOperationException("Local key must contain 256 bits.");
-            connection=new SqliteConnection(new SqliteConnectionStringBuilder {DataSource=Path.Combine(directory,$"qms-{owner:N}.db"),ForeignKeys=true}.ToString());
+            connection=new SqliteConnection(new SqliteConnectionStringBuilder {DataSource=Path.Combine(directory,$"qms-{owner:N}.db"),ForeignKeys=true,Pooling=false}.ToString());
             await connection.OpenAsync(ct);
             await using var version=connection.CreateCommand(); version.CommandText="PRAGMA user_version";
             var current=Convert.ToInt32(await version.ExecuteScalarAsync(ct));
-            if(current>1) throw new InvalidOperationException("Local database is newer than this application. Preserve it and upgrade the app.");
+            if(current>4) throw new InvalidOperationException("Local database is newer than this application. Preserve it and upgrade the app.");
             using var tx=connection.BeginTransaction();
             await ExecuteAsync("""
                 CREATE TABLE IF NOT EXISTS Entity(LocalId TEXT PRIMARY KEY,ServerId INTEGER,Payload BLOB NOT NULL,Dirty INTEGER NOT NULL);
                 CREATE TABLE IF NOT EXISTS Operation(OperationId TEXT PRIMARY KEY,EntityId TEXT NOT NULL REFERENCES Entity(LocalId),Kind TEXT NOT NULL,Payload BLOB NOT NULL,ExpectedRevision INTEGER,Status TEXT NOT NULL,Attempts INTEGER NOT NULL DEFAULT 0,CreatedAt INTEGER NOT NULL,NextAttempt INTEGER NOT NULL DEFAULT 0,LastError TEXT,DependsOn TEXT REFERENCES Operation(OperationId));
                 CREATE TABLE IF NOT EXISTS Conflict(OperationId TEXT PRIMARY KEY REFERENCES Operation(OperationId),LocalPayload BLOB NOT NULL,ServerPayload BLOB NOT NULL,Reason TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS Evidence(LocalId TEXT PRIMARY KEY,EntityId TEXT NOT NULL REFERENCES Entity(LocalId),Path TEXT NOT NULL,ContentType TEXT NOT NULL,FileName TEXT NOT NULL);
-                PRAGMA user_version=1;
+                CREATE TABLE IF NOT EXISTS OperationResult(OperationId TEXT PRIMARY KEY REFERENCES Operation(OperationId),Payload BLOB NOT NULL);
+                CREATE TABLE IF NOT EXISTS OperationDecision(OperationId TEXT PRIMARY KEY REFERENCES Operation(OperationId),Reason BLOB NOT NULL,DecidedAt INTEGER NOT NULL);
+                CREATE TABLE IF NOT EXISTS OperationFailure(OperationId TEXT PRIMARY KEY REFERENCES Operation(OperationId),Payload BLOB NOT NULL);
+                PRAGMA user_version=4;
                 UPDATE Operation SET Status='Pending' WHERE Status='Processing';
                 """,tx,ct);
             tx.Commit();
@@ -65,6 +71,18 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
             tx.Commit();
         },ct);return operationId;
     }
+    public async Task<string?> OperationResultAsync(Guid operationId,CancellationToken ct=default)
+    {
+        string? result=null;await Locked(async()=>{await using var cmd=Command("SELECT Payload FROM OperationResult WHERE OperationId=$id",null,("$id",operationId.ToString()));var bytes=await cmd.ExecuteScalarAsync(ct) as byte[];if(bytes is not null)result=Decrypt(bytes);},ct);return result;
+    }
+    public async Task<IReadOnlyList<LocalRecord>> RecordsAsync(CancellationToken ct=default)
+    {
+        var rows=new List<LocalRecord>();await Locked(async()=>{await using var cmd=Command("SELECT LocalId,ServerId,Payload,Dirty FROM Entity",null);await using var r=await cmd.ExecuteReaderAsync(ct);while(await r.ReadAsync(ct))rows.Add(new(Guid.Parse(r.GetString(0)),r.IsDBNull(1)?null:r.GetInt64(1),Decrypt((byte[])r[2]),r.GetInt64(3)!=0));},ct);return rows;
+    }
+    public async Task<bool> HasPendingTransitionAsync(Guid entityId,CancellationToken ct=default)
+    {
+        var pending=false;await Locked(async()=>{await using var cmd=Command("SELECT EXISTS(SELECT 1 FROM Operation WHERE EntityId=$id AND Status NOT IN('Completed','Cancelled') AND Kind IN('SubmitQCForm','ReturnForCorrection','ApproveQCForm','CreateSignOff'))",null,("$id",entityId.ToString()));pending=Convert.ToInt32(await cmd.ExecuteScalarAsync(ct))!=0;},ct);return pending;
+    }
     public async Task<LocalRecord?> GetAsync(Guid id,CancellationToken ct=default)
     {
         LocalRecord? record=null;await Locked(async()=>{
@@ -80,7 +98,7 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
                 SELECT o.OperationId,o.EntityId,o.Kind,o.Payload,o.ExpectedRevision,o.Attempts,o.DependsOn FROM Operation o
                 WHERE o.Status='Pending' AND o.NextAttempt<=$now
                  AND (o.DependsOn IS NULL OR EXISTS(SELECT 1 FROM Operation p WHERE p.OperationId=o.DependsOn AND p.Status='Completed'))
-                 AND NOT EXISTS(SELECT 1 FROM Operation prior WHERE prior.EntityId=o.EntityId AND prior.rowid<o.rowid AND prior.Status<>'Completed')
+                 AND NOT EXISTS(SELECT 1 FROM Operation prior WHERE prior.EntityId=o.EntityId AND prior.rowid<o.rowid AND prior.Status NOT IN('Completed','Cancelled'))
                 ORDER BY o.rowid LIMIT 1
                 """,tx,("$now",DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
             await using(var r=await cmd.ExecuteReaderAsync(ct))if(await r.ReadAsync(ct))result=new(Guid.Parse(r.GetString(0)),Guid.Parse(r.GetString(1)),r.GetString(2),Decrypt((byte[])r[3]),r.IsDBNull(4)?null:r.GetInt64(4),r.GetInt32(5),r.IsDBNull(6)?null:Guid.Parse(r.GetString(6)));
@@ -88,21 +106,41 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
             tx.Commit();
         },ct);return result;
     }
-    public async Task CompleteAsync(PendingOperation op,long? serverId,long? revision,CancellationToken ct=default)
+    public async Task CompleteAsync(PendingOperation op,long? serverId,long? revision,CancellationToken ct=default,string? resultJson=null)
     {
         await Locked(async()=>{
             using var tx=connection!.BeginTransaction();
+            if(resultJson is not null)await ExecuteAsync("INSERT INTO OperationResult VALUES($id,$payload) ON CONFLICT(OperationId) DO NOTHING",tx,ct,("$id",op.OperationId.ToString()),("$payload",Encrypt(resultJson)));
             await ExecuteAsync("UPDATE Operation SET Status='Completed',LastError=NULL WHERE OperationId=$id",tx,ct,("$id",op.OperationId.ToString()));
-            await ExecuteAsync("UPDATE Entity SET ServerId=COALESCE($server,ServerId),Dirty=EXISTS(SELECT 1 FROM Operation WHERE EntityId=$entity AND Status<>'Completed') WHERE LocalId=$entity",tx,ct,("$server",serverId),("$entity",op.EntityId.ToString()));
-            // Acknowledgement advances only dependent unsent requests, never overwrites a recorded conflict.
-            if(revision.HasValue)await ExecuteAsync("UPDATE Operation SET ExpectedRevision=$revision WHERE EntityId=$entity AND Status='Pending'",tx,ct,("$revision",revision),("$entity",op.EntityId.ToString()));
+            await ExecuteAsync("UPDATE Entity SET ServerId=COALESCE($server,ServerId),Dirty=EXISTS(SELECT 1 FROM Operation WHERE EntityId=$entity AND Status NOT IN('Completed','Cancelled')) WHERE LocalId=$entity",tx,ct,("$server",serverId),("$entity",op.EntityId.ToString()));
+            // Persist acknowledged revision even while later local edits keep the entity dirty.
+            await using(var payloadCommand=Command("SELECT Payload FROM Entity WHERE LocalId=$entity",tx,("$entity",op.EntityId.ToString())))
+            {
+                var payload=await payloadCommand.ExecuteScalarAsync(ct) as byte[];
+                if(payload is not null && revision.HasValue)
+                {
+                    try {
+                        var node=JsonNode.Parse(Decrypt(payload));
+                        if(node is JsonObject obj) {
+                            obj["revision"]=revision.Value;
+                            if(op.Kind=="SubmitQCForm")obj["status"]="Submitted";
+                            if(op.Kind=="ReturnForCorrection")obj["status"]="ReturnedForCorrection";
+                            if(op.Kind=="ApproveQCForm")obj["status"]="Approved";
+                            await ExecuteAsync("UPDATE Entity SET Payload=$payload WHERE LocalId=$entity",tx,ct,("$entity",op.EntityId.ToString()),("$payload",Encrypt(obj.ToJsonString())));
+                        }
+                    }catch(JsonException){ /* Earlier non-JSON synthetic cache entries remain intact. */ }
+                }
+            }
+            // Never alter an already-attempted retry's fingerprint after a lost response.
+            if(revision.HasValue)await ExecuteAsync("UPDATE Operation SET ExpectedRevision=$revision WHERE EntityId=$entity AND Status='Pending' AND Attempts=0",tx,ct,("$revision",revision),("$entity",op.EntityId.ToString()));
             tx.Commit();
         },ct);
     }
-    public async Task FailAsync(PendingOperation op,string reason,bool transient,bool conflict=false,string? serverJson=null,CancellationToken ct=default)
+    public async Task FailAsync(PendingOperation op,string reason,bool transient,bool conflict=false,string? serverJson=null,CancellationToken ct=default,string? failureJson=null)
     {
         await Locked(async()=>{
             using var tx=connection!.BeginTransaction();
+            if(failureJson is not null)await ExecuteAsync("INSERT INTO OperationFailure VALUES($id,$payload) ON CONFLICT(OperationId) DO UPDATE SET Payload=excluded.Payload",tx,ct,("$id",op.OperationId.ToString()),("$payload",Encrypt(failureJson)));
             var state=conflict?"Conflict":transient?"Pending":"Failed";
             var next=DateTimeOffset.UtcNow.AddSeconds(Math.Min(300,Math.Pow(2,Math.Min(op.Attempts+1,8)))).ToUnixTimeMilliseconds();
             await ExecuteAsync("UPDATE Operation SET Status=$status,LastError=$reason,NextAttempt=$next WHERE OperationId=$id",tx,ct,("$status",state),("$reason",reason),("$next",next),("$id",op.OperationId.ToString()));
@@ -110,15 +148,33 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
             tx.Commit();
         },ct);
     }
+    public async Task WithdrawRejectedWorkflowAsync(Guid operationId,string reason,CancellationToken ct=default)
+    {
+        if(string.IsNullOrWhiteSpace(reason)||reason.Length>2000)throw new ArgumentException("A withdrawal reason is required (max 2000).");
+        await Locked(async()=>{
+            using var tx=connection!.BeginTransaction();
+            string? entity=null;
+            await using(var cmd=Command("SELECT EntityId FROM Operation WHERE OperationId=$id AND Status IN('Failed','Conflict') AND Kind IN('SubmitQCForm','ReturnForCorrection','ApproveQCForm','CreateSignOff')",tx,("$id",operationId.ToString())))entity=await cmd.ExecuteScalarAsync(ct) as string;
+            if(entity is null)throw new InvalidOperationException("Only a failed/conflicting workflow action can be withdrawn. Pending work and value/evidence edits remain retained.");
+            await ExecuteAsync("INSERT INTO OperationDecision VALUES($id,$reason,$now)",tx,ct,("$id",operationId.ToString()),("$reason",Encrypt(reason)),("$now",DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            await ExecuteAsync("UPDATE Operation SET Status='Cancelled' WHERE OperationId=$id",tx,ct,("$id",operationId.ToString()));
+            await ExecuteAsync("UPDATE Entity SET Dirty=EXISTS(SELECT 1 FROM Operation WHERE EntityId=$entity AND Status NOT IN('Completed','Cancelled')) WHERE LocalId=$entity",tx,ct,("$entity",entity));
+            tx.Commit();
+        },ct);
+    }
     public async Task<IReadOnlyList<SyncConflict>> ConflictsAsync(CancellationToken ct=default)
     {
-        var rows=new List<SyncConflict>();await Locked(async()=>{await using var cmd=Command("SELECT OperationId,LocalPayload,ServerPayload,Reason FROM Conflict",null);await using var r=await cmd.ExecuteReaderAsync(ct);while(await r.ReadAsync(ct)) rows.Add(new(Guid.Parse(r.GetString(0)),Decrypt((byte[])r[1]),Decrypt((byte[])r[2]),r.GetString(3)));},ct);return rows;
+        var rows=new List<SyncConflict>();await Locked(async()=>{await using var cmd=Command("SELECT c.OperationId,c.LocalPayload,c.ServerPayload,c.Reason,o.Status FROM Conflict c JOIN Operation o ON o.OperationId=c.OperationId",null);await using var r=await cmd.ExecuteReaderAsync(ct);while(await r.ReadAsync(ct)) rows.Add(new(Guid.Parse(r.GetString(0)),Decrypt((byte[])r[1]),Decrypt((byte[])r[2]),r.GetString(3),r.GetString(4)));},ct);return rows;
+    }
+    public async Task<IReadOnlyList<OutboxEntry>> OutboxAsync(CancellationToken ct=default)
+    {
+        var rows=new List<OutboxEntry>();await Locked(async()=>{await using var cmd=Command("SELECT o.OperationId,o.EntityId,o.Kind,o.Payload,o.ExpectedRevision,o.Attempts,o.DependsOn,o.Status,o.LastError,f.Payload FROM Operation o LEFT JOIN OperationFailure f ON f.OperationId=o.OperationId ORDER BY o.rowid",null);await using var r=await cmd.ExecuteReaderAsync(ct);while(await r.ReadAsync(ct))rows.Add(new(new(Guid.Parse(r.GetString(0)),Guid.Parse(r.GetString(1)),r.GetString(2),Decrypt((byte[])r[3]),r.IsDBNull(4)?null:r.GetInt64(4),r.GetInt32(5),r.IsDBNull(6)?null:Guid.Parse(r.GetString(6))),r.GetString(7),r.IsDBNull(8)?null:r.GetString(8),r.IsDBNull(9)?null:Decrypt((byte[])r[9])));},ct);return rows;
     }
     public async Task<IReadOnlyDictionary<string,int>> CountsAsync(CancellationToken ct=default)
     {
         var rows=new Dictionary<string,int>();await Locked(async()=>{await using var cmd=Command("SELECT Status,COUNT(*) FROM Operation GROUP BY Status",null);await using var r=await cmd.ExecuteReaderAsync(ct);while(await r.ReadAsync(ct))rows.Add(r.GetString(0),r.GetInt32(1));},ct);return rows;
     }
-    public async Task<Guid> SaveEvidenceAsync(Guid entityId,Stream source,string contentType,string fileName,CancellationToken ct=default)
+    public async Task<Guid> SaveEvidenceAsync(Guid entityId,Stream source,string contentType,string fileName,CancellationToken ct=default,Func<Guid,SyncRequest>? uploadRequest=null,string? localJson=null,long? expectedRevision=null,SyncRequest? signOffRequest=null)
     {
         await InitialiseAsync(ct);
         // Copy/flush first; an interrupted DB write leaves a recoverable orphan, never a false saved intent.
@@ -132,7 +188,19 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
         }
         var encrypted=EncryptBytes(buffer.ToArray());
         await using(var file=new FileStream(destination,FileMode.CreateNew,FileAccess.Write,FileShare.None,8192,FileOptions.WriteThrough)){await file.WriteAsync(encrypted,ct);file.Flush(true);}
-        await Locked(async()=>{await ExecuteAsync("INSERT INTO Evidence VALUES($id,$entity,$path,$type,$name)",null,ct,("$id",id.ToString()),("$entity",entityId.ToString()),("$path",destination),("$type",contentType),("$name",Path.GetFileName(fileName)));},ct);return id;
+        await Locked(async()=>{
+            using var tx=connection!.BeginTransaction();
+            await ExecuteAsync("INSERT INTO Evidence VALUES($id,$entity,$path,$type,$name)",tx,ct,("$id",id.ToString()),("$entity",entityId.ToString()),("$path",destination),("$type",contentType),("$name",Path.GetFileName(fileName)));
+            if(uploadRequest is not null)
+            {
+                var operation=Guid.NewGuid();
+                await ExecuteAsync("UPDATE Entity SET Payload=$payload,Dirty=1 WHERE LocalId=$entity",tx,ct,("$payload",Encrypt(localJson??throw new ArgumentException("Local snapshot is required."))),("$entity",entityId.ToString()));
+                await ExecuteAsync("INSERT INTO Operation(OperationId,EntityId,Kind,Payload,ExpectedRevision,Status,CreatedAt) VALUES($op,$entity,'UploadEvidence',$payload,$revision,'Pending',$now)",tx,ct,("$op",operation.ToString()),("$entity",entityId.ToString()),("$payload",Encrypt(JsonSerializer.Serialize(uploadRequest(id)))),("$revision",expectedRevision),("$now",DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+                if(signOffRequest is not null)
+                    await ExecuteAsync("INSERT INTO Operation(OperationId,EntityId,Kind,Payload,ExpectedRevision,Status,CreatedAt,DependsOn) VALUES($op,$entity,'CreateSignOff',$payload,$revision,'Pending',$now,$depends)",tx,ct,("$op",Guid.NewGuid().ToString()),("$entity",entityId.ToString()),("$payload",Encrypt(JsonSerializer.Serialize(signOffRequest with {EvidenceOperationId=operation}))),("$revision",expectedRevision),("$now",DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()),("$depends",operation.ToString()));
+            }
+            tx.Commit();
+        },ct);return id;
     }
     public async Task<byte[]> ReadEvidenceAsync(Guid id,CancellationToken ct=default)
     {

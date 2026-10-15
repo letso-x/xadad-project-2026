@@ -28,6 +28,7 @@ public static class MauiProgram
             });
 
         builder.Services.AddSingleton<FieldSession>();
+        builder.Services.AddSingleton<IFieldMedia,FieldMedia>();
         builder.Services.AddSingleton<InspectionWorkspace>();
         builder.Services.AddTransient<FieldLoginPage>();
         builder.Services.AddScoped<IProjectService, ProjectService>();

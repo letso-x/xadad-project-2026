@@ -19,6 +19,10 @@ public sealed class ChecklistTemplatesController : ControllerBase
         _service = service;
     }
 
+    [HttpPost,Authorize(Policy="ManageTemplates")]
+    public async Task<IActionResult> Create([FromBody] CreateChecklistTemplateRequest request,[FromServices] MzukuluQMS.Api.Services.Workflow.TemplateAuthoring authoring,CancellationToken ct)
+      =>StatusCode(201,await authoring.CreateAsync(request,ct));
+
     [HttpGet]
     [ProducesResponseType(
         typeof(IReadOnlyList<ChecklistTemplateDto>),

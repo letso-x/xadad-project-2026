@@ -54,10 +54,9 @@ public sealed class SupabaseEvidenceStorage : IEvidenceStorage
                 HttpMethod.Post,
                 url);
 
-        request.Headers.Authorization =
-            new AuthenticationHeaderValue(
-                "Bearer",
-                _options.SecretKey);
+        // Modern publishable/secret keys are API keys, not bearer JWTs.
+        if (!_options.SecretKey.StartsWith("sb_", StringComparison.Ordinal))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.SecretKey);
 
         request.Headers.Add(
             "apikey",
@@ -115,10 +114,9 @@ public sealed class SupabaseEvidenceStorage : IEvidenceStorage
                 HttpMethod.Delete,
                 url);
 
-        request.Headers.Authorization =
-            new AuthenticationHeaderValue(
-                "Bearer",
-                _options.SecretKey);
+        // Modern publishable/secret keys are API keys, not bearer JWTs.
+        if (!_options.SecretKey.StartsWith("sb_", StringComparison.Ordinal))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.SecretKey);
 
         request.Headers.Add(
             "apikey",
@@ -138,4 +136,19 @@ public sealed class SupabaseEvidenceStorage : IEvidenceStorage
                 $"Status: {(int)response.StatusCode}.");
         }
     }
+    public async Task<byte[]> DownloadAsync(string bucket,string path,CancellationToken cancellationToken=default)
+    {
+        const int maximum=20*1024*1024;
+        var encoded=string.Join("/",path.Split('/').Select(Uri.EscapeDataString));
+        using var request=new HttpRequestMessage(HttpMethod.Get,$"{_options.BaseUrl.TrimEnd('/')}/storage/v1/object/authenticated/{Uri.EscapeDataString(bucket)}/{encoded}");
+        request.Headers.Add("apikey",_options.SecretKey);
+        if(!_options.SecretKey.StartsWith("sb_",StringComparison.Ordinal))request.Headers.Authorization=new AuthenticationHeaderValue("Bearer",_options.SecretKey);
+        using var response=await _httpClient.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,cancellationToken);
+        if(!response.IsSuccessStatusCode)throw new InvalidOperationException($"Private evidence download failed. Status: {(int)response.StatusCode}.");
+        if(response.Content.Headers.ContentLength>maximum)throw new InvalidOperationException("Evidence exceeds the supported download limit.");
+        await using var stream=await response.Content.ReadAsStreamAsync(cancellationToken);using var output=new MemoryStream();
+        var buffer=new byte[81920];int count;while((count=await stream.ReadAsync(buffer,cancellationToken))>0){if(output.Length+count>maximum)throw new InvalidOperationException("Evidence exceeds the supported download limit.");await output.WriteAsync(buffer.AsMemory(0,count),cancellationToken);}
+        return output.ToArray();
+    }
+
 }

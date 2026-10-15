@@ -165,9 +165,7 @@ public sealed class QCFormService : IQCFormService
             answeredByUserId: currentUser.UserID,
             cancellationToken);
 
-        if (validation.FieldType.Equals("Dropdown", StringComparison.OrdinalIgnoreCase)
-            && request.Value.ValueKind==System.Text.Json.JsonValueKind.String
-            && request.Value.GetString()!.Equals("Fail",StringComparison.OrdinalIgnoreCase))
+        if (InspectionOutcome.IsFailure(validation.FieldType,validation.OptionsJson,request.Value))
             await _ncr.RecordFailureAsync(qcFormId,qcResponseId,cancellationToken);
         await operation.CompleteAsync("QCResponseUpdated", qcFormId, new { qcResponseId }, cancellationToken);
 }

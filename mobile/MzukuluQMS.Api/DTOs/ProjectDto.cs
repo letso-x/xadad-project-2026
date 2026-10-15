@@ -2,6 +2,8 @@
 
 public sealed class ProjectDto
 {
+    public string? ClientName {get;init;}
+    public long? QCFormCount {get;init;}
     public long ProjectID { get; init; }
     public long ClientID { get; init; }
 

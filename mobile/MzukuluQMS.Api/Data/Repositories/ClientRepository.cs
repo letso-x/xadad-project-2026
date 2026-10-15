@@ -1,16 +1,19 @@
 ﻿using Dapper;
 using MzukuluQMS.Api.DTOs;
+using MzukuluQMS.Api.Services.Users;
 
 namespace MzukuluQMS.Api.Data.Repositories;
 
 public sealed class ClientRepository : IClientRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;
+    private readonly ICurrentUserService _currentUsers;
 
     public ClientRepository(
-        IDbConnectionFactory connectionFactory)
+        IDbConnectionFactory connectionFactory, ICurrentUserService currentUsers)
     {
         _connectionFactory = connectionFactory;
+        _currentUsers = currentUsers;
     }
 
     public async Task<IReadOnlyList<ClientDto>> GetAllAsync(
@@ -108,7 +111,7 @@ public sealed class ClientRepository : IClientRepository
             "City",
             "Province",
             "PostalCode",
-            "IsActive",
+            "IsActive"
         )
         VALUES
         (
@@ -141,17 +144,24 @@ public sealed class ClientRepository : IClientRepository
             "UpdatedAt";
         """;
 
+        var actor = await _currentUsers.GetCurrentUserAsync(cancellationToken);
         await using var connection =
             await _connectionFactory.CreateOpenConnectionAsync(
                 cancellationToken);
 
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var command = new CommandDefinition(
             sql,
-            request,
+            request, transaction,
             cancellationToken: cancellationToken);
 
-        return await connection.QuerySingleAsync<ClientDto>(
-            command);
+        var result = await connection.QuerySingleAsync<ClientDto>(command);
+        await connection.ExecuteAsync(new CommandDefinition("""
+            INSERT INTO qms_security."AuditEvent" ("ActorUserID","Action","EntityType","EntityID","Details")
+            VALUES (@actor,'ClientCreated','Client',@id,jsonb_build_object('isActive',CAST(@active AS boolean)))
+            """,new { actor=actor.UserID,id=result.ClientID,active=result.IsActive },transaction,cancellationToken:cancellationToken));
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
     public async Task<ClientDto?> UpdateAsync(
     long clientId,
@@ -191,6 +201,7 @@ public sealed class ClientRepository : IClientRepository
             "UpdatedAt";
         """;
 
+        var actor = await _currentUsers.GetCurrentUserAsync(cancellationToken);
         await using var connection =
             await _connectionFactory.CreateOpenConnectionAsync(
                 cancellationToken);
@@ -211,13 +222,20 @@ public sealed class ClientRepository : IClientRepository
             request.IsActive
         };
 
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var command = new CommandDefinition(
             sql,
-            parameters,
+            parameters, transaction,
             cancellationToken: cancellationToken);
 
-        return await connection.QuerySingleOrDefaultAsync<ClientDto>(
-            command);
+        var result = await connection.QuerySingleOrDefaultAsync<ClientDto>(command);
+        if(result is null)return null;
+        await connection.ExecuteAsync(new CommandDefinition("""
+            INSERT INTO qms_security."AuditEvent" ("ActorUserID","Action","EntityType","EntityID","Details")
+            VALUES (@actor,'ClientUpdated','Client',@id,jsonb_build_object('isActive',CAST(@active AS boolean)))
+            """,new { actor=actor.UserID,id=clientId,active=result.IsActive },transaction,cancellationToken:cancellationToken));
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 
 }

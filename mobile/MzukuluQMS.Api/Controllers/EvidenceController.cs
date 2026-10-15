@@ -11,11 +11,21 @@ namespace MzukuluQMS.Api.Controllers;
 public sealed class EvidenceController : ControllerBase
 {
     private readonly IEvidenceService _service;
+    private readonly EvidenceContentService _content;
 
     public EvidenceController(
-        IEvidenceService service)
+        IEvidenceService service, EvidenceContentService content)
     {
         _service = service;
+        _content = content;
+    }
+
+    [HttpGet("{evidenceId:long}/content")]
+    public async Task<IActionResult> Download(long qcFormId,long evidenceId,CancellationToken ct)
+    {
+        var file=await _content.DownloadAsync(qcFormId,evidenceId,ct);
+        Response.Headers.CacheControl="no-store";Response.Headers["X-Content-Type-Options"]="nosniff";
+        return File(file.Bytes,file.ContentType,file.FileName);
     }
 
     [HttpPost]

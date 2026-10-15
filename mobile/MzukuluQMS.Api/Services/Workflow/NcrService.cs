@@ -23,9 +23,19 @@ public sealed class NcrService(QmsDbSession session,IQCWorkflow workflow,ICurren
  public async Task<IReadOnlyList<NcrRow>> ListAsync(long formId,CancellationToken ct)
  {
   await using var access=await workflow.BeginAsync(formId,null,"ReadNcr",ct);
-  return (await session.Connection!.QueryAsync<NcrRow>(new CommandDefinition("""
-    SELECT * FROM qms_core."Ncr" WHERE "QCFormID"=@formId ORDER BY "NcrID" DESC LIMIT 100
+  var current=(await session.Connection!.QueryAsync<NcrRow>(new CommandDefinition("""
+    SELECT n.*,n."LegacyNCRID" AS "PublicNCRID",p."NCRNumber" FROM qms_core."Ncr" n
+    LEFT JOIN public."NCR" p ON p."NCRID"=n."LegacyNCRID" WHERE n."QCFormID"=@formId ORDER BY n."NcrID" DESC LIMIT 100
     """,new {formId},session.Transaction,cancellationToken:ct))).AsList();
+  var historical=await session.Connection!.QueryAsync<NcrRow>(new CommandDefinition("""
+    SELECT 0::bigint AS "NcrID",legacy."NCRID" AS "PublicNCRID",legacy."NCRNumber",legacy."QCFormID",q."ProjectID",
+      legacy."RaisedByUserID" AS "CreatedByUserID",legacy."RaisedAt" AS "CreatedAt",COALESCE(legacy."Severity",'') AS "Severity",
+      'Historical / unclassified' AS "Classification",legacy."CorrectiveAction",legacy."ClosedAt",true AS "IsLegacyOnly"
+    FROM public."NCR" legacy JOIN public."QCForm" q ON q."QCFormID"=legacy."QCFormID"
+    WHERE legacy."QCFormID"=@formId AND NOT EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID")
+    ORDER BY legacy."NCRID" DESC LIMIT 100
+    """,new {formId},session.Transaction,cancellationToken:ct));
+  return current.Concat(historical).ToList();
  }
  public async Task CorrectAsync(long formId,long ncrId,CorrectNcrRequest request,CancellationToken ct)
  {
@@ -60,8 +70,10 @@ public sealed record CorrectNcrRequest(string Severity,string Classification,boo
 public sealed record VerifyNcrRequest(bool Passed,string Comments,long ExpectedRevision);
 public sealed record NcrRow
 {
- public long NcrID {get;init;} public long ProjectID {get;init;} public long QCFormID {get;init;} public long QCResponseID {get;init;} public long QCFormFieldID {get;init;}
- public Guid CreatedByUserID {get;init;} public DateTimeOffset CreatedAt {get;init;} public string Severity {get;init;}="";public string Classification {get;init;}="";
+ public bool IsLegacyOnly {get;init;}
+ public long? PublicNCRID {get;init;} public string? NCRNumber {get;init;}
+ public long NcrID {get;init;} public long ProjectID {get;init;} public long QCFormID {get;init;} public long? QCResponseID {get;init;} public long? QCFormFieldID {get;init;}
+ public Guid? CreatedByUserID {get;init;} public DateTimeOffset CreatedAt {get;init;} public string Severity {get;init;}="";public string Classification {get;init;}="";
  public bool? IsBlocking {get;init;} public string? Disposition {get;init;} public string? CorrectiveAction {get;init;} public Guid? CorrectedByUserID {get;init;}
  public long? CorrectiveEvidenceID {get;init;} public Guid? VerifierUserID {get;init;} public DateTimeOffset? VerifiedAt {get;init;} public bool? VerificationPassed {get;init;} public string? VerificationComments {get;init;} public DateTimeOffset? ClosedAt {get;init;} public long Revision {get;init;}
 }
@@ -75,6 +87,7 @@ public static class NcrRules
  public static void ValidateVerification(NcrRow row,Guid verifier,long expectedRevision)
  {
   if(row.ClosedAt.HasValue || row.Revision!=expectedRevision)throw new InvalidOperationException("NCR is closed or changed.");
+  if(row.CreatedByUserID is null)throw new InvalidOperationException("Creator identity is required for independent verification.");
   if(row.CorrectedByUserID is null || string.IsNullOrWhiteSpace(row.CorrectiveAction)||!row.CorrectiveEvidenceID.HasValue||!row.IsBlocking.HasValue)throw new InvalidOperationException("NCR corrective action/evidence/classification is incomplete.");
   if(row.CorrectedByUserID==verifier || row.CreatedByUserID==verifier)throw new InvalidOperationException("Independent verification requires a different person from the creator and corrective actor.");
  }

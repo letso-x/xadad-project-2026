@@ -18,7 +18,8 @@ public sealed class AuthController : ControllerBase
         _userRepository = userRepository;
     }
 
-    [Authorize]
+    // Identity linkage is the only QMS bootstrap operation available before MFA.
+    [Authorize(Policy="AuthBootstrap")]
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUser(
         CancellationToken cancellationToken)

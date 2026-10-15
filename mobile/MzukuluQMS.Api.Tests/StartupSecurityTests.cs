@@ -20,7 +20,7 @@ public sealed class StartupSecurityTests
    }));
   }
  }
- [Theory][InlineData("/api/projects")][InlineData("/api/clients")][InlineData("/api/checklist-templates")][InlineData("/api/qc-forms/101")][InlineData("/api/quality/notifications")]
+ [Theory][InlineData("/api/projects")][InlineData("/api/clients")][InlineData("/api/checklist-templates")][InlineData("/api/qc-forms/101")][InlineData("/api/quality/notifications")][InlineData("/api/auth/permissions")][InlineData("/api/quality/dashboard")][InlineData("/api/qc-forms/101/evidence")][InlineData("/api/qc-forms/101/evidence/999/content")]
  public async Task Anonymous_requests_are_401_in_real_pipeline(string route)
  {
   await using var app=new App();using var client=app.CreateClient(new WebApplicationFactoryClientOptions{BaseAddress=new Uri("https://localhost"),AllowAutoRedirect=false});using var response=await client.GetAsync(route);Assert.Equal(HttpStatusCode.Unauthorized,response.StatusCode);
@@ -32,5 +32,7 @@ public sealed class StartupSecurityTests
   Assert.NotNull(scope.ServiceProvider.GetRequiredService<IQCSignOffService>());
   Assert.NotNull(scope.ServiceProvider.GetRequiredService<IEvidenceService>());
   Assert.NotNull(scope.ServiceProvider.GetRequiredService<QualityReporting>());
+  Assert.NotNull(scope.ServiceProvider.GetRequiredService<TemplateAuthoring>());
+  Assert.NotNull(scope.ServiceProvider.GetRequiredService<EvidenceContentService>());
  }
 }

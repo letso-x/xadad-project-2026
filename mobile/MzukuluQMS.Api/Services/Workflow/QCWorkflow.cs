@@ -75,6 +75,12 @@ public sealed class QCWorkflow(QmsDbSession session, ICurrentUserService users, 
             SELECT EXISTS(SELECT 1 FROM qms_core."Ncr" WHERE "QCFormID"=@formId AND "ClosedAt" IS NULL AND COALESCE("IsBlocking",true))
             """,new {formId},session.Transaction,cancellationToken:ct)))
             throw new InvalidOperationException("Unresolved blocking or unclassified NCR prevents approval.");
+        if(await session.Connection!.ExecuteScalarAsync<bool>(new CommandDefinition("""
+            SELECT EXISTS(SELECT 1 FROM public."NCR" legacy WHERE legacy."QCFormID"=@formId AND legacy."ClosedAt" IS NULL
+              AND (NOT EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID")
+                OR EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID" AND (n."ClosedAt" IS NOT NULL OR COALESCE(n."IsBlocking",true)))))
+            """,new {formId},session.Transaction,cancellationToken:ct)))
+            throw new InvalidOperationException("An unresolved historical NCR or inconsistent NCR closure prevents approval; reconcile its blocking policy and verification history.");
         // Requirements are execution snapshots, never the latest live template policy.
         var required = (await session.Connection!.QueryAsync<string>(new CommandDefinition("""
             SELECT "SignOffType" FROM qms_security."FormSignatureRequirement" WHERE "QCFormID"=@formId ORDER BY "SignOffType"

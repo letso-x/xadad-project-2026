@@ -7,8 +7,8 @@ public static class ApiConstants
 #elif IOS
     public const string BaseUrl = "https://localhost:7044/";
 #elif WINDOWS
-    public const string BaseUrl = "http://localhost:5163/";
+    public const string BaseUrl = "https://localhost:7044/";
 #else
-    public const string BaseUrl = "http://localhost:5163/";
+    public const string BaseUrl = "https://localhost:7044/";
 #endif
 }

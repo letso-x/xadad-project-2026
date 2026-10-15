@@ -9,6 +9,7 @@ public interface IEvidenceStorage
         long qcFormId,
         long? qcFormFieldId,
         CancellationToken cancellationToken = default);
+    Task<byte[]> DownloadAsync(string bucket,string path,CancellationToken cancellationToken = default);
     Task DeleteAsync(
     string bucket,
     string path,

@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 namespace MzukuluQMS.Mobile.Core;
-public sealed record SyncRequest(string Method,string Route,string? Body=null,Guid? EvidenceId=null,string? EvidenceType=null,long? QCFormFieldID=null);
+public sealed record SyncRequest(string Method,string Route,string? Body=null,Guid? EvidenceId=null,string? EvidenceType=null,long? QCFormFieldID=null,Guid? EvidenceOperationId=null);
 public sealed record SyncReply(int Status,string Body,long? Revision,long? ServerId,string? ServerSnapshot=null);
 public interface ISyncTransport { Task<SyncReply> SendAsync(PendingOperation operation,CancellationToken ct); }
 public interface ISyncSession { Guid? Owner {get;} Task<string?> GetAccessTokenAsync(CancellationToken ct); }
@@ -22,11 +22,13 @@ public sealed class SyncEngine(OfflineStore store,ISyncSession session,ISyncTran
     try
     {
      var reply=await transport.SendAsync(operation,ct);
-     if(reply.Status is >=200 and <300)await store.CompleteAsync(operation,reply.ServerId,reply.Revision,ct);
-     else if(reply.Status==401){await store.FailAsync(operation,"Authentication required",true,ct:ct);return "Authentication required";}
-     else if(reply.Status==409)await store.FailAsync(operation,"Central record changed; review conflict",false,true,reply.ServerSnapshot??reply.Body,ct);
-     else await store.FailAsync(operation,"API returned HTTP "+reply.Status,reply.Status>=500 && operation.Attempts<8,ct:ct);
+     if(reply.Status is >=200 and <300)await store.CompleteAsync(operation,reply.ServerId,reply.Revision,ct,reply.Body);
+     else if(reply.Status==401){await store.FailAsync(operation,"Authentication required",true,ct:ct,failureJson:reply.Body);return "Authentication required";}
+     else if(reply.Status==409)await store.FailAsync(operation,"Central record changed; review conflict",false,true,reply.ServerSnapshot??reply.Body,ct,failureJson:reply.Body);
+     else await store.FailAsync(operation,"API returned HTTP "+reply.Status,(reply.Status>=500 || reply.Status==429) && operation.Attempts<8,ct:ct,failureJson:reply.Body);
     }
+    catch(OperationCanceledException) when(!ct.IsCancellationRequested)
+    {await store.FailAsync(operation,"API request timed out",operation.Attempts<8,ct:ct);}
     catch(OperationCanceledException)
     {
      await store.FailAsync(operation,"Sync interrupted",true,ct:CancellationToken.None);throw;
@@ -67,7 +69,18 @@ public sealed class HttpSyncTransport(HttpClient client,OfflineStore store,ISync
    var png=bytes.Length>=4 && bytes[0]==137 && bytes[1]==80;file.Headers.ContentType=new MediaTypeHeaderValue(png?"image/png":"image/jpeg");
    multipart.Add(file,"File",png?"evidence.png":"evidence.jpg");message.Content=multipart;
   }
-  else if(request.Body is not null)message.Content=new StringContent(request.Body,Encoding.UTF8,"application/json");
+  else if(request.Body is not null)
+  {
+   var requestBody=request.Body;
+   if(request.EvidenceOperationId.HasValue)
+   {
+    var saved=await store.OperationResultAsync(request.EvidenceOperationId.Value,ct)??throw new InvalidOperationException("Signature evidence has not been acknowledged.");
+    using var evidence=JsonDocument.Parse(saved);
+    var id=evidence.RootElement.GetProperty("evidenceID").GetInt64();
+    var node=System.Text.Json.Nodes.JsonNode.Parse(requestBody)!.AsObject();node["signatureEvidenceID"]=id;requestBody=node.ToJsonString();
+   }
+   message.Content=new StringContent(requestBody,Encoding.UTF8,"application/json");
+  }
   using var response=await client.SendAsync(message,ct);var body=await response.Content.ReadAsStringAsync(ct);
   long? revision=long.TryParse(response.Headers.ETag?.Tag.Trim('"'),out var parsed)?parsed:null;
   long? serverId=null;

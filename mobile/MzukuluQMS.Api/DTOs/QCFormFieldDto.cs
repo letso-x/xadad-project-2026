@@ -37,6 +37,7 @@ public sealed class QCFormFieldDto
     public bool IsAnswered { get; init; }
 
     public Guid? AnsweredByUserID { get; init; }
+    public string? AnsweredByName { get; init; }
 
     public DateTime? AnsweredAt { get; init; }
 

@@ -20,6 +20,9 @@ public sealed class ProjectRepository : IProjectRepository
     {
         const string sql = """
             SELECT
+                (SELECT c."ClientName" FROM public."Client" c WHERE c."ClientID"="Project"."ClientID") AS "ClientName",
+                CASE WHEN EXISTS(SELECT 1 FROM public."User" u JOIN qms_security."RolePermission" rp ON rp."RoleName"=u."Role"::text WHERE u."UserID"=@UserID AND u."IsActive" AND rp."Permission"='ReadInspection')
+                  THEN (SELECT count(*) FROM public."QCForm" q WHERE q."ProjectID"="Project"."ProjectID") END AS "QCFormCount",
                 "ProjectID",
                 "ClientID",
                 "ProjectNumber",
@@ -61,7 +64,10 @@ public sealed class ProjectRepository : IProjectRepository
     {
         const string sql = """
         SELECT
-            "ProjectID",
+            (SELECT c."ClientName" FROM public."Client" c WHERE c."ClientID"="Project"."ClientID") AS "ClientName",
+                CASE WHEN EXISTS(SELECT 1 FROM public."User" u JOIN qms_security."RolePermission" rp ON rp."RoleName"=u."Role"::text WHERE u."UserID"=@UserID AND u."IsActive" AND rp."Permission"='ReadInspection')
+                  THEN (SELECT count(*) FROM public."QCForm" q WHERE q."ProjectID"="Project"."ProjectID") END AS "QCFormCount",
+                "ProjectID",
             "ClientID",
             "ProjectNumber",
             "ProjectName",
@@ -149,6 +155,8 @@ public sealed class ProjectRepository : IProjectRepository
             await _connectionFactory.CreateOpenConnectionAsync(
                 cancellationToken);
 
+        var actor=await _users.GetCurrentUserAsync(cancellationToken);
+        await using var transaction=await connection.BeginTransactionAsync(cancellationToken);
         var command = new CommandDefinition(
             sql,
             new
@@ -165,8 +173,14 @@ public sealed class ProjectRepository : IProjectRepository
                 request.StartDate,
                 request.EndDate
             },
-            cancellationToken: cancellationToken);
+            transaction, cancellationToken: cancellationToken);
 
-        return await connection.QuerySingleAsync<ProjectDto>(command);
+        var project=await connection.QuerySingleAsync<ProjectDto>(command);
+        await connection.ExecuteAsync(new CommandDefinition("""
+            INSERT INTO qms_security."ProjectAccess" ("UserID","ProjectID") VALUES(@userId,@projectId) ON CONFLICT DO NOTHING;
+            INSERT INTO qms_security."AuditEvent" ("ActorUserID","Action","EntityType","EntityID","Details")
+            VALUES(@userId,'ProjectCreated','Project',@projectId,'{}'::jsonb)
+            """,new {userId=actor.UserID,projectId=project.ProjectID},transaction,cancellationToken:cancellationToken));
+        await transaction.CommitAsync(cancellationToken);return project;
     }
 }

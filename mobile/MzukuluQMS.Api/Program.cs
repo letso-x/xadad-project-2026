@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using MzukuluQMS.Api.Configuration;
 using MzukuluQMS.Api.Data;
@@ -17,6 +18,14 @@ using MzukuluQMS.Api.Services.Workflow;
 
 
 var builder = WebApplication.CreateBuilder(args);
+// Portable process logs for managed hosting and local Visual Studio; no Windows Event Log dependency.
+builder.Logging.ClearProviders().AddConsole().AddDebug();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options=>
+{
+    options.ForwardedHeaders=ForwardedHeaders.XForwardedFor|ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit=1; // Retain loopback-only trust; verify the immediate proxy before expanding it.
+});
 
 // Add services to the container.
 
@@ -34,7 +43,9 @@ builder.Services.AddScoped<IChecklistTemplateService,ChecklistTemplateService>()
 builder.Services.AddScoped<QmsDbSession>();
 builder.Services.AddScoped<IQCWorkflow, QCWorkflow>();
 builder.Services.AddScoped<QCFormQueries>();
+builder.Services.AddScoped<EvidenceContentService>();
 builder.Services.AddScoped<NcrService>();
+builder.Services.AddScoped<TemplateAuthoring>();
 builder.Services.AddScoped<QualityReporting>();
 builder.Services.AddScoped<IQCFormRepository,QCFormRepository>();
 builder.Services.AddScoped<IQCFormService,QCFormService>();
@@ -61,7 +72,7 @@ builder.Services.Configure<SupabaseStorageOptions>(
 
 builder.Services.AddHttpClient<
     IEvidenceStorage,
-    SupabaseEvidenceStorage>();
+    SupabaseEvidenceStorage>().RemoveAllLoggers(); // Private evidence paths must not enter HttpClient logs.
 
 builder.Services.AddScoped<
     IQCSignOffRepository,
@@ -96,6 +107,16 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         options.Audience=auth.Audience;
         options.RequireHttpsMetadata=true;
         options.MapInboundClaims=false;
+        options.IncludeErrorDetails=false;
+        options.Events=new JwtBearerEvents
+        {
+            OnAuthenticationFailed=context=>
+            {
+                context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("QmsAuthentication")
+                    .LogWarning("JWT authentication failed ({FailureType}); trace {TraceId}.",context.Exception.GetType().Name,context.HttpContext.TraceIdentifier);
+                return Task.CompletedTask;
+            }
+        };
         options.TokenValidationParameters=new TokenValidationParameters
         {
             ValidateIssuer=true, ValidateAudience=true, ValidateLifetime=true, ValidateIssuerSigningKey=true,
@@ -104,27 +125,7 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
     });
 
 builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
-builder.Services.AddAuthorization(options =>
-{
-    foreach (var permission in new[] { "ReadProjects", "ManageProjects", "ReadClients", "ReadTemplates", "ManageTemplates", "DatabaseHealth" })
-        options.AddPolicy(permission, policy => policy.RequireAuthenticatedUser().AddRequirements(new PermissionRequirement(permission)));
-
-    options.AddPolicy(
-        "QmsUser",
-        policy =>
-        {
-            policy.RequireAuthenticatedUser();
-            policy.RequireClaim("qms_user_id");
-            policy.RequireClaim("qms_role");
-        });
-
-    options.AddPolicy(
-        "QmsAdmin",
-        policy =>
-        {
-            policy.RequireClaim("qms_role", "Admin");
-        });
-});
+builder.Services.AddAuthorization(MfaPolicies.Configure);
 
 builder.Services.AddHttpContextAccessor();
 
@@ -133,6 +134,8 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 
 var app = builder.Build();
+if(app.Environment.IsProduction())ProductionConfiguration.Validate(app.Configuration);
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
@@ -141,13 +144,16 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// Production HTTPS terminates at the managed hosting front end (Azure HTTPS Only
+// or an ALB HTTPS listener). Internal HTTP health checks must not redirect in a loop.
+if(app.Environment.IsDevelopment())app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<OperationFingerprintMiddleware>();
 
 app.MapControllers();
+app.MapGet("/health",()=>Results.Ok(new {status="ok"})).AllowAnonymous();
 
 app.Run();
 

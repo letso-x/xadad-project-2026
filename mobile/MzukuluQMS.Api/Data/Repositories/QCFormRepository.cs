@@ -118,11 +118,26 @@ public sealed class QCFormRepository : IQCFormRepository
         WHERE "QCFormID" = @QCFormID;
         """;
 
+        // Fresh form creation and execution copying share the outer workflow transaction.
+        // Do not replay or replace the historical database generator function.
         const string generateSql = """
-        SELECT public.generate_qcform_structure(
-            @QCFormID,
-            @ChecklistTemplateVersionID
-        );
+        INSERT INTO public."QCFormProjectField" ("QCFormID","ChecklistTemplateProjectFieldID","FieldKey","FieldLabel","FieldType","Placeholder","HelpText","IsRequired","Options","ValidationRules","DisplayOrder")
+        SELECT @QCFormID,p."ChecklistTemplateProjectFieldID",p."FieldKey",p."FieldLabel",p."FieldType",p."Placeholder",p."HelpText",p."IsRequired",p."Options",p."ValidationRules",p."DisplayOrder"
+        FROM public."ChecklistTemplateProjectField" p WHERE p."ChecklistTemplateVersionID"=@ChecklistTemplateVersionID AND p."IsActive"
+        ORDER BY p."DisplayOrder",p."ChecklistTemplateProjectFieldID";
+        INSERT INTO public."QCFormSection" ("QCFormID","ChecklistSectionID","SectionName","Description","DisplayOrder")
+        SELECT @QCFormID,s."ChecklistSectionID",s."SectionName",s."Description",s."DisplayOrder"
+        FROM public."ChecklistSection" s WHERE s."ChecklistTemplateVersionID"=@ChecklistTemplateVersionID
+        ORDER BY s."DisplayOrder",s."ChecklistSectionID";
+        INSERT INTO public."QCFormField" ("QCFormSectionID","ChecklistFieldID","FieldKey","FieldLabel","FieldType","Placeholder","HelpText","IsRequired","RequiresPhoto","RequiresSignature","Options","ValidationRules","DisplayOrder")
+        SELECT snapshot."QCFormSectionID",f."ChecklistFieldID",f."FieldKey",f."FieldLabel",f."FieldType",f."Placeholder",f."HelpText",f."IsRequired",f."RequiresPhoto",f."RequiresSignature",f."Options",f."ValidationRules",f."DisplayOrder"
+        FROM public."ChecklistField" f JOIN public."ChecklistSection" s ON s."ChecklistSectionID"=f."ChecklistSectionID"
+        JOIN public."QCFormSection" snapshot ON snapshot."ChecklistSectionID"=s."ChecklistSectionID" AND snapshot."QCFormID"=@QCFormID
+        WHERE s."ChecklistTemplateVersionID"=@ChecklistTemplateVersionID AND f."IsActive"
+        ORDER BY s."DisplayOrder",s."ChecklistSectionID",f."DisplayOrder",f."ChecklistFieldID";
+        INSERT INTO public."QCResponse" ("QCFormID","QCFormFieldID")
+        SELECT @QCFormID,f."QCFormFieldID" FROM public."QCFormField" f JOIN public."QCFormSection" s ON s."QCFormSectionID"=f."QCFormSectionID"
+        WHERE s."QCFormID"=@QCFormID ORDER BY s."DisplayOrder",s."QCFormSectionID",f."DisplayOrder",f."QCFormFieldID";
         """;
 
         const string selectSql = """
@@ -230,6 +245,19 @@ public sealed class QCFormRepository : IQCFormRepository
                 WHERE "ChecklistTemplateVersionID"=@VersionID
                 """, new { QCFormID = qcFormId, VersionID = checklistTemplateVersionId }, transaction, cancellationToken: cancellationToken));
 
+            await connection.ExecuteAsync(new CommandDefinition("""
+                INSERT INTO qms_core."QCFormPresentation" ("QCFormID","Header")
+                SELECT @QCFormID,jsonb_build_object('documentNumber',t."TemplateNumber",'checklistName',t."TemplateName",'subtitle',t."Subtitle",
+                  'revision',v."Revision",'issueDate',v."IssueDate",'scope',v."Scope",'acceptanceCriteria',v."AcceptanceCriteria",
+                  'client',c."ClientName",'project',p."ProjectName",'projectNumber',p."ProjectNumber",
+                  'contractOrderNumber',p."ContractOrderNumber",'siteLocation',p."SiteLocation",
+                  'sectionRequirements',(SELECT COALESCE(jsonb_agg(jsonb_build_object('checklistSectionID',s."ChecklistSectionID",'isRequired',s."IsRequired") ORDER BY s."DisplayOrder",s."ChecklistSectionID"),'[]'::jsonb)
+                    FROM public."ChecklistSection" s WHERE s."ChecklistTemplateVersionID"=v."ChecklistTemplateVersionID"))
+                FROM public."ChecklistTemplateVersion" v JOIN public."ChecklistTemplate" t ON t."ChecklistTemplateID"=v."ChecklistTemplateID"
+                JOIN public."Project" p ON p."ProjectID"=@ProjectID JOIN public."Client" c ON c."ClientID"=p."ClientID"
+                WHERE v."ChecklistTemplateVersionID"=@VersionID AND v."ChecklistTemplateID"=@TemplateID
+                """,new {QCFormID=qcFormId,ProjectID=projectId,VersionID=checklistTemplateVersionId,TemplateID=checklistTemplateId},transaction,cancellationToken:cancellationToken));
+
             var selectCommand =
                 new CommandDefinition(
                     selectSql,
@@ -325,6 +353,7 @@ public sealed class QCFormRepository : IQCFormRepository
             r."Value"::text AS "ValueJson",
             r."IsAnswered",
             r."AnsweredByUserID",
+            (SELECT concat_ws(' ',u."FirstName",u."LastName") FROM public."User" u WHERE u."UserID"=r."AnsweredByUserID") AS "AnsweredByName",
             r."AnsweredAt",
             r."UpdatedAt"
         FROM public."QCFormField" f
@@ -418,6 +447,13 @@ public sealed class QCFormRepository : IQCFormRepository
                 })
                 .ToList();
 
+        var presentation=await connection.QuerySingleOrDefaultAsync<PresentationRow>(new CommandDefinition("""
+            SELECT "Header"::text AS "HeaderJson","Remarks" FROM qms_core."QCFormPresentation" WHERE "QCFormID"=@id
+            """,new {id=qcFormId},_session.Transaction,cancellationToken:cancellationToken));
+        var requiredSections=new Dictionary<long,bool>();
+        var header=ParseJson(presentation?.HeaderJson);
+        if(header is { } documentHeader && documentHeader.TryGetProperty("sectionRequirements",out var requirements))
+            foreach(var requirement in requirements.EnumerateArray())requiredSections[requirement.GetProperty("checklistSectionID").GetInt64()]=requirement.GetProperty("isRequired").GetBoolean();
         var sections =
             sectionRows
                 .Select(section => new QCFormSectionDto
@@ -430,6 +466,7 @@ public sealed class QCFormRepository : IQCFormRepository
 
                     SectionName =
                         section.SectionName,
+                    IsRequired=section.ChecklistSectionID.HasValue&&requiredSections.TryGetValue(section.ChecklistSectionID.Value,out var required)?required:null,
 
                     Description =
                         section.Description,
@@ -444,8 +481,14 @@ public sealed class QCFormRepository : IQCFormRepository
                 })
                 .ToList();
 
+        var signOffTypes=(await connection.QueryAsync<string>(new CommandDefinition("""
+            SELECT "SignOffType" FROM qms_security."FormSignatureRequirement" WHERE "QCFormID"=@id ORDER BY "SignOffType"
+            """,new {id=qcFormId},_session.Transaction,cancellationToken:cancellationToken))).AsList();
         return new QCFormDetailsDto
         {
+            RequiredSignOffTypes=signOffTypes,
+            DocumentSnapshot = ParseJson(presentation?.HeaderJson),
+            Remarks = presentation?.Remarks,
             Revision = form.Revision,
             QCFormID =
                 form.QCFormID,
@@ -545,6 +588,7 @@ public sealed class QCFormRepository : IQCFormRepository
 
             AnsweredByUserID =
                 row.AnsweredByUserID,
+            AnsweredByName = row.AnsweredByName,
 
             AnsweredAt =
                 row.AnsweredAt,
@@ -812,7 +856,7 @@ public sealed class QCFormRepository : IQCFormRepository
     CancellationToken cancellationToken = default)
     {
         const string sql = """
-        SELECT jsonb_build_object(
+        SELECT (jsonb_build_object(
             'qcForm', (
                 SELECT jsonb_build_object(
                     'qcFormID', q."QCFormID",
@@ -892,6 +936,8 @@ public sealed class QCFormRepository : IQCFormRepository
                 WHERE e."QCFormID" = @QCFormID
                   AND e."EvidenceType" <> CAST('Signature' AS public.evidence_type)
             )
+        ) || COALESCE((SELECT jsonb_build_object('executionHeader',p."Header",'remarks',p."Remarks")
+            FROM qms_core."QCFormPresentation" p WHERE p."QCFormID"=@QCFormID),'{}'::jsonb)
         )::text;
         """;
 
@@ -992,6 +1038,7 @@ public sealed class QCFormRepository : IQCFormRepository
     }
 
 
+    private sealed class PresentationRow { public string? HeaderJson {get;init;} public string? Remarks {get;init;} }
     private sealed class QCFormRow
     {
         public long Revision { get; init; }
@@ -1080,6 +1127,7 @@ public sealed class QCFormRepository : IQCFormRepository
         public bool IsAnswered { get; init; }
 
         public Guid? AnsweredByUserID { get; init; }
+        public string? AnsweredByName { get; init; }
 
         public DateTime? AnsweredAt { get; init; }
 

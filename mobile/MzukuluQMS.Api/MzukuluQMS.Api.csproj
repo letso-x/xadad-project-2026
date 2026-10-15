@@ -14,4 +14,9 @@
     <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Procfile" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="certs/supabase-db-ca.crt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

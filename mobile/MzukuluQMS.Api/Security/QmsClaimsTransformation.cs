@@ -27,6 +27,8 @@ public sealed class QmsClaimsTransformation : IClaimsTransformation
             foreach (var claim in claimsIdentity.Claims.Where(c => c.Type is "qms_user_id" or "qms_role").ToList())
                 claimsIdentity.RemoveClaim(claim);
 
+        if(!MfaPolicies.IsAssured(principal))return principal;
+
         var subject =
             principal.FindFirstValue("sub");
 

@@ -8,7 +8,7 @@ public sealed class PermissionHandler(IDbConnectionFactory factory) : Authorizat
 {
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
     {
-        if(context.User.Identity?.IsAuthenticated!=true || !Guid.TryParse(context.User.FindFirstValue("sub"),out var subject)) return;
+        if(!MfaPolicies.IsAssured(context.User) || !Guid.TryParse(context.User.FindFirstValue("sub"),out var subject)) return;
         await using var connection=await factory.CreateOpenConnectionAsync();
         if(await connection.ExecuteScalarAsync<bool>(new CommandDefinition("""
             SELECT EXISTS(SELECT 1 FROM public."User" u JOIN qms_security."RolePermission" rp ON rp."RoleName"=u."Role"::text
