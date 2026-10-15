@@ -18,7 +18,7 @@ public sealed class FieldHomePage : FlyoutPage
   Add("Sync & conflicts",()=>new FieldSyncPage(workspace));
   if(workspace.Permissions.Contains("ManageTemplates"))Add("Checklist Builder",()=>new FieldTemplatesPage(workspace));
   Add("Account & security",()=>new FieldSecurityPage(session,workspace));
-  menu.Add(FieldUi.Action("Sign out",async()=>{await workspace.DisposeAsync();await session.LogoutAsync();if(Window is not null)Window.Page=new NavigationPage(new FieldLoginPage(session,workspace));},true));
+  menu.Add(FieldUi.Action("Sign out",async()=>{await workspace.DisposeAsync();await session.LogoutAsync();if(Application.Current is App app)app.ShowSignIn();},true));
   Flyout=new ContentPage{Title="Mzukulu QC",BackgroundColor=FieldUi.Background,Content=new ScrollView{Content=menu}};
   Detail=new NavigationPage(workspace.Permissions.Contains("ReadReports")?new FieldDashboardPage(workspace):new FieldProjectsPage(workspace)){BarBackgroundColor=FieldUi.Navy,BarTextColor=Colors.White};
  }

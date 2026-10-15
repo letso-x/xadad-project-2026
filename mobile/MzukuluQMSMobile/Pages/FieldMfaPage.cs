@@ -62,34 +62,42 @@ public sealed class FieldMfaPage : FieldScreen
  private async Task ShowSetupAsync(AuthenticatorSetup setup)
  {
   selected=setup.FactorId;var area=new VerticalStackLayout{Spacing=12};setupCard!.Content=area;setupCard.IsVisible=true;verification!.IsVisible=true;
+  area.Add(FieldUi.Text("Add this account to your authenticator app, then return here and enter its 6-digit code."));
+  area.Add(Action("Open authenticator app",async()=>{
+   var current=session.Setup;if(current is null)return;
+   model.Message=await AuthenticatorConvenience.OpenAsync(current,new PlatformAuthenticatorLauncher())?"Return here and enter the code from your authenticator app.":AuthenticatorConvenience.Fallback;
+  },()=>session.Setup is not null));
+  var qrArea=new VerticalStackLayout{Spacing=8,IsVisible=false};
+  area.Add(Action("Show QR code",()=>{var current=session.Setup;if(current is not null&&qr is null)AddQr(current,qrArea);qrArea.IsVisible=true;return Task.CompletedTask;},()=>session.Setup is not null,true));area.Add(qrArea);
+  area.Add(Action("Copy setup key",CopySetupKeyAsync,()=>session.Setup is not null,true));
+  area.Add(FieldUi.Text("Add this key manually in your authenticator app if automatic setup is unavailable."));
+  var manual=new VerticalStackLayout{Spacing=8,IsVisible=false};secret=FieldUi.Entry("");secret.IsReadOnly=true;
+  area.Add(Action("Show setup key",()=>{secret.Text=session.Setup?.Secret??"";manual.IsVisible=true;return Task.CompletedTask;},()=>session.Setup is not null,true));
+  manual.Add(FieldUi.Text("Setup key",12,true));manual.Add(secret);
+  manual.Add(Action("Hide setup key",()=>{secret.Text="";manual.IsVisible=false;return Task.CompletedTask;},secondary:true));
+  manual.Add(FieldUi.Text("Keep this key private. It is not saved by this application.",12));area.Add(manual);
+  UpdateEnabled();await session.ChallengeAsync(selected);await Scroller.ScrollToAsync(setupCard,ScrollToPosition.Start,true);
+ }
+ private async Task CopySetupKeyAsync()
+ {
+  var key=session.Setup?.Secret;if(string.IsNullOrEmpty(key))return;
+  try{await Clipboard.Default.SetTextAsync(key);copiedKey=key;model.Message="Setup key copied. Keep it private.";}
+  catch(Exception error) when(error is not OutOfMemoryException){model.Message="The setup key could not be copied. Use Show setup key to enter it manually.";}
+ }
+ private void AddQr(AuthenticatorSetup setup,VerticalStackLayout area)
+ {
   area.Add(FieldUi.Text("Scan this QR code with your authenticator app."));
   try
   {
    var html=AuthenticatorQr.Html(setup.QrCode);
    qr=new WebView{HeightRequest=280,WidthRequest=280,HorizontalOptions=LayoutOptions.Center,BackgroundColor=Colors.White};
    qr.Navigating+=(_,e)=>{if(!e.Url.StartsWith("about:blank",StringComparison.OrdinalIgnoreCase)&&!e.Url.StartsWith("data:text/html",StringComparison.OrdinalIgnoreCase))e.Cancel=true;};
-   var imageError=FieldUi.Text("The setup image could not load. Reveal the setup key below to continue.");imageError.IsVisible=false;
-   qr.Navigated+=(_,e)=>{imageError.IsVisible=e.Result!=WebNavigationResult.Success;
-#if WINDOWS
-    MzukuluQMSMobile.WinUI.StartupTrace.Mark("Authenticator QR navigation result="+e.Result);
-#endif
-   };
-#if WINDOWS
-   // Shape/status only: never record payloads, IDs, SVG, URI, secret or codes.
-   var qrKind=setup.QrCode.TrimStart().StartsWith("<",StringComparison.Ordinal)?"SVG markup":setup.QrCode.StartsWith("data:image/svg+xml",StringComparison.OrdinalIgnoreCase)?"SVG data URI":"other";
-   MzukuluQMSMobile.WinUI.StartupTrace.Mark("MFA enrollment response fields: id, totp.qr_code, totp.secret; totp.uri present="+setup.HasEnrollmentUri+"; QR kind="+qrKind+"; SVG sanitizer accepted");
-#endif
+   var imageError=FieldUi.Text("The setup image could not load. Copy the setup key to continue.");imageError.IsVisible=false;
+   qr.Navigated+=(_,e)=>imageError.IsVisible=e.Result!=WebNavigationResult.Success;
    qr.Source=new HtmlWebViewSource{Html=html};area.Add(qr);area.Add(imageError);
   }
-  catch(InvalidOperationException){area.Add(FieldUi.Text("The setup image is unavailable. Reveal the setup key below to continue."));}
-  var manual=new VerticalStackLayout{Spacing=8,IsVisible=false};secret=FieldUi.Entry("");secret.IsReadOnly=true;
-  area.Add(FieldUi.Text("Can't scan the QR code?",12));
-  area.Add(Action("Show setup key",()=>{secret.Text=session.Setup?.Secret??"";manual.IsVisible=true;return Task.CompletedTask;},()=>session.Setup is not null,true));
-  manual.Add(FieldUi.Text("Setup key",12,true));manual.Add(secret);
-  manual.Add(Action("Copy",async()=>{var key=session.Setup?.Secret;if(string.IsNullOrEmpty(key))return;await Clipboard.Default.SetTextAsync(key);copiedKey=key;model.Message="Setup key copied. Keep it private.";},()=>session.Setup is not null,true));
-  manual.Add(Action("Hide setup key",()=>{secret.Text="";manual.IsVisible=false;return Task.CompletedTask;},secondary:true));
-  manual.Add(FieldUi.Text("Keep this key private. It is not saved by this application.",12));area.Add(manual);
-  UpdateEnabled();await session.ChallengeAsync(selected);await Scroller.ScrollToAsync(setupCard,ScrollToPosition.Start,true);
+  catch(Exception error) when(error is InvalidOperationException or NotSupportedException or System.Runtime.InteropServices.COMException)
+  {qr=null;area.Add(FieldUi.Text("The setup image is unavailable. Copy or reveal the setup key to continue."));}
  }
  private async Task VerifyCoreAsync()
  {
@@ -101,11 +109,13 @@ public sealed class FieldMfaPage : FieldScreen
  private async Task CancelAsync(){await ClearSecretAsync();if(!backup){await session.LogoutAsync();await workspace.DisposeAsync();}await Navigation.PopAsync();}
  private async Task ClearSecretAsync()
  {
-  if(secret is not null)secret.Text="";if(qr is not null)qr.Source=new HtmlWebViewSource{Html=""};session.ClearSetupSecret();
+  if(secret is not null)secret.Text="";try{if(qr is not null)qr.Source=new HtmlWebViewSource{Html=""};}catch(System.Runtime.InteropServices.COMException){}session.ClearSetupSecret();
   var copied=copiedKey;copiedKey=null;
   if(copied is not null){try{if(await Clipboard.Default.GetTextAsync()==copied)await Clipboard.Default.SetTextAsync("");}catch{/* Clipboard cleanup must not prevent logout or navigation. */}}
  }
- protected override async void OnDisappearing(){base.OnDisappearing();loaded=false;selected=null;actions.Clear();Rows.Clear();var cleanup=ClearSecretAsync();secret=null;qr=null;setupCard=null;verification=null;await cleanup;}
+ // Switching to an authenticator must not destroy the active enrollment or create another factor on return.
+ protected override void OnDisappearing(){base.OnDisappearing();}
+ protected override bool OnBackButtonPressed()=>true;
 }
 
 public sealed class FieldSecurityPage : FieldScreen

@@ -10,7 +10,7 @@ public sealed record AuthTokens(Guid Subject,string AccessToken,string RefreshTo
 {public override string ToString()=>"Authenticated session (redacted)";}
 public sealed record AuthenticatorFactor(string Id,string Name);
 public sealed record AuthenticatorSetup(string FactorId,string QrCode,string Secret)
-{public bool HasEnrollmentUri {get;init;} public override string ToString()=>"Authenticator setup (redacted)";}
+{public bool HasEnrollmentUri {get;init;} public string? EnrollmentUri {get;init;} public override string ToString()=>"Authenticator setup (redacted)";}
 public sealed class AuthenticatorAlreadyEnrolledException():InvalidOperationException("Your authenticator is already set up. Enter its current verification code.");
 
 // Extends the application's existing Supabase Auth REST integration. Local JWT
@@ -68,7 +68,7 @@ public sealed class SupabaseMfaAuth(HttpClient client,string publicKey)
   var result=await SendAsync(HttpMethod.Post,"factors",new {factor_type="totp",friendly_name=name.Trim()});
   var factor=FactorId(result["id"]?.ToString());var qr=result["totp"]?["qr_code"]?.ToString();var secret=result["totp"]?["secret"]?.ToString();
   if(string.IsNullOrWhiteSpace(qr)||string.IsNullOrWhiteSpace(secret))throw new InvalidOperationException("Authenticator setup could not be loaded. Please try again.");
-  pendingFactorId=factor;Setup=new(factor,qr,secret){HasEnrollmentUri=!string.IsNullOrWhiteSpace(result["totp"]?["uri"]?.ToString())};challenge=null;return Setup;
+  pendingFactorId=factor;Setup=new(factor,qr,secret){HasEnrollmentUri=!string.IsNullOrWhiteSpace(result["totp"]?["uri"]?.ToString()),EnrollmentUri=result["totp"]?["uri"]?.ToString()};challenge=null;return Setup;
  });
  public Task ChallengeAsync(string factor)=>SingleAsync(async()=>{await CreateChallengeAsync(factor);return true;});
  private async Task CreateChallengeAsync(string factor)
