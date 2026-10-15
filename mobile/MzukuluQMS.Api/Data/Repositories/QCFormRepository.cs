@@ -1,0 +1,1215 @@
+﻿using System.Text.Json;
+using Dapper;
+using MzukuluQMS.Api.DTOs;
+
+namespace MzukuluQMS.Api.Data.Repositories;
+
+public sealed class QCFormRepository : IQCFormRepository
+{
+    private readonly QmsDbSession _session;
+
+
+    public QCFormRepository(
+        QmsDbSession session)
+    {
+        _session = session;
+    }
+
+    public async Task<bool> ProjectExistsAsync(
+        long projectId,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT EXISTS
+            (
+                SELECT 1
+                FROM public."Project"
+                WHERE "ProjectID" = @ProjectID
+            );
+            """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new { ProjectID = projectId },
+            cancellationToken: cancellationToken);
+
+        return await connection.ExecuteScalarAsync<bool>(command);
+    }
+
+    public async Task<long?> GetActiveTemplateVersionIdAsync(
+        long checklistTemplateId,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT v."ChecklistTemplateVersionID"
+            FROM public."ChecklistTemplateVersion" v
+            INNER JOIN public."ChecklistTemplate" t
+                ON t."ChecklistTemplateID" =
+                   v."ChecklistTemplateID"
+            WHERE v."ChecklistTemplateID" =
+                    @ChecklistTemplateID
+              AND t."IsActive" = true
+              AND v."Status" = 'Active'::template_status
+            ORDER BY
+                v."EffectiveDate" DESC NULLS LAST,
+                v."IssueDate" DESC NULLS LAST,
+                v."ChecklistTemplateVersionID" DESC
+            LIMIT 1 FOR SHARE OF v, t;
+            """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                ChecklistTemplateID =
+                    checklistTemplateId
+            },
+            cancellationToken: cancellationToken);
+
+        return await connection.QuerySingleOrDefaultAsync<long?>(
+            command);
+    }
+
+    public async Task<QCFormDto> CreateAsync(
+    long projectId,
+    long checklistTemplateId,
+    long checklistTemplateVersionId,
+    Guid? startedByUserId,
+    Guid? assignedToUserId,
+    CancellationToken cancellationToken = default)
+    {
+        const string insertSql = """
+        INSERT INTO public."QCForm"
+        (
+            "ProjectID",
+            "ChecklistTemplateID",
+            "ChecklistTemplateVersionID",
+            "FormNumber",
+            "Status",
+            "StartedByUserID",
+            "AssignedToUserID",
+            "StartedAt"
+        )
+        VALUES
+        (
+            @ProjectID,
+            @ChecklistTemplateID,
+            @ChecklistTemplateVersionID,
+            @TemporaryFormNumber,
+            'Draft'::form_status,
+            @StartedByUserID,
+            @AssignedToUserID,
+            now()
+        )
+        RETURNING "QCFormID";
+        """;
+
+        const string updateFormNumberSql = """
+        UPDATE public."QCForm"
+        SET
+            "FormNumber" = @FormNumber,
+            "UpdatedAt" = now()
+        WHERE "QCFormID" = @QCFormID;
+        """;
+
+        // Fresh form creation and execution copying share the outer workflow transaction.
+        // Do not replay or replace the historical database generator function.
+        const string generateSql = """
+        INSERT INTO public."QCFormProjectField" ("QCFormID","ChecklistTemplateProjectFieldID","FieldKey","FieldLabel","FieldType","Placeholder","HelpText","IsRequired","Options","ValidationRules","DisplayOrder")
+        SELECT @QCFormID,p."ChecklistTemplateProjectFieldID",p."FieldKey",p."FieldLabel",p."FieldType",p."Placeholder",p."HelpText",p."IsRequired",p."Options",p."ValidationRules",p."DisplayOrder"
+        FROM public."ChecklistTemplateProjectField" p WHERE p."ChecklistTemplateVersionID"=@ChecklistTemplateVersionID AND p."IsActive"
+        ORDER BY p."DisplayOrder",p."ChecklistTemplateProjectFieldID";
+        INSERT INTO public."QCFormSection" ("QCFormID","ChecklistSectionID","SectionName","Description","DisplayOrder")
+        SELECT @QCFormID,s."ChecklistSectionID",s."SectionName",s."Description",s."DisplayOrder"
+        FROM public."ChecklistSection" s WHERE s."ChecklistTemplateVersionID"=@ChecklistTemplateVersionID
+        ORDER BY s."DisplayOrder",s."ChecklistSectionID";
+        INSERT INTO public."QCFormField" ("QCFormSectionID","ChecklistFieldID","FieldKey","FieldLabel","FieldType","Placeholder","HelpText","IsRequired","RequiresPhoto","RequiresSignature","Options","ValidationRules","DisplayOrder")
+        SELECT snapshot."QCFormSectionID",f."ChecklistFieldID",f."FieldKey",f."FieldLabel",f."FieldType",f."Placeholder",f."HelpText",f."IsRequired",f."RequiresPhoto",f."RequiresSignature",f."Options",f."ValidationRules",f."DisplayOrder"
+        FROM public."ChecklistField" f JOIN public."ChecklistSection" s ON s."ChecklistSectionID"=f."ChecklistSectionID"
+        JOIN public."QCFormSection" snapshot ON snapshot."ChecklistSectionID"=s."ChecklistSectionID" AND snapshot."QCFormID"=@QCFormID
+        WHERE s."ChecklistTemplateVersionID"=@ChecklistTemplateVersionID AND f."IsActive"
+        ORDER BY s."DisplayOrder",s."ChecklistSectionID",f."DisplayOrder",f."ChecklistFieldID";
+        INSERT INTO public."QCResponse" ("QCFormID","QCFormFieldID")
+        SELECT @QCFormID,f."QCFormFieldID" FROM public."QCFormField" f JOIN public."QCFormSection" s ON s."QCFormSectionID"=f."QCFormSectionID"
+        WHERE s."QCFormID"=@QCFormID ORDER BY s."DisplayOrder",s."QCFormSectionID",f."DisplayOrder",f."QCFormFieldID";
+        """;
+
+        const string selectSql = """
+        SELECT
+            "Revision",
+            "QCFormID",
+            "ProjectID",
+            "ChecklistTemplateID",
+            "ChecklistTemplateVersionID",
+            "FormNumber",
+            "Status"::text AS "Status",
+            "StartedByUserID",
+            "AssignedToUserID",
+            "StartedAt",
+            "SubmittedAt",
+            "CreatedAt",
+            "UpdatedAt"
+        FROM public."QCForm"
+        WHERE "QCFormID" = @QCFormID;
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var transaction = _session.Transaction
+            ?? throw new InvalidOperationException("Form creation requires a workflow transaction.");
+
+        try
+        {
+            if(assignedToUserId.HasValue && !await connection.ExecuteScalarAsync<bool>(new CommandDefinition("""
+                SELECT EXISTS(SELECT 1 FROM public."User" u JOIN qms_security."ProjectAccess" pa ON pa."UserID"=u."UserID"
+                 WHERE u."UserID"=@userId AND u."IsActive" AND pa."ProjectID"=@projectId)
+                """,new {userId=assignedToUserId.Value,projectId},transaction,cancellationToken:cancellationToken)))
+                throw new ArgumentException("Assigned user must be active and have project access.");
+            var temporaryFormNumber =
+                $"TEMP-{Guid.NewGuid():N}";
+
+            var insertCommand =
+                new CommandDefinition(
+                    insertSql,
+                    new
+                    {
+                        ProjectID = projectId,
+                        ChecklistTemplateID =
+                            checklistTemplateId,
+
+                        ChecklistTemplateVersionID =
+                            checklistTemplateVersionId,
+
+                        TemporaryFormNumber =
+                            temporaryFormNumber,
+
+                        StartedByUserID =
+                            startedByUserId,
+
+                        AssignedToUserID =
+                            assignedToUserId
+                    },
+                    transaction,
+                    cancellationToken:
+                        cancellationToken);
+
+            var qcFormId =
+                await connection.QuerySingleAsync<long>(
+                    insertCommand);
+
+            var formNumber =
+                $"QC-{qcFormId:D4}";
+
+            var updateCommand =
+                new CommandDefinition(
+                    updateFormNumberSql,
+                    new
+                    {
+                        QCFormID = qcFormId,
+                        FormNumber = formNumber
+                    },
+                    transaction,
+                    cancellationToken:
+                        cancellationToken);
+
+            await connection.ExecuteAsync(
+                updateCommand);
+
+            var generateCommand =
+                new CommandDefinition(
+                    generateSql,
+                    new
+                    {
+                        QCFormID = qcFormId,
+
+                        ChecklistTemplateVersionID =
+                            checklistTemplateVersionId
+                    },
+                    transaction,
+                    cancellationToken:
+                        cancellationToken);
+
+            await connection.ExecuteAsync(
+                generateCommand);
+
+            await connection.ExecuteAsync(new CommandDefinition("""
+                INSERT INTO qms_security."FormSignatureRequirement" ("QCFormID","SignOffType")
+                SELECT @QCFormID,"SignOffType" FROM qms_security."TemplateSignatureRequirement"
+                WHERE "ChecklistTemplateVersionID"=@VersionID
+                """, new { QCFormID = qcFormId, VersionID = checklistTemplateVersionId }, transaction, cancellationToken: cancellationToken));
+
+            await connection.ExecuteAsync(new CommandDefinition("""
+                INSERT INTO qms_core."QCFormPresentation" ("QCFormID","Header")
+                SELECT @QCFormID,jsonb_build_object('documentNumber',t."TemplateNumber",'checklistName',t."TemplateName",'subtitle',t."Subtitle",
+                  'revision',v."Revision",'issueDate',v."IssueDate",'scope',v."Scope",'acceptanceCriteria',v."AcceptanceCriteria",
+                  'client',c."ClientName",'project',p."ProjectName",'projectNumber',p."ProjectNumber",
+                  'contractOrderNumber',p."ContractOrderNumber",'siteLocation',p."SiteLocation",
+                  'sectionRequirements',(SELECT COALESCE(jsonb_agg(jsonb_build_object('checklistSectionID',s."ChecklistSectionID",'isRequired',s."IsRequired") ORDER BY s."DisplayOrder",s."ChecklistSectionID"),'[]'::jsonb)
+                    FROM public."ChecklistSection" s WHERE s."ChecklistTemplateVersionID"=v."ChecklistTemplateVersionID"))
+                FROM public."ChecklistTemplateVersion" v JOIN public."ChecklistTemplate" t ON t."ChecklistTemplateID"=v."ChecklistTemplateID"
+                JOIN public."Project" p ON p."ProjectID"=@ProjectID JOIN public."Client" c ON c."ClientID"=p."ClientID"
+                WHERE v."ChecklistTemplateVersionID"=@VersionID AND v."ChecklistTemplateID"=@TemplateID
+                """,new {QCFormID=qcFormId,ProjectID=projectId,VersionID=checklistTemplateVersionId,TemplateID=checklistTemplateId},transaction,cancellationToken:cancellationToken));
+
+            var selectCommand =
+                new CommandDefinition(
+                    selectSql,
+                    new
+                    {
+                        QCFormID = qcFormId
+                    },
+                    transaction,
+                    cancellationToken:
+                        cancellationToken);
+
+            var form =
+                await connection.QuerySingleAsync<QCFormDto>(
+                    selectCommand);
+
+            return form;
+        }
+        catch
+        {
+
+            throw;
+        }
+    }
+    public async Task<QCFormDetailsDto?> GetByIdAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT
+            "Revision",
+            "QCFormID",
+            "ProjectID",
+            "ChecklistTemplateID",
+            "ChecklistTemplateVersionID",
+            "FormNumber",
+            "Status"::text AS "Status",
+            "StartedByUserID",
+            "AssignedToUserID",
+            "StartedAt",
+            "SubmittedAt",
+            "CreatedAt",
+            "UpdatedAt"
+        FROM public."QCForm"
+        WHERE "QCFormID" = @QCFormID;
+
+        SELECT
+            "QCFormProjectFieldID",
+            "ChecklistTemplateProjectFieldID",
+            "FieldKey",
+            "FieldLabel",
+            "FieldType"::text AS "FieldType",
+            "Placeholder",
+            "HelpText",
+            "IsRequired",
+            "Options"::text AS "OptionsJson",
+            "ValidationRules"::text AS "ValidationRulesJson",
+            "DisplayOrder",
+            "Value"::text AS "ValueJson"
+        FROM public."QCFormProjectField"
+        WHERE "QCFormID" = @QCFormID
+        ORDER BY
+            "DisplayOrder",
+            "QCFormProjectFieldID";
+
+        SELECT
+            "QCFormSectionID",
+            "ChecklistSectionID",
+            "SectionName",
+            "Description",
+            "DisplayOrder"
+        FROM public."QCFormSection"
+        WHERE "QCFormID" = @QCFormID
+        ORDER BY
+            "DisplayOrder",
+            "QCFormSectionID";
+
+        SELECT
+            f."QCFormFieldID",
+            f."QCFormSectionID",
+            f."ChecklistFieldID",
+            f."FieldKey",
+            f."FieldLabel",
+            f."FieldType"::text AS "FieldType",
+            f."Placeholder",
+            f."HelpText",
+            f."IsRequired",
+            f."RequiresPhoto",
+            f."RequiresSignature",
+            f."Options"::text AS "OptionsJson",
+            f."ValidationRules"::text AS "ValidationRulesJson",
+            f."DisplayOrder",
+            r."QCResponseID",
+            r."Value"::text AS "ValueJson",
+            r."IsAnswered",
+            r."AnsweredByUserID",
+            (SELECT concat_ws(' ',u."FirstName",u."LastName") FROM public."User" u WHERE u."UserID"=r."AnsweredByUserID") AS "AnsweredByName",
+            r."AnsweredAt",
+            r."UpdatedAt"
+        FROM public."QCFormField" f
+        INNER JOIN public."QCFormSection" s
+            ON s."QCFormSectionID" = f."QCFormSectionID"
+        INNER JOIN public."QCResponse" r
+            ON r."QCFormFieldID" = f."QCFormFieldID"
+           AND r."QCFormID" = s."QCFormID"
+        WHERE s."QCFormID" = @QCFormID
+        ORDER BY
+            s."DisplayOrder",
+            f."DisplayOrder",
+            f."QCFormFieldID";
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new { QCFormID = qcFormId },
+            cancellationToken: cancellationToken);
+
+        using var multi =
+            await connection.QueryMultipleAsync(command);
+
+        var form =
+            (await multi.ReadAsync<QCFormRow>())
+            .SingleOrDefault();
+
+        var projectFieldRows =
+            (await multi.ReadAsync<QCFormProjectFieldRow>())
+            .AsList();
+
+        var sectionRows =
+            (await multi.ReadAsync<QCFormSectionRow>())
+            .AsList();
+
+        var fieldRows =
+            (await multi.ReadAsync<QCFormFieldRow>())
+            .AsList();
+
+        if (form is null)
+        {
+            return null;
+        }
+
+        var fieldsBySection =
+            fieldRows.ToLookup(
+                field => field.QCFormSectionID);
+
+        var projectFields =
+            projectFieldRows
+                .Select(row => new QCFormProjectFieldDto
+                {
+                    QCFormProjectFieldID =
+                        row.QCFormProjectFieldID,
+
+                    ChecklistTemplateProjectFieldID =
+                        row.ChecklistTemplateProjectFieldID,
+
+                    FieldKey =
+                        row.FieldKey,
+
+                    FieldLabel =
+                        row.FieldLabel,
+
+                    FieldType =
+                        row.FieldType,
+
+                    Placeholder =
+                        row.Placeholder,
+
+                    HelpText =
+                        row.HelpText,
+
+                    IsRequired =
+                        row.IsRequired,
+
+                    Options =
+                        ParseJson(row.OptionsJson),
+
+                    ValidationRules =
+                        ParseJson(row.ValidationRulesJson),
+
+                    DisplayOrder =
+                        row.DisplayOrder,
+
+                    Value =
+                        ParseJson(row.ValueJson)
+                })
+                .ToList();
+
+        var presentation=await connection.QuerySingleOrDefaultAsync<PresentationRow>(new CommandDefinition("""
+            SELECT "Header"::text AS "HeaderJson","Remarks" FROM qms_core."QCFormPresentation" WHERE "QCFormID"=@id
+            """,new {id=qcFormId},_session.Transaction,cancellationToken:cancellationToken));
+        var requiredSections=new Dictionary<long,bool>();
+        var header=ParseJson(presentation?.HeaderJson);
+        if(header is { } documentHeader && documentHeader.TryGetProperty("sectionRequirements",out var requirements))
+            foreach(var requirement in requirements.EnumerateArray())requiredSections[requirement.GetProperty("checklistSectionID").GetInt64()]=requirement.GetProperty("isRequired").GetBoolean();
+        var sections =
+            sectionRows
+                .Select(section => new QCFormSectionDto
+                {
+                    QCFormSectionID =
+                        section.QCFormSectionID,
+
+                    ChecklistSectionID =
+                        section.ChecklistSectionID,
+
+                    SectionName =
+                        section.SectionName,
+                    IsRequired=section.ChecklistSectionID.HasValue&&requiredSections.TryGetValue(section.ChecklistSectionID.Value,out var required)?required:null,
+
+                    Description =
+                        section.Description,
+
+                    DisplayOrder =
+                        section.DisplayOrder,
+
+                    Fields = fieldsBySection[
+                            section.QCFormSectionID]
+                        .Select(MapQCFormField)
+                        .ToList()
+                })
+                .ToList();
+
+        var signOffTypes=(await connection.QueryAsync<string>(new CommandDefinition("""
+            SELECT "SignOffType" FROM qms_security."FormSignatureRequirement" WHERE "QCFormID"=@id ORDER BY "SignOffType"
+            """,new {id=qcFormId},_session.Transaction,cancellationToken:cancellationToken))).AsList();
+        return new QCFormDetailsDto
+        {
+            RequiredSignOffTypes=signOffTypes,
+            DocumentSnapshot = ParseJson(presentation?.HeaderJson),
+            Remarks = presentation?.Remarks,
+            Revision = form.Revision,
+            QCFormID =
+                form.QCFormID,
+
+            ProjectID =
+                form.ProjectID,
+
+            ChecklistTemplateID =
+                form.ChecklistTemplateID,
+
+            ChecklistTemplateVersionID =
+                form.ChecklistTemplateVersionID,
+
+            FormNumber =
+                form.FormNumber,
+
+            Status =
+                form.Status,
+
+            StartedByUserID =
+                form.StartedByUserID,
+
+            AssignedToUserID =
+                form.AssignedToUserID,
+
+            StartedAt =
+                form.StartedAt,
+
+            SubmittedAt =
+                form.SubmittedAt,
+
+            CreatedAt =
+                form.CreatedAt,
+
+            UpdatedAt =
+                form.UpdatedAt,
+
+            ProjectFields =
+                projectFields,
+
+            Sections =
+                sections
+        };
+    }
+    private static QCFormFieldDto MapQCFormField(
+    QCFormFieldRow row)
+    {
+        return new QCFormFieldDto
+        {
+            QCFormFieldID =
+                row.QCFormFieldID,
+
+            ChecklistFieldID =
+                row.ChecklistFieldID,
+
+            FieldKey =
+                row.FieldKey,
+
+            FieldLabel =
+                row.FieldLabel,
+
+            FieldType =
+                row.FieldType,
+
+            Placeholder =
+                row.Placeholder,
+
+            HelpText =
+                row.HelpText,
+
+            IsRequired =
+                row.IsRequired,
+
+            RequiresPhoto =
+                row.RequiresPhoto,
+
+            RequiresSignature =
+                row.RequiresSignature,
+
+            Options =
+                ParseJson(row.OptionsJson),
+
+            ValidationRules =
+                ParseJson(row.ValidationRulesJson),
+
+            DisplayOrder =
+                row.DisplayOrder,
+
+            QCResponseID =
+                row.QCResponseID,
+
+            Value =
+                ParseJson(row.ValueJson),
+
+            IsAnswered =
+                row.IsAnswered,
+
+            AnsweredByUserID =
+                row.AnsweredByUserID,
+            AnsweredByName = row.AnsweredByName,
+
+            AnsweredAt =
+                row.AnsweredAt,
+
+            UpdatedAt =
+                row.UpdatedAt
+        };
+    }
+    private static JsonElement? ParseJson(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        using var document =
+            JsonDocument.Parse(json);
+
+        return document.RootElement.Clone();
+    }
+
+    public async Task UpdateResponseAsync(
+    long qcFormId,
+    long qcResponseId,
+    string valueJson,
+    Guid? answeredByUserId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        UPDATE public."QCResponse"
+        SET
+            "Value" = CAST(@ValueJson AS jsonb),
+            "IsAnswered" = true,
+            "AnsweredByUserID" = @AnsweredByUserID,
+            "AnsweredAt" = now(),
+            "UpdatedAt" = now()
+        WHERE "QCResponseID" = @QCResponseID
+          AND "QCFormID" = @QCFormID;
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId,
+                QCResponseID = qcResponseId,
+                ValueJson = valueJson,
+                AnsweredByUserID = answeredByUserId
+            },
+            cancellationToken: cancellationToken);
+
+        var affectedRows =
+            await connection.ExecuteAsync(command);
+
+        if (affectedRows != 1)
+        {
+            throw new KeyNotFoundException(
+                "The QC response was not found.");
+        }
+    }
+
+    public async Task UpdateProjectFieldAsync(
+    long qcFormId,
+    long qcFormProjectFieldId,
+    string valueJson,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        UPDATE public."QCFormProjectField"
+        SET
+            "Value" = CAST(@ValueJson AS jsonb),
+            "UpdatedAt" = now()
+        WHERE "QCFormProjectFieldID" =
+                @QCFormProjectFieldID
+          AND "QCFormID" = @QCFormID;
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId,
+                QCFormProjectFieldID =
+                    qcFormProjectFieldId,
+                ValueJson = valueJson
+            },
+            cancellationToken: cancellationToken);
+
+        var affectedRows =
+            await connection.ExecuteAsync(command);
+
+        if (affectedRows != 1)
+        {
+            throw new KeyNotFoundException(
+                "The QC form project field was not found.");
+        }
+    }
+
+    public async Task<string?> GetStatusAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT "Status"::text
+        FROM public."QCForm"
+        WHERE "QCFormID" = @QCFormID;
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        return await connection
+            .QuerySingleOrDefaultAsync<string>(
+                command);
+    }
+    public async Task SubmitAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        UPDATE public."QCForm"
+        SET
+            "Status" = CAST('Submitted' AS public.form_status),
+            "SubmittedAt" = now(),
+            "UpdatedAt" = now()
+        WHERE "QCFormID" = @QCFormID AND "Status"::text IN ('Draft','InProgress','ReturnedForCorrection');
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        var affectedRows =
+            await connection.ExecuteAsync(
+                command);
+
+        if (affectedRows == 0)
+        {
+            throw new InvalidOperationException(
+                $"QC form {qcFormId} was not found.");
+        }
+    }
+    public async Task<int> CountMissingRequiredProjectFieldsAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT COUNT(*)
+        FROM public."QCFormProjectField"
+        WHERE "QCFormID" = @QCFormID
+          AND "IsRequired" = true
+          AND (
+                "Value" IS NULL
+                OR "Value" = 'null'::jsonb
+                OR "Value" = '[]'::jsonb
+                OR (jsonb_typeof("Value")='string' AND btrim("Value"#>>'{}')='')
+              );
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new { QCFormID = qcFormId },
+            cancellationToken: cancellationToken);
+
+        return await connection.ExecuteScalarAsync<int>(
+            command);
+    }
+    public async Task<int> CountMissingRequiredResponsesAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT COUNT(*)
+        FROM public."QCFormField" f
+        INNER JOIN public."QCFormSection" s
+            ON s."QCFormSectionID" = f."QCFormSectionID"
+        LEFT JOIN public."QCResponse" r
+            ON r."QCFormFieldID" = f."QCFormFieldID"
+           AND r."QCFormID" = s."QCFormID"
+        WHERE s."QCFormID" = @QCFormID
+          AND f."IsRequired" = true
+          AND f."FieldType"::text NOT IN ('Photo', 'Signature')
+          AND (
+                r."QCResponseID" IS NULL
+                OR r."IsAnswered" = false
+                OR r."Value" IS NULL
+                OR r."Value" = 'null'::jsonb
+                OR r."Value" = '[]'::jsonb
+                OR (jsonb_typeof(r."Value")='string' AND btrim(r."Value"#>>'{}')='')
+              );
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new { QCFormID = qcFormId },
+            cancellationToken: cancellationToken);
+
+        return await connection.ExecuteScalarAsync<int>(
+            command);
+    }
+   
+    public async Task<int> CountMissingRequiredPhotoEvidenceAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT COUNT(*)
+        FROM public."QCFormField" f
+        INNER JOIN public."QCFormSection" s
+            ON s."QCFormSectionID" = f."QCFormSectionID"
+        WHERE s."QCFormID" = @QCFormID
+          AND (
+                (f."FieldType"::text = 'Photo' AND f."IsRequired"=true)
+                OR f."RequiresPhoto" = true
+              )
+          AND NOT EXISTS (
+                SELECT 1
+                FROM public."Evidence" e
+                WHERE e."QCFormID" = @QCFormID
+                  AND e."QCFormFieldID" = f."QCFormFieldID"
+                  AND e."EvidenceType" = CAST('Photo' AS public.evidence_type)
+              );
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new { QCFormID = qcFormId },
+            cancellationToken: cancellationToken);
+
+        return await connection.ExecuteScalarAsync<int>(
+            command);
+    }
+    public async Task<string> GetSignableContentAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT (jsonb_build_object(
+            'qcForm', (
+                SELECT jsonb_build_object(
+                    'qcFormID', q."QCFormID",
+                    'projectID', q."ProjectID",
+                    'checklistTemplateID', q."ChecklistTemplateID",
+                    'checklistTemplateVersionID', q."ChecklistTemplateVersionID",
+                    'formNumber', q."FormNumber",
+                    'status', q."Status"::text,
+                    'submittedAt', q."SubmittedAt"
+                )
+                FROM public."QCForm" q
+                WHERE q."QCFormID" = @QCFormID
+            ),
+
+            'requiredSignoffs', (
+                SELECT COALESCE(jsonb_agg(r."SignOffType" ORDER BY r."SignOffType"),'[]'::jsonb)
+                FROM qms_security."FormSignatureRequirement" r WHERE r."QCFormID"=@QCFormID
+            ),
+            'snapshotSections', (
+                SELECT COALESCE(jsonb_agg(to_jsonb(s) - 'CreatedAt' - 'UpdatedAt' ORDER BY s."QCFormSectionID"),'[]'::jsonb)
+                FROM public."QCFormSection" s WHERE s."QCFormID"=@QCFormID
+            ),
+            'snapshotFields', (
+                SELECT COALESCE(jsonb_agg(to_jsonb(f) - 'CreatedAt' - 'UpdatedAt' ORDER BY f."QCFormFieldID"),'[]'::jsonb)
+                FROM public."QCFormField" f JOIN public."QCFormSection" s ON s."QCFormSectionID"=f."QCFormSectionID"
+                WHERE s."QCFormID"=@QCFormID
+            ),
+            'projectFields', (
+                SELECT COALESCE(
+                    jsonb_agg(
+                        to_jsonb(pf) - 'CreatedAt' - 'UpdatedAt'
+                        ORDER BY pf."QCFormProjectFieldID"
+                    ),
+                    '[]'::jsonb
+                )
+                FROM public."QCFormProjectField" pf
+                WHERE pf."QCFormID" = @QCFormID
+            ),
+
+            'responses', (
+                SELECT COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'qcResponseID', r."QCResponseID",
+                            'qcFormFieldID', r."QCFormFieldID",
+                            'value', r."Value",
+                            'isAnswered', r."IsAnswered"
+                        )
+                        ORDER BY r."QCResponseID"
+                    ),
+                    '[]'::jsonb
+                )
+                FROM public."QCResponse" r
+                WHERE r."QCFormID" = @QCFormID
+            ),
+
+            'evidence', (
+                SELECT COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'evidenceID', e."EvidenceID",
+                            'qcFormFieldID', e."QCFormFieldID",
+                            'evidenceType', e."EvidenceType"::text,
+                            'storageBucket', e."StorageBucket",
+                            'storagePath', e."StoragePath",
+                            'fileName', e."FileName",
+                            'contentType', e."ContentType",
+                            'fileSizeBytes', e."FileSizeBytes",
+                            'capturedAt', e."CapturedAt",
+                            'uploadedByUserID', e."UploadedByUserID"
+                        )
+                        ORDER BY e."EvidenceID"
+                    ),
+                    '[]'::jsonb
+                )
+                FROM public."Evidence" e
+                WHERE e."QCFormID" = @QCFormID
+                  AND e."EvidenceType" <> CAST('Signature' AS public.evidence_type)
+            )
+        ) || COALESCE((SELECT jsonb_build_object('executionHeader',p."Header",'remarks',p."Remarks")
+            FROM qms_core."QCFormPresentation" p WHERE p."QCFormID"=@QCFormID),'{}'::jsonb)
+        )::text;
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        var content =
+            await connection.QuerySingleOrDefaultAsync<string>(
+                command);
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new KeyNotFoundException(
+                $"QC form {qcFormId} was not found.");
+        }
+
+        return content;
+    }
+
+    public async Task ApproveAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        UPDATE public."QCForm"
+        SET
+            "Status" = CAST('Approved' AS public.form_status),
+            "UpdatedAt" = now()
+        WHERE "QCFormID" = @QCFormID
+          AND "Status" = CAST('Submitted' AS public.form_status);
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        var affectedRows =
+            await connection.ExecuteAsync(command);
+
+        if (affectedRows == 0)
+        {
+            throw new InvalidOperationException(
+                "QC form could not be approved because it is not currently Submitted.");
+        }
+    }
+
+    public async Task ReturnForCorrectionAsync(
+    long qcFormId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        UPDATE public."QCForm"
+        SET
+            "Status" = CAST(
+                'ReturnedForCorrection'
+                AS public.form_status),
+            "UpdatedAt" = now()
+        WHERE "QCFormID" = @QCFormID
+          AND "Status" = CAST(
+              'Submitted'
+              AS public.form_status);
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId
+            },
+            cancellationToken: cancellationToken);
+
+        var affectedRows =
+            await connection.ExecuteAsync(command);
+
+        if (affectedRows == 0)
+        {
+            throw new InvalidOperationException(
+                "QC form could not be returned for correction because it is not currently Submitted.");
+        }
+    }
+
+
+    private sealed class PresentationRow { public string? HeaderJson {get;init;} public string? Remarks {get;init;} }
+    private sealed class QCFormRow
+    {
+        public long Revision { get; init; }
+        public long QCFormID { get; init; }
+        public long ProjectID { get; init; }
+        public long ChecklistTemplateID { get; init; }
+        public long ChecklistTemplateVersionID { get; init; }
+
+        public string FormNumber { get; init; } = string.Empty;
+        public string Status { get; init; } = string.Empty;
+
+        public Guid? StartedByUserID { get; init; }
+        public Guid? AssignedToUserID { get; init; }
+
+        public DateTime? StartedAt { get; init; }
+        public DateTime? SubmittedAt { get; init; }
+
+        public DateTime CreatedAt { get; init; }
+        public DateTime UpdatedAt { get; init; }
+    }
+
+    private sealed class QCFormProjectFieldRow
+    {
+        public long QCFormProjectFieldID { get; init; }
+
+        public long? ChecklistTemplateProjectFieldID { get; init; }
+
+        public string FieldKey { get; init; } = string.Empty;
+        public string FieldLabel { get; init; } = string.Empty;
+        public string FieldType { get; init; } = string.Empty;
+
+        public string? Placeholder { get; init; }
+        public string? HelpText { get; init; }
+
+        public bool IsRequired { get; init; }
+
+        public string? OptionsJson { get; init; }
+        public string? ValidationRulesJson { get; init; }
+
+        public int DisplayOrder { get; init; }
+
+        public string? ValueJson { get; init; }
+    }
+
+    private sealed class QCFormSectionRow
+    {
+        public long QCFormSectionID { get; init; }
+
+        public long? ChecklistSectionID { get; init; }
+
+        public string SectionName { get; init; } = string.Empty;
+
+        public string? Description { get; init; }
+
+        public int DisplayOrder { get; init; }
+    }
+
+    private sealed class QCFormFieldRow
+    {
+        public long QCFormFieldID { get; init; }
+
+        public long QCFormSectionID { get; init; }
+
+        public long? ChecklistFieldID { get; init; }
+
+        public string FieldKey { get; init; } = string.Empty;
+        public string FieldLabel { get; init; } = string.Empty;
+        public string FieldType { get; init; } = string.Empty;
+
+        public string? Placeholder { get; init; }
+        public string? HelpText { get; init; }
+
+        public bool IsRequired { get; init; }
+        public bool RequiresPhoto { get; init; }
+        public bool RequiresSignature { get; init; }
+
+        public string? OptionsJson { get; init; }
+        public string? ValidationRulesJson { get; init; }
+
+        public int DisplayOrder { get; init; }
+
+        public long QCResponseID { get; init; }
+
+        public string? ValueJson { get; init; }
+
+        public bool IsAnswered { get; init; }
+
+        public Guid? AnsweredByUserID { get; init; }
+        public string? AnsweredByName { get; init; }
+
+        public DateTime? AnsweredAt { get; init; }
+
+        public DateTime UpdatedAt { get; init; }
+    }
+    public async Task<QCResponseValidationRow?> GetResponseValidationAsync(
+    long qcFormId,
+    long qcResponseId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT
+            r."QCFormID",
+            r."QCResponseID",
+            r."QCFormFieldID",
+            f."FieldType"::text AS "FieldType",
+            f."IsRequired",
+            f."RequiresPhoto",
+            f."RequiresSignature",
+            f."Options"::text AS "OptionsJson",
+            f."ValidationRules"::text AS "ValidationRulesJson"
+        FROM public."QCResponse" r
+        INNER JOIN public."QCFormField" f
+            ON f."QCFormFieldID" = r."QCFormFieldID"
+        INNER JOIN public."QCFormSection" s
+            ON s."QCFormSectionID" = f."QCFormSectionID"
+        WHERE r."QCResponseID" = @QCResponseID
+          AND r."QCFormID" = @QCFormID
+          AND s."QCFormID" = @QCFormID;
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId,
+                QCResponseID = qcResponseId
+            },
+            cancellationToken: cancellationToken);
+
+        return await connection
+            .QuerySingleOrDefaultAsync<QCResponseValidationRow>(
+                command);
+    }
+    public async Task<QCProjectFieldValidationRow?> GetProjectFieldValidationAsync(
+    long qcFormId,
+    long qcFormProjectFieldId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+        SELECT
+            "Revision",
+            "QCFormID",
+            "QCFormProjectFieldID",
+            "FieldType"::text AS "FieldType",
+            "IsRequired",
+            "Options"::text AS "OptionsJson",
+            "ValidationRules"::text AS "ValidationRulesJson"
+        FROM public."QCFormProjectField"
+        WHERE "QCFormID" = @QCFormID
+          AND "QCFormProjectFieldID" =
+              @QCFormProjectFieldID;
+        """;
+
+        await using var lease = await _session.OpenAsync(cancellationToken);
+        var connection = lease.Connection;
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                QCFormID = qcFormId,
+                QCFormProjectFieldID =
+                    qcFormProjectFieldId
+            },
+            cancellationToken: cancellationToken);
+
+        return await connection
+            .QuerySingleOrDefaultAsync<QCProjectFieldValidationRow>(
+                command);
+    }
+}

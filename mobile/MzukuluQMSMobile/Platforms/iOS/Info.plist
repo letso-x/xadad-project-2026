@@ -28,5 +28,7 @@
 	</array>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
+<key>NSCameraUsageDescription</key><string>Capture inspection evidence for your authorised QC record.</string>
+<key>NSPhotoLibraryUsageDescription</key><string>Select inspection evidence to save locally and upload through the QMS API.</string>
 </dict>
 </plist>

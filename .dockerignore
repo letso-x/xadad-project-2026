@@ -1,0 +1,22 @@
+# API-only build context. Keep Git history, MAUI, docs, local tools and secrets out.
+**
+!mobile/
+!mobile/MzukuluQMS.Api/
+!mobile/MzukuluQMS.Api/**
+
+# Exclude local build/publish output and IDE deployment/authentication profiles.
+**/bin/**
+**/obj/**
+**/Properties/**
+**/*.user
+**/*.suo
+**/.vs/**
+**/.env
+**/.env.*
+**/secrets.json
+**/appsettings.Local.json
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.publishsettings
+# certs/supabase-db-ca.crt is public trust material and must remain included.
