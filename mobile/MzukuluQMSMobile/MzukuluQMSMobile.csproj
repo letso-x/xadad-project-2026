@@ -66,8 +66,23 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+		<PackageReference Include="Supabase" Version="8.3.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Data\Local\" />
+	  <Folder Include="Data\Repositories\" />
+	  <Folder Include="Helpers\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiXaml Update="Pages\ProjectsPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	</ItemGroup>
+
+  <ItemGroup><ProjectReference Include="../MzukuluQMS.Mobile.Core/MzukuluQMS.Mobile.Core.csproj" GlobalPropertiesToRemove="TargetFrameworks" /></ItemGroup>
 </Project>

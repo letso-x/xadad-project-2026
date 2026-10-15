@@ -1,0 +1,686 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="17a4c455-744d-419b-945b-abf1c0ca72ed" name="User@DESKTOP-LA3KJ7R 2026-10-12 22:57:15" runUser="DESKTOP-LA3KJ7R\CodexSandboxOffline" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-12T22:57:15.5760257+02:00" queuing="2026-10-12T22:57:15.5760270+02:00" start="2026-10-12T22:57:02.4926498+02:00" finish="2026-10-12T22:57:20.1895186+02:00" />
+  <TestSettings name="default" id="5b757566-4e8a-4ce1-ac04-2ef357e7aeb6">
+    <Deployment runDeploymentRoot="User_DESKTOP-LA3KJ7R_2026-10-12_22_57_15" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="64516a21-dc3c-442d-be7e-892be1ec8f86" testId="0056b85e-e47e-c367-d495-9baa74692eae" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_TextExceedingMaxLength_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0017957" startTime="2026-10-12T22:57:15.3912214+02:00" endTime="2026-10-12T22:57:15.3917722+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="64516a21-dc3c-442d-be7e-892be1ec8f86" />
+    <UnitTestResult executionId="6d26fb36-b857-43df-8f4c-477c70ae0c55" testId="cb8b4b07-27cd-cad4-0720-33e699b64ea9" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Missing_required_data_prevents_submission(fields: 0, responses: 0, photos: 1)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0160604" startTime="2026-10-12T22:57:19.6726728+02:00" endTime="2026-10-12T22:57:19.6894949+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6d26fb36-b857-43df-8f4c-477c70ae0c55" />
+    <UnitTestResult executionId="32fdbef2-eaeb-458a-9b0d-ac07380389bb" testId="19909367-cd3d-34c2-87c2-9d05bc3ddd41" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Submit_allows_editable_states_without_pre_submit_signoff(status: &quot;Draft&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0146478" startTime="2026-10-12T22:57:18.9434797+02:00" endTime="2026-10-12T22:57:18.9530090+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="32fdbef2-eaeb-458a-9b0d-ac07380389bb" />
+    <UnitTestResult executionId="dcb3728c-3d6d-45b2-b1fe-bc6461d4bc69" testId="c3b4bcd3-b019-dfa9-4709-0b4e4258229f" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Editable_states_accept_valid_response_and_audit(status: &quot;Draft&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0495028" startTime="2026-10-12T22:57:19.4524411+02:00" endTime="2026-10-12T22:57:19.5008958+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dcb3728c-3d6d-45b2-b1fe-bc6461d4bc69" />
+    <UnitTestResult executionId="37d196af-edca-4744-a488-8ff42248673e" testId="7d3c6f84-3124-4364-ae46-6d03edfab9db" testName="MzukuluQMS.Api.Tests.OperationFingerprintTests.Identical_bytes_are_stable_and_changed_request_or_resource_differs" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0891975" startTime="2026-10-12T22:57:18.7334288+02:00" endTime="2026-10-12T22:57:18.8216065+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="37d196af-edca-4744-a488-8ff42248673e" />
+    <UnitTestResult executionId="16fee720-623d-4d84-960b-4f4e658dc0ee" testId="58a36d2f-83c3-aa63-edc0-c72155956025" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Locked_states_never_write_response(status: &quot;Submitted&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.1932336" startTime="2026-10-12T22:57:18.9575390+02:00" endTime="2026-10-12T22:57:19.1465688+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="16fee720-623d-4d84-960b-4f4e658dc0ee" />
+    <UnitTestResult executionId="833e2c71-9029-4b4d-9c83-5e65cf77a71b" testId="25970a79-b778-de3d-1c3c-df2d70ea3d5b" testName="MzukuluQMS.Api.Tests.SignOffServiceTests.Server_resolves_actor_hash_and_normalised_signoff_type" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.3672865" startTime="2026-10-12T22:57:18.4503699+02:00" endTime="2026-10-12T22:57:18.8170569+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="833e2c71-9029-4b4d-9c83-5e65cf77a71b" />
+    <UnitTestResult executionId="df50542f-3172-449a-a1ad-5962c385f685" testId="7c77c746-64d9-0660-aa27-b71b2966be10" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Locked_states_never_write_response(status: &quot;Rejected&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0422331" startTime="2026-10-12T22:57:19.1478578+02:00" endTime="2026-10-12T22:57:19.1958454+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="df50542f-3172-449a-a1ad-5962c385f685" />
+    <UnitTestResult executionId="d786be11-27ca-45a6-b112-cf15197c4325" testId="761b3383-762d-b84a-8d10-fe4fd11f4360" testName="MzukuluQMS.Api.Tests.OperationFingerprintTests.Invalid_key_is_rejected" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0636471" startTime="2026-10-12T22:57:18.6671072+02:00" endTime="2026-10-12T22:57:18.7318236+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d786be11-27ca-45a6-b112-cf15197c4325" />
+    <UnitTestResult executionId="afc457d2-d668-4f8f-81ea-dd439ba83764" testId="dbf509a3-669d-253d-6650-b4482fc861c9" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_IntegerNumberWithWholeNumber_Succeeds" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0006210" startTime="2026-10-12T22:57:15.4628182+02:00" endTime="2026-10-12T22:57:15.4632637+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="afc457d2-d668-4f8f-81ea-dd439ba83764" />
+    <UnitTestResult executionId="f6b83f2f-7b4b-4011-a7f3-56347d7eaf40" testId="b1aa5594-863f-f05b-0c18-3eec1d21ec26" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_PhotoField_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.8183306" startTime="2026-10-12T22:57:14.6752987+02:00" endTime="2026-10-12T22:57:15.2983937+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f6b83f2f-7b4b-4011-a7f3-56347d7eaf40" />
+    <UnitTestResult executionId="6cf8b819-913e-496b-8fc4-8b2676846ec5" testId="6934819d-bedb-a3c8-3dc8-eddb1bd758e6" testName="MzukuluQMS.Api.Tests.ContentHashTests.Nonexistent_form_is_not_signed" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.8092943" startTime="2026-10-12T22:57:14.6316722+02:00" endTime="2026-10-12T22:57:15.2628433+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6cf8b819-913e-496b-8fc4-8b2676846ec5" />
+    <UnitTestResult executionId="51b7cd52-10c6-4b4b-a869-1676024a93f3" testId="0a3e8626-33b4-5882-99f9-6c76a5166bac" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_ValidDropdownOption_Succeeds" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0251616" startTime="2026-10-12T22:57:15.4714089+02:00" endTime="2026-10-12T22:57:15.4717836+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="51b7cd52-10c6-4b4b-a869-1676024a93f3" />
+    <UnitTestResult executionId="a089ef02-d0bb-49e9-9db3-7f6c3559bb56" testId="cd06aa3d-c15d-e514-0a97-15016a807b34" testName="MzukuluQMS.Api.Tests.IdentityMappingTests.Inactive_or_unlinked_users_cannot_keep_posted_qms_claims(inactive: False)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0282740" startTime="2026-10-12T22:57:18.4173595+02:00" endTime="2026-10-12T22:57:18.4447886+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a089ef02-d0bb-49e9-9db3-7f6c3559bb56" />
+    <UnitTestResult executionId="8933fb1b-456c-466d-9db0-e66d49e11ac6" testId="400e059f-52f4-0990-560c-235e578f4869" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_InvalidDate_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0023275" startTime="2026-10-12T22:57:15.3893556+02:00" endTime="2026-10-12T22:57:15.3898714+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8933fb1b-456c-466d-9db0-e66d49e11ac6" />
+    <UnitTestResult executionId="ffa425e3-d9e8-4635-9fbc-a9e39e514b58" testId="5d434182-0fbe-486a-948c-6d689d93e9b4" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Locked_states_never_write_response(status: &quot;Approved&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0281267" startTime="2026-10-12T22:57:19.1968335+02:00" endTime="2026-10-12T22:57:19.2303491+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ffa425e3-d9e8-4635-9fbc-a9e39e514b58" />
+    <UnitTestResult executionId="2b1053df-06da-4dec-a101-ab9838ca718e" testId="95160fba-6364-032a-deb1-b29027e01217" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Stale_or_missing_current_signature_prevents_approval" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0386796" startTime="2026-10-12T22:57:19.4133461+02:00" endTime="2026-10-12T22:57:19.4509807+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2b1053df-06da-4dec-a101-ab9838ca718e" />
+    <UnitTestResult executionId="a0964dca-e5e2-41df-a7e0-da2cbb31715e" testId="b3c9eac5-511e-fa65-8c5b-e713a142fdd9" testName="MzukuluQMS.Api.Tests.StartupSecurityTests.Critical_service_graph_resolves_without_database_access" computerName="DESKTOP-LA3KJ7R" duration="00:00:03.5329269" startTime="2026-10-12T22:57:15.5406786+02:00" endTime="2026-10-12T22:57:19.0597329+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a0964dca-e5e2-41df-a7e0-da2cbb31715e">
+      <Output>
+        <ErrorInfo>
+          <Message>System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.</Message>
+          <StackTrace>   at Program.&lt;Main&gt;$(String[] args) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs:line 93&#xD;
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.get_Services()&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Critical_service_graph_resolves_without_database_access() in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 30&#xD;
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)&#xD;
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="d29d3219-2206-47dc-999d-1501b520a3d1" testId="9c59dc3b-5f68-693b-43ea-ef1f52dd7389" testName="MzukuluQMS.Api.Tests.IdentityMappingTests.Inactive_or_unlinked_users_cannot_keep_posted_qms_claims(inactive: True)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0036897" startTime="2026-10-12T22:57:18.4457954+02:00" endTime="2026-10-12T22:57:18.4487554+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d29d3219-2206-47dc-999d-1501b520a3d1" />
+    <UnitTestResult executionId="079fb9a4-9142-4f67-8c35-8c7decabb050" testId="48f472d9-299f-eae8-4e6f-61146d185105" testName="MzukuluQMS.Api.Tests.SignOffServiceTests.Only_submitted_can_sign(status: &quot;Draft&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0248116" startTime="2026-10-12T22:57:18.9164848+02:00" endTime="2026-10-12T22:57:18.9320299+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="079fb9a4-9142-4f67-8c35-8c7decabb050" />
+    <UnitTestResult executionId="93c9b4e3-31d8-449c-911e-495c86bd6b13" testId="ced5d905-ce09-ac7f-a3b0-172318607d6a" testName="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/clients&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0962030" startTime="2026-10-12T22:57:19.1234763+02:00" endTime="2026-10-12T22:57:19.1762970+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="93c9b4e3-31d8-449c-911e-495c86bd6b13">
+      <Output>
+        <ErrorInfo>
+          <Message>System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.</Message>
+          <StackTrace>   at Program.&lt;Main&gt;$(String[] args) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs:line 93&#xD;
+   at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="c69aa727-8854-448e-b56e-eeace21528f0" testId="6e8052f1-9894-1b6a-aa34-ef215d62666c" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Editable_states_accept_valid_response_and_audit(status: &quot;InProgress&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0157163" startTime="2026-10-12T22:57:19.5240465+02:00" endTime="2026-10-12T22:57:19.5407640+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c69aa727-8854-448e-b56e-eeace21528f0" />
+    <UnitTestResult executionId="bebbc946-f7d5-468d-a283-2e960fe45256" testId="2f0e3f2e-4210-0d7a-625a-530badc4e9a6" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_RequiredTextWithValidValue_Succeeds" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0031768" startTime="2026-10-12T22:57:15.3851252+02:00" endTime="2026-10-12T22:57:15.3856813+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bebbc946-f7d5-468d-a283-2e960fe45256" />
+    <UnitTestResult executionId="67d9d77e-e1d1-4296-8ca7-dda8c5820067" testId="c693d2df-a778-94ba-c036-530569b6e4a7" testName="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithMissingClient_ThrowsKeyNotFoundException" computerName="DESKTOP-LA3KJ7R" duration="00:00:03.0352370" startTime="2026-10-12T22:57:15.5432544+02:00" endTime="2026-10-12T22:57:18.4580673+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="67d9d77e-e1d1-4296-8ca7-dda8c5820067" />
+    <UnitTestResult executionId="4309c583-b93d-4c61-b6b3-c33aa9ba5f37" testId="8d195bd9-05df-f759-09b4-beaf5a790666" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_RequiredTextWithEmptyValue_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0016591" startTime="2026-10-12T22:57:15.4643843+02:00" endTime="2026-10-12T22:57:15.4647579+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4309c583-b93d-4c61-b6b3-c33aa9ba5f37" />
+    <UnitTestResult executionId="db0cbbec-0d91-44a5-a7f3-03e719e26498" testId="c0abaf40-029d-7b35-4931-be844db65987" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_ValidDate_Succeeds" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0011058" startTime="2026-10-12T22:57:15.4698939+02:00" endTime="2026-10-12T22:57:15.4703084+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="db0cbbec-0d91-44a5-a7f3-03e719e26498" />
+    <UnitTestResult executionId="7c2a1386-3bc6-415b-b7af-88d83718dcdb" testId="f7aadfce-fa85-3da4-7c6a-eb302b74437c" testName="MzukuluQMS.Api.Tests.SignOffServiceTests.Only_submitted_can_sign(status: &quot;ReturnedForCorrection&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0364643" startTime="2026-10-12T22:57:18.9846108+02:00" endTime="2026-10-12T22:57:19.0202546+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7c2a1386-3bc6-415b-b7af-88d83718dcdb" />
+    <UnitTestResult executionId="c3e704f4-e6f5-42c6-93e1-623d0d042714" testId="ead630bc-bf21-c0aa-220a-b551316cff5e" testName="MzukuluQMS.Api.Tests.IdentityMappingTests.Server_mapping_replaces_supplied_role_and_user" computerName="DESKTOP-LA3KJ7R" duration="00:00:01.2723663" startTime="2026-10-12T22:57:17.1444006+02:00" endTime="2026-10-12T22:57:18.4161026+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c3e704f4-e6f5-42c6-93e1-623d0d042714" />
+    <UnitTestResult executionId="58e2d9a3-c782-4c89-93c1-19322f00181e" testId="9d2662b6-a375-91c4-c689-7c2c0e3d2007" testName="MzukuluQMS.Api.Tests.NcrRulesTests.Incomplete_changed_or_closed_cases_cannot_verify" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0219507" startTime="2026-10-12T22:57:15.4851264+02:00" endTime="2026-10-12T22:57:15.5146948+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="58e2d9a3-c782-4c89-93c1-19322f00181e" />
+    <UnitTestResult executionId="ea409ade-5b9a-4bce-9730-1b8c41245788" testId="cfda11f0-6af9-1363-dfbe-ac968bc26f6f" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_InvalidDropdownOption_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0033181" startTime="2026-10-12T22:57:15.4728735+02:00" endTime="2026-10-12T22:57:15.4732621+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ea409ade-5b9a-4bce-9730-1b8c41245788" />
+    <UnitTestResult executionId="538c814f-82d9-47c5-9b01-4a3e97b5a188" testId="7220d1ba-e441-2675-06c2-a6b8b57ebd99" testName="MzukuluQMS.Api.Tests.CoreRulesTests.Calibration_due_date_is_inclusive_and_future_or_expired_is_denied" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0051520" startTime="2026-10-12T22:57:17.1378615+02:00" endTime="2026-10-12T22:57:17.1422386+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="538c814f-82d9-47c5-9b01-4a3e97b5a188" />
+    <UnitTestResult executionId="e729e614-5a3c-438c-8e12-dca86b2dc01b" testId="3358b9fa-b276-93bc-d993-d25a8ffefd67" testName="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/projects&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0553640" startTime="2026-10-12T22:57:19.4327298+02:00" endTime="2026-10-12T22:57:19.4810140+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e729e614-5a3c-438c-8e12-dca86b2dc01b">
+      <Output>
+        <ErrorInfo>
+          <Message>System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.</Message>
+          <StackTrace>   at Program.&lt;Main&gt;$(String[] args) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs:line 93&#xD;
+   at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e943bcbc-b5a9-4ef8-9ee5-40a7e36b124a" testId="82be8cb9-9a34-014d-59a5-56ce27a5f456" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Current_signatures_checked_before_approval_and_audit" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0282099" startTime="2026-10-12T22:57:19.5420107+02:00" endTime="2026-10-12T22:57:19.5669507+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e943bcbc-b5a9-4ef8-9ee5-40a7e36b124a" />
+    <UnitTestResult executionId="b7f27e46-3302-4489-8157-39d6599ab87d" testId="ec879634-befe-84f3-3be2-2dfe008057a2" testName="MzukuluQMS.Api.Tests.CoreRulesTests.Cycles_and_missing_dependencies_are_rejected" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0179895" startTime="2026-10-12T22:57:17.1202726+02:00" endTime="2026-10-12T22:57:17.1365685+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b7f27e46-3302-4489-8157-39d6599ab87d" />
+    <UnitTestResult executionId="8a7a44d2-0505-40a1-ada3-4e593bb18114" testId="3e638015-5bd7-2ee4-5dd1-96460f3a7974" testName="MzukuluQMS.Api.Tests.CoreRulesTests.Hold_and_completion_prevent_downstream_progress" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0666076" startTime="2026-10-12T22:57:17.0509919+02:00" endTime="2026-10-12T22:57:17.1181530+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8a7a44d2-0505-40a1-ada3-4e593bb18114" />
+    <UnitTestResult executionId="9f7665b3-9612-4e59-ba89-776d2dffa32d" testId="e300ea19-8528-7eae-74f3-1d112d2d064f" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Missing_required_data_prevents_submission(fields: 1, responses: 0, photos: 0)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0123017" startTime="2026-10-12T22:57:19.6907659+02:00" endTime="2026-10-12T22:57:19.7023470+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9f7665b3-9612-4e59-ba89-776d2dffa32d" />
+    <UnitTestResult executionId="aa767b6c-2892-44d1-a675-cb2a9c863996" testId="4915f4c2-eb47-afae-612a-36f832470d5e" testName="MzukuluQMS.Api.Tests.SignOffServiceTests.Only_submitted_can_sign(status: &quot;Cancelled&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0334426" startTime="2026-10-12T22:57:18.9492153+02:00" endTime="2026-10-12T22:57:18.9834304+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aa767b6c-2892-44d1-a675-cb2a9c863996" />
+    <UnitTestResult executionId="537e5df7-637e-48e6-81c7-93fb6cc442cb" testId="806fa417-f532-9603-c13b-e09a7460b0a2" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Permission_denial_prevents_mutation" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0988803" startTime="2026-10-12T22:57:19.2487002+02:00" endTime="2026-10-12T22:57:19.3467200+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="537e5df7-637e-48e6-81c7-93fb6cc442cb" />
+    <UnitTestResult executionId="30556739-9a58-472e-9099-d97ab93670d9" testId="a48de73d-26b9-7bab-d912-9994d6f1da58" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Missing_required_data_prevents_submission(fields: 0, responses: 1, photos: 0)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0414866" startTime="2026-10-12T22:57:19.6305724+02:00" endTime="2026-10-12T22:57:19.6712965+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="30556739-9a58-472e-9099-d97ab93670d9" />
+    <UnitTestResult executionId="0aec0f3f-5f0b-41e8-a973-a3ea33869ca8" testId="9bd20f7b-52ed-37c9-db6c-aeb1089b1a36" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_DecimalOutsideMaximum_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0221195" startTime="2026-10-12T22:57:15.3874899+02:00" endTime="2026-10-12T22:57:15.3879948+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0aec0f3f-5f0b-41e8-a973-a3ea33869ca8" />
+    <UnitTestResult executionId="16f8cfbc-3a7b-4465-a2ad-895905ceabe0" testId="65d6e03a-ed4e-4b09-cf04-7ba0cdb31542" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Submit_allows_editable_states_without_pre_submit_signoff(status: &quot;InProgress&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0805863" startTime="2026-10-12T22:57:18.8267708+02:00" endTime="2026-10-12T22:57:18.9168257+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="16f8cfbc-3a7b-4465-a2ad-895905ceabe0" />
+    <UnitTestResult executionId="23e0a314-1afa-4340-b551-643a9b8b318a" testId="76e623fb-bfb2-6318-ebab-d65689dc5c4f" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Submit_allows_editable_states_without_pre_submit_signoff(status: &quot;ReturnedForCorrection&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0286074" startTime="2026-10-12T22:57:18.9177552+02:00" endTime="2026-10-12T22:57:18.9424459+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="23e0a314-1afa-4340-b551-643a9b8b318a" />
+    <UnitTestResult executionId="4c806e51-3703-4563-9082-781eb58577ec" testId="5712cbe0-7e0a-e285-d6c3-7bbe6e1195f5" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Locked_states_never_write_response(status: &quot;Cancelled&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0222770" startTime="2026-10-12T22:57:19.2314005+02:00" endTime="2026-10-12T22:57:19.2474982+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4c806e51-3703-4563-9082-781eb58577ec" />
+    <UnitTestResult executionId="9329f34c-8cfb-42d8-9cbc-f08bae73bd84" testId="641a35bc-ee29-97c2-cd15-32d9fbe3b0ad" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_IntegerNumberWithDecimal_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0065283" startTime="2026-10-12T22:57:15.3817281+02:00" endTime="2026-10-12T22:57:15.3828452+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9329f34c-8cfb-42d8-9cbc-f08bae73bd84" />
+    <UnitTestResult executionId="cdafbef3-9883-4a35-a11a-9b16c184aed5" testId="a3d7e10b-16f8-dc82-ce46-58fc9ab54b18" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Editable_states_accept_valid_response_and_audit(status: &quot;ReturnedForCorrection&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0206946" startTime="2026-10-12T22:57:19.5018827+02:00" endTime="2026-10-12T22:57:19.5222586+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cdafbef3-9883-4a35-a11a-9b16c184aed5" />
+    <UnitTestResult executionId="13cb9c43-d579-4e07-b278-f9ed82084794" testId="086556e6-eb23-797b-d5e8-3ce897f33dd6" testName="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithInactiveClient_ThrowsInvalidOperationException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0291889" startTime="2026-10-12T22:57:18.5175860+02:00" endTime="2026-10-12T22:57:18.5456677+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="13cb9c43-d579-4e07-b278-f9ed82084794" />
+    <UnitTestResult executionId="112f3e08-9b59-4f24-b43b-78e054e7cbda" testId="fdd3f1e5-e628-c647-bb4b-46a841587264" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_InvalidBoolean_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0033554" startTime="2026-10-12T22:57:15.4658588+02:00" endTime="2026-10-12T22:57:15.4662288+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="112f3e08-9b59-4f24-b43b-78e054e7cbda" />
+    <UnitTestResult executionId="a4d41728-7015-4591-96c4-9df72e53a364" testId="61d8fb73-19a2-c8f6-5f39-02fa70589a53" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Correction_records_reason_and_does_not_delete_signatures" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0287169" startTime="2026-10-12T22:57:19.7036546+02:00" endTime="2026-10-12T22:57:19.7313733+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a4d41728-7015-4591-96c4-9df72e53a364" />
+    <UnitTestResult executionId="05e58445-d497-4243-99c3-0791ffa8ad0e" testId="313e4297-ec9d-0e11-6571-1aad31bfd5da" testName="MzukuluQMS.Api.Tests.ContentHashTests.Nested_object_keys_are_ordinal_and_types_remain_distinct" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0047907" startTime="2026-10-12T22:57:15.5141126+02:00" endTime="2026-10-12T22:57:15.5354202+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="05e58445-d497-4243-99c3-0791ffa8ad0e" />
+    <UnitTestResult executionId="85d99b9c-19b7-42f7-a50e-e65e45fd8a22" testId="d45608b0-dd43-f916-b486-7dfaca019d6a" testName="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_ValidBoolean_Succeeds" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0015485" startTime="2026-10-12T22:57:15.3930976+02:00" endTime="2026-10-12T22:57:15.3936860+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="85d99b9c-19b7-42f7-a50e-e65e45fd8a22" />
+    <UnitTestResult executionId="81d1c502-4dd3-406b-b4de-7986f9a1c6b0" testId="5c54ba18-c514-f22e-8421-0cd7d82052e3" testName="MzukuluQMS.Api.Tests.NcrRulesTests.Creator_and_corrector_cannot_verify_their_own_case" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0057052" startTime="2026-10-12T22:57:15.5333430+02:00" endTime="2026-10-12T22:57:15.5383393+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="81d1c502-4dd3-406b-b4de-7986f9a1c6b0" />
+    <UnitTestResult executionId="2c76b32b-49cb-41da-acd2-c8bfc131ef98" testId="75ab6899-0439-d597-558b-cb1f6c248418" testName="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithInvalidClientId_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0214654" startTime="2026-10-12T22:57:18.5004203+02:00" endTime="2026-10-12T22:57:18.5162747+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2c76b32b-49cb-41da-acd2-c8bfc131ef98" />
+    <UnitTestResult executionId="77b7e7fa-e69b-40f3-b964-259eb003e26a" testId="4c16b6a2-226a-bfb7-27a8-510cfbf2dd58" testName="MzukuluQMS.Api.Tests.ContentHashTests.Signable_content_changes_invalidate_hash(property: &quot;evidence&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.1250114" startTime="2026-10-12T22:57:15.3820370+02:00" endTime="2026-10-12T22:57:15.4858930+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="77b7e7fa-e69b-40f3-b964-259eb003e26a" />
+    <UnitTestResult executionId="7dbaa556-6193-444f-8fff-d867fab637cf" testId="077a73b7-631a-c82c-879e-8f17bca4bca9" testName="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/qc-forms/101&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0442567" startTime="2026-10-12T22:57:19.1876363+02:00" endTime="2026-10-12T22:57:19.2222063+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7dbaa556-6193-444f-8fff-d867fab637cf">
+      <Output>
+        <ErrorInfo>
+          <Message>System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.</Message>
+          <StackTrace>   at Program.&lt;Main&gt;$(String[] args) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs:line 93&#xD;
+   at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e2edd973-2183-4371-90be-7b9a6ef59249" testId="f360d774-2d70-5395-f600-d901219c680b" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Audit_failure_is_not_reported_as_success" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0641055" startTime="2026-10-12T22:57:19.3481079+02:00" endTime="2026-10-12T22:57:19.4119585+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e2edd973-2183-4371-90be-7b9a6ef59249" />
+    <UnitTestResult executionId="bf0d989b-2eb5-4888-a74b-90b0582536fc" testId="77348489-0b83-44eb-302c-3c50b9ff1226" testName="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/checklist-templates&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.1378026" startTime="2026-10-12T22:57:19.2859432+02:00" endTime="2026-10-12T22:57:19.4193178+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bf0d989b-2eb5-4888-a74b-90b0582536fc">
+      <Output>
+        <ErrorInfo>
+          <Message>System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.</Message>
+          <StackTrace>   at Program.&lt;Main&gt;$(String[] args) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs:line 93&#xD;
+   at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="b4fda7f0-d0d6-4d86-af95-44863aa4df9e" testId="8dd87467-f67b-4d04-078c-572dadc50036" testName="MzukuluQMS.Api.Tests.SignOffServiceTests.Signing_permission_denied" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0253194" startTime="2026-10-12T22:57:19.0481595+02:00" endTime="2026-10-12T22:57:19.1241334+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b4fda7f0-d0d6-4d86-af95-44863aa4df9e" />
+    <UnitTestResult executionId="24336ce4-90bb-4df4-95e6-6c4c50f1d464" testId="cf1d44f3-b957-117a-3004-5559677af901" testName="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithMissingProjectName_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0128195" startTime="2026-10-12T22:57:18.6533700+02:00" endTime="2026-10-12T22:57:18.6653635+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="24336ce4-90bb-4df4-95e6-6c4c50f1d464" />
+    <UnitTestResult executionId="351ed6d1-dc76-4933-8588-019b28d37bd0" testId="69b2c6b8-b40c-5fed-30a7-d42808275179" testName="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/quality/notifications&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0435052" startTime="2026-10-12T22:57:19.2299140+02:00" endTime="2026-10-12T22:57:19.2674184+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="351ed6d1-dc76-4933-8588-019b28d37bd0">
+      <Output>
+        <ErrorInfo>
+          <Message>System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.</Message>
+          <StackTrace>   at Program.&lt;Main&gt;$(String[] args) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs:line 93&#xD;
+   at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+--- End of stack trace from previous location ---&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+   at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+   at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+   at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route) in C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs:line 26&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="88458655-e928-4c98-a573-0c6b4c03ab15" testId="5d0ab314-c8c2-9bc5-8088-13da11425704" testName="MzukuluQMS.Api.Tests.ContentHashTests.Signable_content_changes_invalidate_hash(property: &quot;responses&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0003766" startTime="2026-10-12T22:57:15.4995831+02:00" endTime="2026-10-12T22:57:15.5000747+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="88458655-e928-4c98-a573-0c6b4c03ab15" />
+    <UnitTestResult executionId="1068b7eb-747d-4879-b39c-bb58ac920312" testId="3d0ae428-8719-b455-c5da-c3989624e4de" testName="MzukuluQMS.Api.Tests.SignOffServiceTests.Only_submitted_can_sign(status: &quot;Approved&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0893428" startTime="2026-10-12T22:57:18.8183537+02:00" endTime="2026-10-12T22:57:18.9095440+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1068b7eb-747d-4879-b39c-bb58ac920312" />
+    <UnitTestResult executionId="688a1f0d-74f1-4d61-b8e6-92034fb74467" testId="3064a6bb-9495-c936-dca9-4e478c69ab6e" testName="MzukuluQMS.Api.Tests.ContentHashTests.Workflow_metadata_does_not_change_version_2_hash" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0225904" startTime="2026-10-12T22:57:15.5378259+02:00" endTime="2026-10-12T22:57:15.5412490+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="688a1f0d-74f1-4d61-b8e6-92034fb74467" />
+    <UnitTestResult executionId="acfe34d0-f774-4ee0-8d3e-aacec3472b11" testId="efdb1e52-541a-4771-df88-27566e781e3c" testName="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithValidRequest_CallsRepository" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.1061244" startTime="2026-10-12T22:57:18.5469346+02:00" endTime="2026-10-12T22:57:18.6521506+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="acfe34d0-f774-4ee0-8d3e-aacec3472b11" />
+    <UnitTestResult executionId="69abdd4d-474c-46c4-bfc0-e6af55b54a9f" testId="590509f6-8c20-42b3-d921-8457ae1addc9" testName="MzukuluQMS.Api.Tests.SignOffServiceTests.Invalid_evidence_identity_form_type_or_reuse_prevents_signing" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0247570" startTime="2026-10-12T22:57:19.0225391+02:00" endTime="2026-10-12T22:57:19.0469109+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="69abdd4d-474c-46c4-bfc0-e6af55b54a9f" />
+    <UnitTestResult executionId="4cd85795-add7-4f0a-bb93-7b90f09d3f99" testId="745d346c-1700-81f3-fd25-003920bc38bf" testName="MzukuluQMS.Api.Tests.ContentHashTests.Signable_content_changes_invalidate_hash(property: &quot;projectFields&quot;)" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0017682" startTime="2026-10-12T22:57:15.4872417+02:00" endTime="2026-10-12T22:57:15.4877377+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4cd85795-add7-4f0a-bb93-7b90f09d3f99" />
+    <UnitTestResult executionId="dea74611-01c9-405e-9ca7-7d8f02aa5597" testId="87785fa8-aaac-4c25-0083-555493a86c35" testName="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Correction_requires_reason" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0618407" startTime="2026-10-12T22:57:19.5741612+02:00" endTime="2026-10-12T22:57:19.6292570+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dea74611-01c9-405e-9ca7-7d8f02aa5597" />
+    <UnitTestResult executionId="3a976b6a-e44f-4f88-bfc1-d1315c5abba2" testId="83f73975-e7bb-06d8-5b4c-50bcc92ad026" testName="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithEndDateBeforeStartDate_ThrowsArgumentException" computerName="DESKTOP-LA3KJ7R" duration="00:00:00.0356541" startTime="2026-10-12T22:57:18.4596916+02:00" endTime="2026-10-12T22:57:18.4942438+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3a976b6a-e44f-4f88-bfc1-d1315c5abba2" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Editable_states_accept_valid_response_and_audit(status: &quot;Draft&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="c3b4bcd3-b019-dfa9-4709-0b4e4258229f">
+      <Execution id="dcb3728c-3d6d-45b2-b1fe-bc6461d4bc69" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Editable_states_accept_valid_response_and_audit" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.CoreRulesTests.Calibration_due_date_is_inclusive_and_future_or_expired_is_denied" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="7220d1ba-e441-2675-06c2-a6b8b57ebd99">
+      <Execution id="538c814f-82d9-47c5-9b01-4a3e97b5a188" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.CoreRulesTests" name="Calibration_due_date_is_inclusive_and_future_or_expired_is_denied" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_InvalidDropdownOption_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="cfda11f0-6af9-1363-dfbe-ac968bc26f6f">
+      <Execution id="ea409ade-5b9a-4bce-9730-1b8c41245788" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_InvalidDropdownOption_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_RequiredTextWithEmptyValue_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="8d195bd9-05df-f759-09b4-beaf5a790666">
+      <Execution id="4309c583-b93d-4c61-b6b3-c33aa9ba5f37" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_RequiredTextWithEmptyValue_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Stale_or_missing_current_signature_prevents_approval" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="95160fba-6364-032a-deb1-b29027e01217">
+      <Execution id="2b1053df-06da-4dec-a101-ab9838ca718e" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Stale_or_missing_current_signature_prevents_approval" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_TextExceedingMaxLength_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="0056b85e-e47e-c367-d495-9baa74692eae">
+      <Execution id="64516a21-dc3c-442d-be7e-892be1ec8f86" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_TextExceedingMaxLength_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/clients&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="ced5d905-ce09-ac7f-a3b0-172318607d6a">
+      <Execution id="93c9b4e3-31d8-449c-911e-495c86bd6b13" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.StartupSecurityTests" name="Anonymous_requests_are_401_in_real_pipeline" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.SignOffServiceTests.Only_submitted_can_sign(status: &quot;Cancelled&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="4915f4c2-eb47-afae-612a-36f832470d5e">
+      <Execution id="aa767b6c-2892-44d1-a675-cb2a9c863996" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.SignOffServiceTests" name="Only_submitted_can_sign" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/quality/notifications&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="69b2c6b8-b40c-5fed-30a7-d42808275179">
+      <Execution id="351ed6d1-dc76-4933-8588-019b28d37bd0" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.StartupSecurityTests" name="Anonymous_requests_are_401_in_real_pipeline" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Locked_states_never_write_response(status: &quot;Rejected&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="7c77c746-64d9-0660-aa27-b71b2966be10">
+      <Execution id="df50542f-3172-449a-a1ad-5962c385f685" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Locked_states_never_write_response" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.NcrRulesTests.Incomplete_changed_or_closed_cases_cannot_verify" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="9d2662b6-a375-91c4-c689-7c2c0e3d2007">
+      <Execution id="58e2d9a3-c782-4c89-93c1-19322f00181e" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.NcrRulesTests" name="Incomplete_changed_or_closed_cases_cannot_verify" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.IdentityMappingTests.Inactive_or_unlinked_users_cannot_keep_posted_qms_claims(inactive: True)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="9c59dc3b-5f68-693b-43ea-ef1f52dd7389">
+      <Execution id="d29d3219-2206-47dc-999d-1501b520a3d1" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.IdentityMappingTests" name="Inactive_or_unlinked_users_cannot_keep_posted_qms_claims" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_ValidBoolean_Succeeds" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="d45608b0-dd43-f916-b486-7dfaca019d6a">
+      <Execution id="85d99b9c-19b7-42f7-a50e-e65e45fd8a22" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_ValidBoolean_Succeeds" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithMissingClient_ThrowsKeyNotFoundException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="c693d2df-a778-94ba-c036-530569b6e4a7">
+      <Execution id="67d9d77e-e1d1-4296-8ca7-dda8c5820067" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ProjectServiceTests" name="CreateAsync_WithMissingClient_ThrowsKeyNotFoundException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.OperationFingerprintTests.Identical_bytes_are_stable_and_changed_request_or_resource_differs" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="7d3c6f84-3124-4364-ae46-6d03edfab9db">
+      <Execution id="37d196af-edca-4744-a488-8ff42248673e" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.OperationFingerprintTests" name="Identical_bytes_are_stable_and_changed_request_or_resource_differs" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/qc-forms/101&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="077a73b7-631a-c82c-879e-8f17bca4bca9">
+      <Execution id="7dbaa556-6193-444f-8fff-d867fab637cf" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.StartupSecurityTests" name="Anonymous_requests_are_401_in_real_pipeline" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithInvalidClientId_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="75ab6899-0439-d597-558b-cb1f6c248418">
+      <Execution id="2c76b32b-49cb-41da-acd2-c8bfc131ef98" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ProjectServiceTests" name="CreateAsync_WithInvalidClientId_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.SignOffServiceTests.Only_submitted_can_sign(status: &quot;Approved&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="3d0ae428-8719-b455-c5da-c3989624e4de">
+      <Execution id="1068b7eb-747d-4879-b39c-bb58ac920312" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.SignOffServiceTests" name="Only_submitted_can_sign" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithInactiveClient_ThrowsInvalidOperationException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="086556e6-eb23-797b-d5e8-3ce897f33dd6">
+      <Execution id="13cb9c43-d579-4e07-b278-f9ed82084794" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ProjectServiceTests" name="CreateAsync_WithInactiveClient_ThrowsInvalidOperationException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ContentHashTests.Signable_content_changes_invalidate_hash(property: &quot;responses&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="5d0ab314-c8c2-9bc5-8088-13da11425704">
+      <Execution id="88458655-e928-4c98-a573-0c6b4c03ab15" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ContentHashTests" name="Signable_content_changes_invalidate_hash" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_InvalidBoolean_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="fdd3f1e5-e628-c647-bb4b-46a841587264">
+      <Execution id="112f3e08-9b59-4f24-b43b-78e054e7cbda" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_InvalidBoolean_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.NcrRulesTests.Creator_and_corrector_cannot_verify_their_own_case" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="5c54ba18-c514-f22e-8421-0cd7d82052e3">
+      <Execution id="81d1c502-4dd3-406b-b4de-7986f9a1c6b0" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.NcrRulesTests" name="Creator_and_corrector_cannot_verify_their_own_case" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_InvalidDate_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="400e059f-52f4-0990-560c-235e578f4869">
+      <Execution id="8933fb1b-456c-466d-9db0-e66d49e11ac6" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_InvalidDate_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/projects&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="3358b9fa-b276-93bc-d993-d25a8ffefd67">
+      <Execution id="e729e614-5a3c-438c-8e12-dca86b2dc01b" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.StartupSecurityTests" name="Anonymous_requests_are_401_in_real_pipeline" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithEndDateBeforeStartDate_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="83f73975-e7bb-06d8-5b4c-50bcc92ad026">
+      <Execution id="3a976b6a-e44f-4f88-bfc1-d1315c5abba2" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ProjectServiceTests" name="CreateAsync_WithEndDateBeforeStartDate_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.IdentityMappingTests.Server_mapping_replaces_supplied_role_and_user" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="ead630bc-bf21-c0aa-220a-b551316cff5e">
+      <Execution id="c3e704f4-e6f5-42c6-93e1-623d0d042714" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.IdentityMappingTests" name="Server_mapping_replaces_supplied_role_and_user" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ContentHashTests.Signable_content_changes_invalidate_hash(property: &quot;projectFields&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="745d346c-1700-81f3-fd25-003920bc38bf">
+      <Execution id="4cd85795-add7-4f0a-bb93-7b90f09d3f99" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ContentHashTests" name="Signable_content_changes_invalidate_hash" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_DecimalOutsideMaximum_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="9bd20f7b-52ed-37c9-db6c-aeb1089b1a36">
+      <Execution id="0aec0f3f-5f0b-41e8-a973-a3ea33869ca8" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_DecimalOutsideMaximum_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Permission_denial_prevents_mutation" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="806fa417-f532-9603-c13b-e09a7460b0a2">
+      <Execution id="537e5df7-637e-48e6-81c7-93fb6cc442cb" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Permission_denial_prevents_mutation" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.OperationFingerprintTests.Invalid_key_is_rejected" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="761b3383-762d-b84a-8d10-fe4fd11f4360">
+      <Execution id="d786be11-27ca-45a6-b112-cf15197c4325" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.OperationFingerprintTests" name="Invalid_key_is_rejected" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_RequiredTextWithValidValue_Succeeds" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="2f0e3f2e-4210-0d7a-625a-530badc4e9a6">
+      <Execution id="bebbc946-f7d5-468d-a283-2e960fe45256" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_RequiredTextWithValidValue_Succeeds" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.SignOffServiceTests.Only_submitted_can_sign(status: &quot;ReturnedForCorrection&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="f7aadfce-fa85-3da4-7c6a-eb302b74437c">
+      <Execution id="7c2a1386-3bc6-415b-b7af-88d83718dcdb" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.SignOffServiceTests" name="Only_submitted_can_sign" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Correction_records_reason_and_does_not_delete_signatures" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="61d8fb73-19a2-c8f6-5f39-02fa70589a53">
+      <Execution id="a4d41728-7015-4591-96c4-9df72e53a364" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Correction_records_reason_and_does_not_delete_signatures" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: &quot;/api/checklist-templates&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="77348489-0b83-44eb-302c-3c50b9ff1226">
+      <Execution id="bf0d989b-2eb5-4888-a74b-90b0582536fc" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.StartupSecurityTests" name="Anonymous_requests_are_401_in_real_pipeline" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.CoreRulesTests.Cycles_and_missing_dependencies_are_rejected" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="ec879634-befe-84f3-3be2-2dfe008057a2">
+      <Execution id="b7f27e46-3302-4489-8157-39d6599ab87d" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.CoreRulesTests" name="Cycles_and_missing_dependencies_are_rejected" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Current_signatures_checked_before_approval_and_audit" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="82be8cb9-9a34-014d-59a5-56ce27a5f456">
+      <Execution id="e943bcbc-b5a9-4ef8-9ee5-40a7e36b124a" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Current_signatures_checked_before_approval_and_audit" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.StartupSecurityTests.Critical_service_graph_resolves_without_database_access" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="b3c9eac5-511e-fa65-8c5b-e713a142fdd9">
+      <Execution id="a0964dca-e5e2-41df-a7e0-da2cbb31715e" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.StartupSecurityTests" name="Critical_service_graph_resolves_without_database_access" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Editable_states_accept_valid_response_and_audit(status: &quot;ReturnedForCorrection&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="a3d7e10b-16f8-dc82-ce46-58fc9ab54b18">
+      <Execution id="cdafbef3-9883-4a35-a11a-9b16c184aed5" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Editable_states_accept_valid_response_and_audit" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Locked_states_never_write_response(status: &quot;Submitted&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="58a36d2f-83c3-aa63-edc0-c72155956025">
+      <Execution id="16fee720-623d-4d84-960b-4f4e658dc0ee" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Locked_states_never_write_response" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_IntegerNumberWithDecimal_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="641a35bc-ee29-97c2-cd15-32d9fbe3b0ad">
+      <Execution id="9329f34c-8cfb-42d8-9cbc-f08bae73bd84" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_IntegerNumberWithDecimal_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_PhotoField_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="b1aa5594-863f-f05b-0c18-3eec1d21ec26">
+      <Execution id="f6b83f2f-7b4b-4011-a7f3-56347d7eaf40" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_PhotoField_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Locked_states_never_write_response(status: &quot;Approved&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="5d434182-0fbe-486a-948c-6d689d93e9b4">
+      <Execution id="ffa425e3-d9e8-4635-9fbc-a9e39e514b58" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Locked_states_never_write_response" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.SignOffServiceTests.Only_submitted_can_sign(status: &quot;Draft&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="48f472d9-299f-eae8-4e6f-61146d185105">
+      <Execution id="079fb9a4-9142-4f67-8c35-8c7decabb050" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.SignOffServiceTests" name="Only_submitted_can_sign" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.SignOffServiceTests.Signing_permission_denied" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="8dd87467-f67b-4d04-078c-572dadc50036">
+      <Execution id="b4fda7f0-d0d6-4d86-af95-44863aa4df9e" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.SignOffServiceTests" name="Signing_permission_denied" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ContentHashTests.Workflow_metadata_does_not_change_version_2_hash" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="3064a6bb-9495-c936-dca9-4e478c69ab6e">
+      <Execution id="688a1f0d-74f1-4d61-b8e6-92034fb74467" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ContentHashTests" name="Workflow_metadata_does_not_change_version_2_hash" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_ValidDropdownOption_Succeeds" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="0a3e8626-33b4-5882-99f9-6c76a5166bac">
+      <Execution id="51b7cd52-10c6-4b4b-a869-1676024a93f3" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_ValidDropdownOption_Succeeds" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ContentHashTests.Nonexistent_form_is_not_signed" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="6934819d-bedb-a3c8-3dc8-eddb1bd758e6">
+      <Execution id="6cf8b819-913e-496b-8fc4-8b2676846ec5" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ContentHashTests" name="Nonexistent_form_is_not_signed" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Submit_allows_editable_states_without_pre_submit_signoff(status: &quot;InProgress&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="65d6e03a-ed4e-4b09-cf04-7ba0cdb31542">
+      <Execution id="16f8cfbc-3a7b-4465-a2ad-895905ceabe0" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Submit_allows_editable_states_without_pre_submit_signoff" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Editable_states_accept_valid_response_and_audit(status: &quot;InProgress&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="6e8052f1-9894-1b6a-aa34-ef215d62666c">
+      <Execution id="c69aa727-8854-448e-b56e-eeace21528f0" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Editable_states_accept_valid_response_and_audit" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Missing_required_data_prevents_submission(fields: 0, responses: 0, photos: 1)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="cb8b4b07-27cd-cad4-0720-33e699b64ea9">
+      <Execution id="6d26fb36-b857-43df-8f4c-477c70ae0c55" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Missing_required_data_prevents_submission" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.IdentityMappingTests.Inactive_or_unlinked_users_cannot_keep_posted_qms_claims(inactive: False)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="cd06aa3d-c15d-e514-0a97-15016a807b34">
+      <Execution id="a089ef02-d0bb-49e9-9db3-7f6c3559bb56" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.IdentityMappingTests" name="Inactive_or_unlinked_users_cannot_keep_posted_qms_claims" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Missing_required_data_prevents_submission(fields: 0, responses: 1, photos: 0)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="a48de73d-26b9-7bab-d912-9994d6f1da58">
+      <Execution id="30556739-9a58-472e-9099-d97ab93670d9" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Missing_required_data_prevents_submission" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ContentHashTests.Nested_object_keys_are_ordinal_and_types_remain_distinct" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="313e4297-ec9d-0e11-6571-1aad31bfd5da">
+      <Execution id="05e58445-d497-4243-99c3-0791ffa8ad0e" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ContentHashTests" name="Nested_object_keys_are_ordinal_and_types_remain_distinct" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_IntegerNumberWithWholeNumber_Succeeds" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="dbf509a3-669d-253d-6650-b4482fc861c9">
+      <Execution id="afc457d2-d668-4f8f-81ea-dd439ba83764" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_IntegerNumberWithWholeNumber_Succeeds" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Locked_states_never_write_response(status: &quot;Cancelled&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="5712cbe0-7e0a-e285-d6c3-7bbe6e1195f5">
+      <Execution id="4c806e51-3703-4563-9082-781eb58577ec" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Locked_states_never_write_response" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Submit_allows_editable_states_without_pre_submit_signoff(status: &quot;ReturnedForCorrection&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="76e623fb-bfb2-6318-ebab-d65689dc5c4f">
+      <Execution id="23e0a314-1afa-4340-b551-643a9b8b318a" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Submit_allows_editable_states_without_pre_submit_signoff" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Submit_allows_editable_states_without_pre_submit_signoff(status: &quot;Draft&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="19909367-cd3d-34c2-87c2-9d05bc3ddd41">
+      <Execution id="32fdbef2-eaeb-458a-9b0d-ac07380389bb" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Submit_allows_editable_states_without_pre_submit_signoff" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Missing_required_data_prevents_submission(fields: 1, responses: 0, photos: 0)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="e300ea19-8528-7eae-74f3-1d112d2d064f">
+      <Execution id="9f7665b3-9612-4e59-ba89-776d2dffa32d" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Missing_required_data_prevents_submission" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.SignOffServiceTests.Invalid_evidence_identity_form_type_or_reuse_prevents_signing" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="590509f6-8c20-42b3-d921-8457ae1addc9">
+      <Execution id="69abdd4d-474c-46c4-bfc0-e6af55b54a9f" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.SignOffServiceTests" name="Invalid_evidence_identity_form_type_or_reuse_prevents_signing" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Audit_failure_is_not_reported_as_success" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="f360d774-2d70-5395-f600-d901219c680b">
+      <Execution id="e2edd973-2183-4371-90be-7b9a6ef59249" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Audit_failure_is_not_reported_as_success" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.FieldValueValidatorTests.Validate_ValidDate_Succeeds" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="c0abaf40-029d-7b35-4931-be844db65987">
+      <Execution id="db0cbbec-0d91-44a5-a7f3-03e719e26498" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.FieldValueValidatorTests" name="Validate_ValidDate_Succeeds" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.QCWorkflowServiceTests.Correction_requires_reason" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="87785fa8-aaac-4c25-0083-555493a86c35">
+      <Execution id="dea74611-01c9-405e-9ca7-7d8f02aa5597" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.QCWorkflowServiceTests" name="Correction_requires_reason" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithValidRequest_CallsRepository" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="efdb1e52-541a-4771-df88-27566e781e3c">
+      <Execution id="acfe34d0-f774-4ee0-8d3e-aacec3472b11" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ProjectServiceTests" name="CreateAsync_WithValidRequest_CallsRepository" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ProjectServiceTests.CreateAsync_WithMissingProjectName_ThrowsArgumentException" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="cf1d44f3-b957-117a-3004-5559677af901">
+      <Execution id="24336ce4-90bb-4df4-95e6-6c4c50f1d464" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ProjectServiceTests" name="CreateAsync_WithMissingProjectName_ThrowsArgumentException" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.CoreRulesTests.Hold_and_completion_prevent_downstream_progress" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="3e638015-5bd7-2ee4-5dd1-96460f3a7974">
+      <Execution id="8a7a44d2-0505-40a1-ada3-4e593bb18114" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.CoreRulesTests" name="Hold_and_completion_prevent_downstream_progress" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.ContentHashTests.Signable_content_changes_invalidate_hash(property: &quot;evidence&quot;)" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="4c16b6a2-226a-bfb7-27a8-510cfbf2dd58">
+      <Execution id="77b7e7fa-e69b-40f3-b964-259eb003e26a" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.ContentHashTests" name="Signable_content_changes_invalidate_hash" />
+    </UnitTest>
+    <UnitTest name="MzukuluQMS.Api.Tests.SignOffServiceTests.Server_resolves_actor_hash_and_normalised_signoff_type" storage="c:\users\user\documents\xadad-project-2026\mobile\mzukuluqms.api.tests\bin\debug\net10.0\mzukuluqms.api.tests.dll" id="25970a79-b778-de3d-1c3c-df2d70ea3d5b">
+      <Execution id="833e2c71-9029-4b4d-9c83-5e65cf77a71b" />
+      <TestMethod codeBase="C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\bin\Debug\net10.0\MzukuluQMS.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="MzukuluQMS.Api.Tests.SignOffServiceTests" name="Server_resolves_actor_hash_and_normalised_signoff_type" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="0056b85e-e47e-c367-d495-9baa74692eae" executionId="64516a21-dc3c-442d-be7e-892be1ec8f86" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cb8b4b07-27cd-cad4-0720-33e699b64ea9" executionId="6d26fb36-b857-43df-8f4c-477c70ae0c55" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19909367-cd3d-34c2-87c2-9d05bc3ddd41" executionId="32fdbef2-eaeb-458a-9b0d-ac07380389bb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c3b4bcd3-b019-dfa9-4709-0b4e4258229f" executionId="dcb3728c-3d6d-45b2-b1fe-bc6461d4bc69" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7d3c6f84-3124-4364-ae46-6d03edfab9db" executionId="37d196af-edca-4744-a488-8ff42248673e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="58a36d2f-83c3-aa63-edc0-c72155956025" executionId="16fee720-623d-4d84-960b-4f4e658dc0ee" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="25970a79-b778-de3d-1c3c-df2d70ea3d5b" executionId="833e2c71-9029-4b4d-9c83-5e65cf77a71b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7c77c746-64d9-0660-aa27-b71b2966be10" executionId="df50542f-3172-449a-a1ad-5962c385f685" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="761b3383-762d-b84a-8d10-fe4fd11f4360" executionId="d786be11-27ca-45a6-b112-cf15197c4325" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dbf509a3-669d-253d-6650-b4482fc861c9" executionId="afc457d2-d668-4f8f-81ea-dd439ba83764" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b1aa5594-863f-f05b-0c18-3eec1d21ec26" executionId="f6b83f2f-7b4b-4011-a7f3-56347d7eaf40" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6934819d-bedb-a3c8-3dc8-eddb1bd758e6" executionId="6cf8b819-913e-496b-8fc4-8b2676846ec5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0a3e8626-33b4-5882-99f9-6c76a5166bac" executionId="51b7cd52-10c6-4b4b-a869-1676024a93f3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cd06aa3d-c15d-e514-0a97-15016a807b34" executionId="a089ef02-d0bb-49e9-9db3-7f6c3559bb56" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="400e059f-52f4-0990-560c-235e578f4869" executionId="8933fb1b-456c-466d-9db0-e66d49e11ac6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5d434182-0fbe-486a-948c-6d689d93e9b4" executionId="ffa425e3-d9e8-4635-9fbc-a9e39e514b58" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="95160fba-6364-032a-deb1-b29027e01217" executionId="2b1053df-06da-4dec-a101-ab9838ca718e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b3c9eac5-511e-fa65-8c5b-e713a142fdd9" executionId="a0964dca-e5e2-41df-a7e0-da2cbb31715e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9c59dc3b-5f68-693b-43ea-ef1f52dd7389" executionId="d29d3219-2206-47dc-999d-1501b520a3d1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="48f472d9-299f-eae8-4e6f-61146d185105" executionId="079fb9a4-9142-4f67-8c35-8c7decabb050" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ced5d905-ce09-ac7f-a3b0-172318607d6a" executionId="93c9b4e3-31d8-449c-911e-495c86bd6b13" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6e8052f1-9894-1b6a-aa34-ef215d62666c" executionId="c69aa727-8854-448e-b56e-eeace21528f0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2f0e3f2e-4210-0d7a-625a-530badc4e9a6" executionId="bebbc946-f7d5-468d-a283-2e960fe45256" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c693d2df-a778-94ba-c036-530569b6e4a7" executionId="67d9d77e-e1d1-4296-8ca7-dda8c5820067" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8d195bd9-05df-f759-09b4-beaf5a790666" executionId="4309c583-b93d-4c61-b6b3-c33aa9ba5f37" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c0abaf40-029d-7b35-4931-be844db65987" executionId="db0cbbec-0d91-44a5-a7f3-03e719e26498" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f7aadfce-fa85-3da4-7c6a-eb302b74437c" executionId="7c2a1386-3bc6-415b-b7af-88d83718dcdb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ead630bc-bf21-c0aa-220a-b551316cff5e" executionId="c3e704f4-e6f5-42c6-93e1-623d0d042714" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9d2662b6-a375-91c4-c689-7c2c0e3d2007" executionId="58e2d9a3-c782-4c89-93c1-19322f00181e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cfda11f0-6af9-1363-dfbe-ac968bc26f6f" executionId="ea409ade-5b9a-4bce-9730-1b8c41245788" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7220d1ba-e441-2675-06c2-a6b8b57ebd99" executionId="538c814f-82d9-47c5-9b01-4a3e97b5a188" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3358b9fa-b276-93bc-d993-d25a8ffefd67" executionId="e729e614-5a3c-438c-8e12-dca86b2dc01b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="82be8cb9-9a34-014d-59a5-56ce27a5f456" executionId="e943bcbc-b5a9-4ef8-9ee5-40a7e36b124a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ec879634-befe-84f3-3be2-2dfe008057a2" executionId="b7f27e46-3302-4489-8157-39d6599ab87d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3e638015-5bd7-2ee4-5dd1-96460f3a7974" executionId="8a7a44d2-0505-40a1-ada3-4e593bb18114" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e300ea19-8528-7eae-74f3-1d112d2d064f" executionId="9f7665b3-9612-4e59-ba89-776d2dffa32d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4915f4c2-eb47-afae-612a-36f832470d5e" executionId="aa767b6c-2892-44d1-a675-cb2a9c863996" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="806fa417-f532-9603-c13b-e09a7460b0a2" executionId="537e5df7-637e-48e6-81c7-93fb6cc442cb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a48de73d-26b9-7bab-d912-9994d6f1da58" executionId="30556739-9a58-472e-9099-d97ab93670d9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9bd20f7b-52ed-37c9-db6c-aeb1089b1a36" executionId="0aec0f3f-5f0b-41e8-a973-a3ea33869ca8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="65d6e03a-ed4e-4b09-cf04-7ba0cdb31542" executionId="16f8cfbc-3a7b-4465-a2ad-895905ceabe0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="76e623fb-bfb2-6318-ebab-d65689dc5c4f" executionId="23e0a314-1afa-4340-b551-643a9b8b318a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5712cbe0-7e0a-e285-d6c3-7bbe6e1195f5" executionId="4c806e51-3703-4563-9082-781eb58577ec" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="641a35bc-ee29-97c2-cd15-32d9fbe3b0ad" executionId="9329f34c-8cfb-42d8-9cbc-f08bae73bd84" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a3d7e10b-16f8-dc82-ce46-58fc9ab54b18" executionId="cdafbef3-9883-4a35-a11a-9b16c184aed5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="086556e6-eb23-797b-d5e8-3ce897f33dd6" executionId="13cb9c43-d579-4e07-b278-f9ed82084794" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fdd3f1e5-e628-c647-bb4b-46a841587264" executionId="112f3e08-9b59-4f24-b43b-78e054e7cbda" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="61d8fb73-19a2-c8f6-5f39-02fa70589a53" executionId="a4d41728-7015-4591-96c4-9df72e53a364" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="313e4297-ec9d-0e11-6571-1aad31bfd5da" executionId="05e58445-d497-4243-99c3-0791ffa8ad0e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d45608b0-dd43-f916-b486-7dfaca019d6a" executionId="85d99b9c-19b7-42f7-a50e-e65e45fd8a22" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5c54ba18-c514-f22e-8421-0cd7d82052e3" executionId="81d1c502-4dd3-406b-b4de-7986f9a1c6b0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="75ab6899-0439-d597-558b-cb1f6c248418" executionId="2c76b32b-49cb-41da-acd2-c8bfc131ef98" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4c16b6a2-226a-bfb7-27a8-510cfbf2dd58" executionId="77b7e7fa-e69b-40f3-b964-259eb003e26a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="077a73b7-631a-c82c-879e-8f17bca4bca9" executionId="7dbaa556-6193-444f-8fff-d867fab637cf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f360d774-2d70-5395-f600-d901219c680b" executionId="e2edd973-2183-4371-90be-7b9a6ef59249" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="77348489-0b83-44eb-302c-3c50b9ff1226" executionId="bf0d989b-2eb5-4888-a74b-90b0582536fc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8dd87467-f67b-4d04-078c-572dadc50036" executionId="b4fda7f0-d0d6-4d86-af95-44863aa4df9e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cf1d44f3-b957-117a-3004-5559677af901" executionId="24336ce4-90bb-4df4-95e6-6c4c50f1d464" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="69b2c6b8-b40c-5fed-30a7-d42808275179" executionId="351ed6d1-dc76-4933-8588-019b28d37bd0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5d0ab314-c8c2-9bc5-8088-13da11425704" executionId="88458655-e928-4c98-a573-0c6b4c03ab15" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3d0ae428-8719-b455-c5da-c3989624e4de" executionId="1068b7eb-747d-4879-b39c-bb58ac920312" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3064a6bb-9495-c936-dca9-4e478c69ab6e" executionId="688a1f0d-74f1-4d61-b8e6-92034fb74467" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="efdb1e52-541a-4771-df88-27566e781e3c" executionId="acfe34d0-f774-4ee0-8d3e-aacec3472b11" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="590509f6-8c20-42b3-d921-8457ae1addc9" executionId="69abdd4d-474c-46c4-bfc0-e6af55b54a9f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="745d346c-1700-81f3-fd25-003920bc38bf" executionId="4cd85795-add7-4f0a-bb93-7b90f09d3f99" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="87785fa8-aaac-4c25-0083-555493a86c35" executionId="dea74611-01c9-405e-9ca7-7d8f02aa5597" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="83f73975-e7bb-06d8-5b4c-50bcc92ad026" executionId="3a976b6a-e44f-4f88-bfc1-d1315c5abba2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="67" executed="67" passed="61" failed="6" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.02] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:02.83]   Discovering: MzukuluQMS.Api.Tests&#xD;
+[xUnit.net 00:00:03.24]   Discovered:  MzukuluQMS.Api.Tests&#xD;
+[xUnit.net 00:00:03.77]   Starting:    MzukuluQMS.Api.Tests&#xD;
+[xUnit.net 00:00:08.68]       System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.&#xD;
+[xUnit.net 00:00:08.68]       Stack Trace:&#xD;
+[xUnit.net 00:00:08.70]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs(93,0): at Program.&lt;Main&gt;$(String[] args)&#xD;
+[xUnit.net 00:00:08.70]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)&#xD;
+[xUnit.net 00:00:08.70]            at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)&#xD;
+[xUnit.net 00:00:08.70]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:08.70]            at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+[xUnit.net 00:00:08.70]            at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+[xUnit.net 00:00:08.70]            at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+[xUnit.net 00:00:08.70]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+[xUnit.net 00:00:08.70]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+[xUnit.net 00:00:08.70]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+[xUnit.net 00:00:08.70]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.get_Services()&#xD;
+[xUnit.net 00:00:08.71]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(30,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Critical_service_graph_resolves_without_database_access()&#xD;
+[xUnit.net 00:00:08.71]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)&#xD;
+[xUnit.net 00:00:08.71]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:08.77]       System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.&#xD;
+[xUnit.net 00:00:08.77]       Stack Trace:&#xD;
+[xUnit.net 00:00:08.77]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs(93,0): at Program.&lt;Main&gt;$(String[] args)&#xD;
+[xUnit.net 00:00:08.78]            at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+[xUnit.net 00:00:08.78]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:08.78]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:08.78]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+[xUnit.net 00:00:08.78]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:08.78]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:08.78]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:08.82]       System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.&#xD;
+[xUnit.net 00:00:08.82]       Stack Trace:&#xD;
+[xUnit.net 00:00:08.82]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs(93,0): at Program.&lt;Main&gt;$(String[] args)&#xD;
+[xUnit.net 00:00:08.82]            at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+[xUnit.net 00:00:08.82]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:08.82]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:08.82]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+[xUnit.net 00:00:08.82]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:08.82]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:08.82]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:08.86]       System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.&#xD;
+[xUnit.net 00:00:08.86]       Stack Trace:&#xD;
+[xUnit.net 00:00:08.87]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs(93,0): at Program.&lt;Main&gt;$(String[] args)&#xD;
+[xUnit.net 00:00:08.87]            at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+[xUnit.net 00:00:08.87]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:08.87]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:08.87]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+[xUnit.net 00:00:08.87]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:08.87]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:08.87]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:09.02]       System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.&#xD;
+[xUnit.net 00:00:09.02]       Stack Trace:&#xD;
+[xUnit.net 00:00:09.02]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs(93,0): at Program.&lt;Main&gt;$(String[] args)&#xD;
+[xUnit.net 00:00:09.02]            at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+[xUnit.net 00:00:09.02]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:09.02]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:09.02]            at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+[xUnit.net 00:00:09.02]            at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+[xUnit.net 00:00:09.02]            at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+[xUnit.net 00:00:09.02]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+[xUnit.net 00:00:09.02]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+[xUnit.net 00:00:09.03]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+[xUnit.net 00:00:09.03]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:09.03]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:09.03]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+[xUnit.net 00:00:09.03]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:09.03]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:09.03]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:09.08]       System.InvalidOperationException : SupabaseAuth:MetadataAddress is required.&#xD;
+[xUnit.net 00:00:09.08]       Stack Trace:&#xD;
+[xUnit.net 00:00:09.08]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api\Program.cs(93,0): at Program.&lt;Main&gt;$(String[] args)&#xD;
+[xUnit.net 00:00:09.08]            at InvokeStub_Program.&lt;Main&gt;$(Object, Span`1)&#xD;
+[xUnit.net 00:00:09.08]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:09.08]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:09.08]            at Microsoft.Extensions.Hosting.HostFactoryResolver.HostingListener.CreateHost()&#xD;
+[xUnit.net 00:00:09.08]            at Microsoft.Extensions.Hosting.HostFactoryResolver.&lt;&gt;c__DisplayClass10_0.&lt;ResolveHostFactory&gt;b__0(String[] args)&#xD;
+[xUnit.net 00:00:09.08]            at Microsoft.AspNetCore.Mvc.Testing.DeferredHostBuilder.Build()&#xD;
+[xUnit.net 00:00:09.08]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateHost(IHostBuilder builder)&#xD;
+[xUnit.net 00:00:09.08]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.ConfigureHostBuilder(IHostBuilder hostBuilder)&#xD;
+[xUnit.net 00:00:09.08]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.StartServer()&#xD;
+[xUnit.net 00:00:09.08]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:09.08]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateDefaultClient(Uri baseAddress, DelegatingHandler[] handlers)&#xD;
+[xUnit.net 00:00:09.09]            at Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1.CreateClient(WebApplicationFactoryClientOptions options)&#xD;
+[xUnit.net 00:00:09.09]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:09.09]         C:\Users\User\Documents\xadad-project-2026\mobile\MzukuluQMS.Api.Tests\StartupSecurityTests.cs(26,0): at MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(String route)&#xD;
+[xUnit.net 00:00:09.09]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:09.35]   Finished:    MzukuluQMS.Api.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="DESKTOP-LA3KJ7R" outcome="Error" timestamp="2026-10-12T22:57:19.0782659+02:00">
+        <Text>[xUnit.net 00:00:08.67]     MzukuluQMS.Api.Tests.StartupSecurityTests.Critical_service_graph_resolves_without_database_access [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="DESKTOP-LA3KJ7R" outcome="Error" timestamp="2026-10-12T22:57:19.1781190+02:00">
+        <Text>[xUnit.net 00:00:08.77]     MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: "/api/clients") [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="DESKTOP-LA3KJ7R" outcome="Error" timestamp="2026-10-12T22:57:19.2237303+02:00">
+        <Text>[xUnit.net 00:00:08.82]     MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: "/api/qc-forms/101") [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="DESKTOP-LA3KJ7R" outcome="Error" timestamp="2026-10-12T22:57:19.2687240+02:00">
+        <Text>[xUnit.net 00:00:08.86]     MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: "/api/quality/notifications") [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="DESKTOP-LA3KJ7R" outcome="Error" timestamp="2026-10-12T22:57:19.4219371+02:00">
+        <Text>[xUnit.net 00:00:09.02]     MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: "/api/checklist-templates") [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="DESKTOP-LA3KJ7R" outcome="Error" timestamp="2026-10-12T22:57:19.4823251+02:00">
+        <Text>[xUnit.net 00:00:09.08]     MzukuluQMS.Api.Tests.StartupSecurityTests.Anonymous_requests_are_401_in_real_pipeline(route: "/api/projects") [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>
