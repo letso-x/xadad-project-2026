@@ -55,7 +55,7 @@ public sealed class MfaAuthorizationTests
  }
  [Theory][InlineData("aal1")][InlineData(null)][InlineData("unknown")]
  public async Task Password_or_missing_assurance_rejected_across_policies(string? aal)
- {await using var app=new App();using var client=app.Client(app.Token(aal));foreach(var route in new[]{"/test/mfa/protected","/test/mfa/default","/test/mfa/fallback","/api/projects","/api/auth/permissions","/api/qc-forms/101"}){using var response=await client.GetAsync(route);Assert.Equal(HttpStatusCode.Forbidden,response.StatusCode);}app.Users.Verify(r=>r.GetByExternalAuthIdAsync(It.IsAny<Guid>(),It.IsAny<CancellationToken>()),Times.Never);}
+ {await using var app=new App();using var client=app.Client(app.Token(aal));foreach(var route in new[]{"/test/mfa/protected","/test/mfa/default","/test/mfa/fallback","/api/projects","/api/auth/permissions","/api/qc-forms/101","/api/projects/101/cable-registers","/api/quality/notifications","/api/checklist-template-versions/101","/api/qc-forms/101/ncrs"}){using var response=await client.GetAsync(route);Assert.Equal(HttpStatusCode.Forbidden,response.StatusCode);}app.Users.Verify(r=>r.GetByExternalAuthIdAsync(It.IsAny<Guid>(),It.IsAny<CancellationToken>()),Times.Never);}
  [Fact]public async Task Password_session_can_only_bootstrap_active_identity()
  {await using var app=new App();using var client=app.Client(app.Token("aal1"));using var response=await client.GetAsync("/api/auth/me");Assert.Equal(HttpStatusCode.OK,response.StatusCode);}
  [Fact]public async Task Verified_session_uses_database_role_not_posted_role()

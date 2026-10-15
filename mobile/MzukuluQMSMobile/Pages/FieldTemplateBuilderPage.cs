@@ -6,14 +6,15 @@ using System.Globalization;
 namespace MzukuluQMSMobile.Pages;
 public sealed class FieldTemplateBuilderPage : FieldScreen
 {
- private readonly TemplateBuilderViewModel model;private bool loaded;
+ private readonly TemplateBuilderViewModel model;private bool loaded;private long? revisionVersion;
+ public FieldTemplateBuilderPage(InspectionWorkspace workspace,long version):this(workspace){revisionVersion=version;}
  public FieldTemplateBuilderPage(InspectionWorkspace workspace):this(new TemplateBuilderViewModel(workspace)){}
- private FieldTemplateBuilderPage(TemplateBuilderViewModel model):base("Create checklist template",model){this.model=model;}
- protected override async void OnAppearing(){base.OnAppearing();if(loaded)return;loaded=true;await model.RunAsync(async()=>{await model.LoadAsync();Render();});}
+ private FieldTemplateBuilderPage(TemplateBuilderViewModel model):base("Create checklist template",model){this.model=model;model.PropertyChanged+=(_,e)=>{if(e.PropertyName==nameof(FieldViewModel.Busy))Rows.IsEnabled=!model.Busy;};}
+ protected override async void OnAppearing(){base.OnAppearing();if(loaded)return;loaded=true;if(revisionVersion.HasValue){if(await model.StartRevisionAsync(revisionVersion.Value))Render();}else await model.RunAsync(async()=>{await model.LoadAsync();Render();});}
  private async Task SaveDraftAsync(){try{await model.PersistAsync();model.Message="Draft saved";}catch{model.Message="Draft could not be saved. Keep this page open and try again.";}}
  private void Render()
  {
-  Rows.Clear();Heading("Administration","Create Checklist Template");
+  Rows.Clear();Heading("Administration",model.Draft["revisionTemplateID"] is null?"Create Checklist Template":"Create new revision");
   if(model.Draft["publishedTemplateID"] is null&&ChecklistFieldSettings.NeedsReferenceRepair(model.Draft))
   {
    Rows.Add(FieldUi.Warning("Some saved checklist settings need repair before editing. Your draft is retained."));
@@ -21,11 +22,12 @@ public sealed class FieldTemplateBuilderPage : FieldScreen
   }
   if(model.Draft["publishedTemplateID"] is not null)
   {
-   Rows.Add(FieldUi.Card(FieldUi.Text(model.Draft["documentNumber"]+" · "+model.Draft["documentName"]+" is available in Form Library."),FieldUi.Action("Start another template",async()=>{await model.ResetAsync();Render();})));return;
+   Rows.Add(FieldUi.Card(FieldUi.Text(model.Draft["documentNumber"]+" · "+model.Draft["documentName"]+(model.Draft["active"]?.GetValue<bool>()==true?" is available in Form Library.":" is saved as inactive.")),FieldUi.Action("Start another template",async()=>{await model.ResetAsync();Render();})));return;
   }
   Rows.Add(FieldUi.Section("Document information"));
-  foreach(var (key,label) in new[]{("documentNumber","Document number *"),("documentName","Document name *"),("subtitle","Description / subtitle"),("revision","Revision *")})AddText(model.Draft,key,label,Rows);
-  var date=new DatePicker{Date=DateTime.TryParse(model.Draft["issueDate"]?.ToString(),out var value)?value:DateTime.Today};date.DateSelected+=async(_,_)=>{model.Draft["issueDate"]=Convert.ToDateTime(date.Date).ToString("yyyy-MM-dd");await SaveDraftAsync();};Rows.Add(FieldUi.Card(FieldUi.Text("ISSUE DATE",12,true),date));AddFlag(model.Draft,"active","Active (visible in Form Library)",Rows);
+  foreach(var (key,label) in new[]{("documentNumber","Document number *"),("documentName","Document name *"),("subtitle","Description / subtitle"),("revision","Revision *")})
+   if(model.Draft["revisionTemplateID"] is not null&&key!="revision")Rows.Add(FieldUi.Card(FieldUi.Text(label,12,true),FieldUi.Text(model.Draft[key]?.ToString()??"")));else AddText(model.Draft,key,label,Rows);
+  var date=new DatePicker{Date=DateTime.TryParse(model.Draft["issueDate"]?.ToString(),out var value)?value:DateTime.Today};date.DateSelected+=async(_,_)=>{model.Draft["issueDate"]=Convert.ToDateTime(date.Date).ToString("yyyy-MM-dd");await SaveDraftAsync();};Rows.Add(FieldUi.Card(FieldUi.Text("ISSUE DATE",12,true),date));if(model.Draft["revisionTemplateID"] is null)AddFlag(model.Draft,"active","Active (visible in Form Library)",Rows);else Rows.Add(FieldUi.Text("Publishing makes this revision available for new forms. Existing QC records keep their saved checklist and signing requirements."));
   Rows.Add(FieldUi.Section("Project information fields"));Rows.Add(FieldUi.Text("Extra site-specific fields shown in the QC header."));
   var projects=model.Draft["projectFields"]!.AsArray();foreach(var field in projects)AddField(field!,projects,true);
   Rows.Add(FieldUi.Action("+ Add Field",async()=>{projects.Add(TemplateBuilderViewModel.NewField());await model.PersistAsync();Render();},true));

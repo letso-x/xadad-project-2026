@@ -22,10 +22,15 @@ public sealed class SyncEngine(OfflineStore store,ISyncSession session,ISyncTran
     try
     {
      var reply=await transport.SendAsync(operation,ct);
-     if(reply.Status is >=200 and <300)await store.CompleteAsync(operation,reply.ServerId,reply.Revision,ct,reply.Body);
+     if(reply.Status is >=200 and <300)
+     {
+      try{await store.CompleteAsync(operation,reply.ServerId,reply.Revision,ct,reply.Body,reply.ServerSnapshot);}
+      catch(Exception error) when(operation.Kind=="CreateQCForm"&&reply.ServerSnapshot is not null&&error is InvalidOperationException or JsonException)
+      {await store.FailAsync(operation,"Created record differs from saved checklist; review both versions",false,true,reply.ServerSnapshot,ct,failureJson:reply.Body);}
+     }
      else if(reply.Status==401){await store.FailAsync(operation,"Authentication required",true,ct:ct,failureJson:reply.Body);return "Authentication required";}
      else if(reply.Status==409)await store.FailAsync(operation,"Central record changed; review conflict",false,true,reply.ServerSnapshot??reply.Body,ct,failureJson:reply.Body);
-     else await store.FailAsync(operation,"API returned HTTP "+reply.Status,(reply.Status>=500 || reply.Status==429) && operation.Attempts<8,ct:ct,failureJson:reply.Body);
+     else await store.FailAsync(operation,ApiFailureMessage.Describe((HttpStatusCode)reply.Status,reply.Body),(reply.Status>=500 || reply.Status==429) && operation.Attempts<8,ct:ct,failureJson:reply.Body);
     }
     catch(OperationCanceledException) when(!ct.IsCancellationRequested)
     {await store.FailAsync(operation,"API request timed out",operation.Attempts<8,ct:ct);}
@@ -51,6 +56,11 @@ public sealed class HttpSyncTransport(HttpClient client,OfflineStore store,ISync
  {
   if(session.Owner!=store.Owner)throw new InvalidOperationException("Local data belongs to another account.");
   var request=JsonSerializer.Deserialize<SyncRequest>(operation.Payload)??throw new InvalidOperationException("Invalid queued request.");
+  if(operation.Kind!="CreateQCForm"&&request.Route.Split('/').ElementAtOrDefault(2)?.StartsWith('-')==true)
+  {
+   var local=await store.GetAsync(operation.EntityId,ct)??throw new InvalidOperationException("The saved QC record is unavailable.");
+   request=OfflineFormIdentity.Resolve(request,System.Text.Json.Nodes.JsonNode.Parse(local.Json)!);
+  }
   // Restrict durable payloads to same-origin QC API routes; never transmit to a posted absolute URI.
   if(!request.Route.StartsWith("api/qc-forms",StringComparison.Ordinal) || request.Route.Contains(":") || request.Route.Contains(".."))throw new InvalidOperationException("Invalid queued API route.");
   using var message=new HttpRequestMessage(new HttpMethod(request.Method),request.Route);
@@ -90,6 +100,13 @@ public sealed class HttpSyncTransport(HttpClient client,OfflineStore store,ISync
    foreach(var property in doc.RootElement.EnumerateObject())if(property.Name.Equals("qcFormID",StringComparison.OrdinalIgnoreCase) && property.Value.TryGetInt64(out var id)){serverId=id;break;}
   }
   string? snapshot=null;
+  if(response.IsSuccessStatusCode&&operation.Kind=="CreateQCForm"&&serverId.HasValue)
+  {
+   using var get=new HttpRequestMessage(HttpMethod.Get,$"api/qc-forms/{serverId.Value}");get.Headers.Authorization=message.Headers.Authorization;
+   using var current=await client.SendAsync(get,ct);
+   if(!current.IsSuccessStatusCode)throw new HttpRequestException("The created record could not yet be reloaded.");
+   snapshot=await current.Content.ReadAsStringAsync(ct);
+  }
   if(response.StatusCode==HttpStatusCode.Conflict)
   {
    var parts=request.Route.Split('/');

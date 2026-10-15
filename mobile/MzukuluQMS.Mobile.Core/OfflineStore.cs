@@ -13,7 +13,7 @@ public interface ILocalKeyStore { Task<byte[]> GetKeyAsync(Guid owner, Cancellat
 
 // SQLite metadata is NOT encrypted. Payload/file encryption is a defence in depth;
 // verified SQLCipher DB encryption remains a release requirement.
-public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore keys) : IAsyncDisposable
+public sealed partial class OfflineStore(string directory, Guid owner, ILocalKeyStore keys) : IAsyncDisposable
 {
     public Guid Owner => owner;
     private readonly SemaphoreSlim gate=new(1,1);
@@ -66,6 +66,7 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
         var operationId=Guid.NewGuid();
         await Locked(async()=>{
             using var tx=connection!.BeginTransaction();
+            (localJson,expectedRevision)=await PreserveLocalIdentityAsync(entityId,localJson,expectedRevision,tx,ct);
             await ExecuteAsync("INSERT INTO Entity VALUES($id,NULL,$payload,1) ON CONFLICT(LocalId) DO UPDATE SET Payload=excluded.Payload,Dirty=1",tx,ct,("$id",entityId.ToString()),("$payload",Encrypt(localJson)));
             await ExecuteAsync("INSERT INTO Operation(OperationId,EntityId,Kind,Payload,ExpectedRevision,Status,CreatedAt,DependsOn) VALUES($op,$entity,$kind,$payload,$revision,'Pending',$now,$depends)",tx,ct,("$op",operationId.ToString()),("$entity",entityId.ToString()),("$kind",kind),("$payload",Encrypt(payload)),("$revision",expectedRevision),("$now",DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()),("$depends",dependsOn?.ToString()));
             tx.Commit();
@@ -106,7 +107,7 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
             tx.Commit();
         },ct);return result;
     }
-    public async Task CompleteAsync(PendingOperation op,long? serverId,long? revision,CancellationToken ct=default,string? resultJson=null)
+    public async Task CompleteAsync(PendingOperation op,long? serverId,long? revision,CancellationToken ct=default,string? resultJson=null,string? serverSnapshot=null)
     {
         await Locked(async()=>{
             using var tx=connection!.BeginTransaction();
@@ -117,18 +118,21 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
             await using(var payloadCommand=Command("SELECT Payload FROM Entity WHERE LocalId=$entity",tx,("$entity",op.EntityId.ToString())))
             {
                 var payload=await payloadCommand.ExecuteScalarAsync(ct) as byte[];
-                if(payload is not null && revision.HasValue)
+                if(payload is not null && (revision.HasValue||op.Kind=="CreateQCForm"))
                 {
                     try {
                         var node=JsonNode.Parse(Decrypt(payload));
+                        if(op.Kind=="CreateQCForm"&&node?["qcFormID"] is not null&&long.TryParse(node["qcFormID"]!.ToString(),out var localFormId)&&localFormId<0)
+                            node=OfflineFormIdentity.Acknowledge(node,JsonNode.Parse(serverSnapshot??throw new InvalidOperationException("The created record needs to be reloaded before dependent work can sync."))!);
+
                         if(node is JsonObject obj) {
-                            obj["revision"]=revision.Value;
+                            if(revision.HasValue)obj["revision"]=revision.Value;
                             if(op.Kind=="SubmitQCForm")obj["status"]="Submitted";
                             if(op.Kind=="ReturnForCorrection")obj["status"]="ReturnedForCorrection";
                             if(op.Kind=="ApproveQCForm")obj["status"]="Approved";
                             await ExecuteAsync("UPDATE Entity SET Payload=$payload WHERE LocalId=$entity",tx,ct,("$entity",op.EntityId.ToString()),("$payload",Encrypt(obj.ToJsonString())));
                         }
-                    }catch(JsonException){ /* Earlier non-JSON synthetic cache entries remain intact. */ }
+                    }catch(JsonException) when(op.Kind!="CreateQCForm"||serverSnapshot is null){ /* Earlier non-JSON synthetic cache entries remain intact. */ }
                 }
             }
             // Never alter an already-attempted retry's fingerprint after a lost response.
@@ -194,6 +198,7 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
             if(uploadRequest is not null)
             {
                 var operation=Guid.NewGuid();
+                (localJson,expectedRevision)=await PreserveLocalIdentityAsync(entityId,localJson??throw new ArgumentException("Local snapshot is required."),expectedRevision,tx,ct);
                 await ExecuteAsync("UPDATE Entity SET Payload=$payload,Dirty=1 WHERE LocalId=$entity",tx,ct,("$payload",Encrypt(localJson??throw new ArgumentException("Local snapshot is required."))),("$entity",entityId.ToString()));
                 await ExecuteAsync("INSERT INTO Operation(OperationId,EntityId,Kind,Payload,ExpectedRevision,Status,CreatedAt) VALUES($op,$entity,'UploadEvidence',$payload,$revision,'Pending',$now)",tx,ct,("$op",operation.ToString()),("$entity",entityId.ToString()),("$payload",Encrypt(JsonSerializer.Serialize(uploadRequest(id)))),("$revision",expectedRevision),("$now",DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
                 if(signOffRequest is not null)
@@ -206,6 +211,16 @@ public sealed class OfflineStore(string directory, Guid owner, ILocalKeyStore ke
     {
         string? file=null;await Locked(async()=>{await using var cmd=Command("SELECT Path FROM Evidence WHERE LocalId=$id",null,("$id",id.ToString()));file=(string?)await cmd.ExecuteScalarAsync(ct);},ct);
         if(file is null)throw new KeyNotFoundException("Local evidence not found.");return DecryptBytes(await File.ReadAllBytesAsync(file,ct));
+    }
+    private async Task<(string Json,long? Revision)> PreserveLocalIdentityAsync(Guid entityId,string json,long? revision,SqliteTransaction tx,CancellationToken ct)
+    {
+        JsonNode? incoming;try{incoming=JsonNode.Parse(json);}catch(JsonException){return(json,revision);}
+        if(incoming is not JsonObject form||!long.TryParse(form["qcFormID"]?.ToString(),out var id)||id>=0)return(json,revision);
+        await using var cmd=Command("SELECT Payload FROM Entity WHERE LocalId=$id",tx,("$id",entityId.ToString()));
+        var bytes=await cmd.ExecuteScalarAsync(ct) as byte[];if(bytes is null)return(json,revision);
+        var saved=JsonNode.Parse(Decrypt(bytes));if(saved?["serverIdMap"] is null)return(json,revision);
+        foreach(var key in new[]{"serverIdMap","serverFormID","formNumber","localCreate","revision","status"})form[key]=saved[key]?.DeepClone();
+        return(form.ToJsonString(),long.TryParse(saved["revision"]?.ToString(),out var acknowledged)?acknowledged:revision);
     }
     private async Task Locked(Func<Task> action,CancellationToken ct)
     {
