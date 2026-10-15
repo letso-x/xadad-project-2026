@@ -85,12 +85,13 @@ public sealed class FieldFormPage : FieldScreen
    foreach(var ncr in model.Ncrs)
    {
     var source=form["sections"]?.AsArray().SelectMany(s=>s?["fields"]?.AsArray()??[]).FirstOrDefault(f=>f?["qcFormFieldID"] is not null&&JsonNode.DeepEquals(f["qcFormFieldID"],ncr?["qcFormFieldID"]));
-    Rows.Add(FieldUi.Card(FieldUi.Text(ncr?["ncrNumber"]?.ToString()??"NCR number unavailable",16,true),FieldUi.Text(ncr?["classification"]?.ToString()??"Unclassified"),FieldUi.Badge(ncr?["closedAt"] is null?"Open":"Closed"),FieldUi.Text(source?["fieldLabel"]?.ToString()??"Historical inspection requirement unavailable")));
+    Rows.Add(FieldUi.Card(FieldUi.Text(ncr?["ncrNumber"]?.ToString()??"NCR number unavailable",16,true),FieldUi.Text(ncr?["classification"]?.ToString()??"Unclassified"),FieldUi.Badge(ncr?["closedAt"] is null?"Open":"Closed"),FieldUi.Text(source?["fieldLabel"]?.ToString()??"Historical inspection requirement unavailable"),
+     FieldUi.Action("Open NCR",async()=>{await FlushAsync();await Navigation.PushAsync(new FieldNcrPage(workspace,formId,ncr!));},true)));
    }
   }
   Rows.Add(FieldUi.Section("Sign-off history"));Rows.Add(FieldUi.Text("Required signing capacities: "+string.Join(", ",form["requiredSignOffTypes"]?.AsArray().Select(t=>t!.ToString())??[])));
   if(model.SignOffs.Count==0)Rows.Add(FieldUi.Text("No signatures recorded. Sign after submitting this record."));
-  foreach(var sign in model.SignOffs)Rows.Add(FieldUi.Card(FieldUi.Text(BusinessText.SignOff(sign?["signOffType"]?.ToString()),16,true),FieldUi.Text(sign?["signerName"]?.ToString()??"Signer name unavailable"),FieldUi.Text(sign?["signOffType"]?.ToString()??"Signing capacity unavailable"),FieldUi.Text("Signed "+BusinessText.Date(sign?["signedAt"]?.ToString())),FieldUi.Badge(sign?["matchesCurrentContentAndSubmission"]?.GetValue<bool>()==true?"Current signature":"Historical signature")));
+  foreach(var sign in model.SignOffs)Rows.Add(FieldUi.Card(FieldUi.Text(BusinessText.SignOff(sign?["signOffType"]?.ToString()),16,true),FieldUi.Text(sign?["signerName"]?.ToString()??"Signer name unavailable"),FieldUi.Text(sign?["signedRequirement"]?.ToString()??"Record sign-off"),FieldUi.Text(sign?["signOffType"]?.ToString()??"Signing capacity unavailable"),FieldUi.Text("Signed "+BusinessText.Date(sign?["signedAt"]?.ToString())),FieldUi.Badge(sign?["matchesCurrentContentAndSubmission"]?.GetValue<bool>()==true?"Current signature":"Historical signature")));
   if(form["status"]?.ToString()=="Approved")
   {
    var approved=model.Audit.OrderBy(a=>a?["occurredAt"]?.ToString()).LastOrDefault(a=>a?["action"]?.ToString()=="QCFormApproved");
@@ -167,13 +168,22 @@ public sealed class FieldFormPage : FieldScreen
   if(!projectField&&(type=="Photo"||field["requiresPhoto"]?.GetValue<bool>()==true))
   {
    var id=field["qcFormFieldID"]!.GetValue<long>();controls.Add(FieldUi.Text("Photo evidence"+(required||field["requiresPhoto"]?.GetValue<bool>()==true?" *":""),12,true));
-   foreach(var evidence in model.Evidence.Where(e=>e?["qcFormFieldID"]?.GetValue<long>()==id&&e["evidenceType"]?.ToString()=="Photo"))controls.Add(FieldUi.Text("Uploaded: "+evidence?["fileName"]));
+   foreach(var evidence in model.Evidence.Where(e=>e?["qcFormFieldID"]?.GetValue<long>()==id&&e["evidenceType"]?.ToString()=="Photo"))
+   {
+    var evidenceId=evidence!["evidenceID"]!.GetValue<long>();
+    controls.Add(FieldUi.Action("View photo · "+evidence["fileName"],async()=>{await model.RunAsync(async()=>{var bytes=await model.UploadedEvidenceAsync(evidenceId);await Navigation.PushAsync(new FieldEvidencePreviewPage(bytes));});},true));
+   }
    if(model.Editable){controls.Add(FieldUi.Action("Camera",()=>CaptureAsync(id,true,controls),true));controls.Add(FieldUi.Action("Choose from gallery",()=>CaptureAsync(id,false,controls),true));}
    _=AddLocalPreviewsAsync(id,controls);
   }
   if(!projectField&&(type=="Signature"||field["requiresSignature"]?.GetValue<bool>()==true))
   {
-   controls.Add(FieldUi.Text("Signature requires Submitted state and fresh signing consent."));
+   controls.Add(FieldUi.Text("Sign this requirement after submitting the record. Corrected content requires fresh consent."));
+   if(model.Form?["status"]?.ToString()=="Submitted"&&model.Can("SignInspection"))
+   {
+    var signatureField=field["qcFormFieldID"]!.GetValue<long>();
+    controls.Add(FieldUi.Action("Sign this requirement",async()=>{await FlushAsync();await Navigation.PushAsync(new FieldSignaturePage(workspace,model,signatureField));},true));
+   }
    if(model.Form!["status"]!.ToString()=="Submitted"&&model.Can("SignInspection")){var id=field["qcFormFieldID"]!.GetValue<long>();controls.Add(FieldUi.Action("Sign this field",()=>Navigation.PushAsync(new FieldSignaturePage(workspace,model,id))));}
   }
   if(!projectField)
@@ -251,13 +261,13 @@ public sealed class FieldFormPage : FieldScreen
  }
  private async Task CaptureAsync(long fieldId,bool camera,VerticalStackLayout controls)
  {
-  var id=await model.CaptureAsync(fieldId,camera);if(!id.HasValue)return;
-  var bytes=await model.EvidenceBytesAsync(id.Value);controls.Add(new Image{Source=ImageSource.FromStream(()=>new MemoryStream(bytes)),Aspect=Aspect.AspectFit,HeightRequest=180});
-  var photos=await PhotoFieldsAsync();foreach(var input in inputs.Where(i=>!i.Project&&i.Field["qcFormFieldID"]?.GetValue<long>()==fieldId&&i.ShowErrors))ShowError(input,InputError(input,photos));
+  await FlushAsync();var id=await model.CaptureAsync(fieldId,camera);if(id.HasValue)await LoadAsync();
  }
  private async Task AddLocalPreviewsAsync(long fieldId,VerticalStackLayout controls)
  {
-  try{foreach(var item in (await model.LocalEvidenceAsync()).Where(e=>e.Field==fieldId&&e.Type=="Photo")){var bytes=await model.EvidenceBytesAsync(item.Id);controls.Add(FieldUi.Text(BusinessText.PhotoStatus(item.Status)));controls.Add(new Image{Source=ImageSource.FromStream(()=>new MemoryStream(bytes)),Aspect=Aspect.AspectFit,HeightRequest=180});}}catch{model.Message="Some photo previews are unavailable. Saved attachments are retained.";}
+  try{foreach(var item in (await model.LocalEvidenceAsync()).Where(e=>e.Field==fieldId&&e.Type=="Photo"&&e.Status is not ("Cancelled" or "Completed"))){var bytes=await model.EvidenceBytesAsync(item.Id);controls.Add(FieldUi.Text(BusinessText.PhotoStatus(item.Status)));controls.Add(new Image{Source=ImageSource.FromStream(()=>new MemoryStream(bytes)),Aspect=Aspect.AspectFit,HeightRequest=180});
+   if(model.Editable&&item.Status=="Pending")controls.Add(FieldUi.Action("Remove unsent photo",async()=>{await FlushAsync();if(await DisplayAlertAsync("Remove unsent photo","Remove this photo from the upload queue? Photos already sent to the server cannot be removed.","Remove","Keep")){if(await model.RemoveUnsentPhotoAsync(item.Id))await LoadAsync();}},true));
+  }}catch{model.Message="Some photo previews are unavailable. Saved attachments are retained.";}
  }
 }
 public sealed class FieldSignaturePage : FieldScreen
@@ -270,6 +280,7 @@ public sealed class FieldSignaturePage : FieldScreen
  {
   var model=(FieldViewModel)BindingContext;var ink=new SignatureInk();Heading("Electronic signature","Draw your signature");
   Rows.Add(FieldUi.Warning("I intend to sign the current submitted record under my authenticated account. An old signature will not be reused for corrected content."));
+  if(fieldId.HasValue){var requirement=form.Form?["sections"]?.AsArray().SelectMany(s=>s?["fields"]?.AsArray()??[]).FirstOrDefault(f=>f?["qcFormFieldID"]?.GetValue<long>()==fieldId.Value);Rows.Add(FieldUi.Card(FieldUi.Text("Signing requirement",12,true),FieldUi.Text(requirement?["fieldLabel"]?.ToString()??"Selected inspection requirement",18,true)));}
   var pad=new GraphicsView{Drawable=new InkDrawing(ink),HeightRequest=240,BackgroundColor=Colors.White};
   void Point(TouchEventArgs e,bool begin){if(e.Touches.Length==0||pad.Width<=0||pad.Height<=0)return;var p=e.Touches[0];if(begin)ink.Begin((float)(p.X/pad.Width),(float)(p.Y/pad.Height));else ink.Move((float)(p.X/pad.Width),(float)(p.Y/pad.Height));pad.Invalidate();}
   pad.StartInteraction+=(_,e)=>Point(e,true);pad.DragInteraction+=(_,e)=>Point(e,false);pad.EndInteraction+=(_,e)=>Point(e,false);

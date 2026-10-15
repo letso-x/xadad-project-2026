@@ -49,6 +49,7 @@ public sealed class FieldFormsPage : FieldScreen
   base.OnAppearing();Rows.Clear();Heading("Project",project?["projectName"]?.ToString()??"QC records");
   if(project is not null)Rows.Add(FieldUi.Card(FieldUi.Text(project["projectNumber"]?.ToString()??""),FieldUi.Text(project["contractOrderNumber"]?.ToString()??""),FieldUi.Text(project["siteLocation"]?.ToString()??"")));
   if(workspace.Permissions.Contains("ReadTemplates"))Rows.Add(FieldUi.Action("+ Start from Form Library",()=>Navigation.PushAsync(new FieldLibraryPage(workspace,projectId))));
+  if(workspace.Permissions.Contains("ReadInspection"))Rows.Add(FieldUi.Action("Cable registers · MZT-QC-203",()=>Navigation.PushAsync(new FieldCableRegistersPage(workspace,projectId)),true));
   if(await model.LoadAsync(()=>workspace.FormsAsync(projectId)))
   {
    AddForms(model.Data!.AsArray());if(model.Data.AsArray().Count==0)Rows.Add(FieldUi.Text("No QC records available."));
@@ -107,6 +108,7 @@ public sealed class FieldLibraryPage : FieldScreen
    });
    create.IsEnabled=selection.Selected is not null&&workspace.Permissions.Contains("PerformInspection");createButtons.Add(create);
    Rows.Add(FieldUi.Card(FieldUi.Text(template!["templateNumber"]?.ToString()??"",12,true),FieldUi.Text(template["templateName"]!.ToString(),18,true),FieldUi.Text(template["subtitle"]?.ToString()??""),FieldUi.Text("Revision "+template["revision"]),create));
+   var version=template["activeVersionID"]!.GetValue<long>();Rows.Add(FieldUi.Action("Save checklist for offline use",()=>model.RunAsync(async()=>{await workspace.TemplateAsync(version);},"Checklist saved on this device. You can start it offline with a saved accessible project."),true));
   }
   }
   finally{loading=false;}

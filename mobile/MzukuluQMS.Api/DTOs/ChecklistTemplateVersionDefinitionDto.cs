@@ -2,6 +2,7 @@
 
 public sealed class ChecklistTemplateVersionDefinitionDto
 {
+    public IReadOnlyList<string> RequiredSignOffTypes { get; init; } = [];
     public long ChecklistTemplateVersionID { get; init; }
     public long ChecklistTemplateID { get; init; }
 

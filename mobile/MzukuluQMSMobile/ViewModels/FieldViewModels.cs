@@ -54,6 +54,11 @@ public sealed class FieldFormViewModel(InspectionWorkspace workspace,long formId
  });
  public Task<bool> SaveParsedAsync(JsonNode field,Func<JsonNode?> value,bool project)=>RunAsync(()=>workspace.SaveValueAsync(Form!,field,value(),project),"Pending sync");
  public Task<byte[]> EvidenceBytesAsync(Guid id)=>ReadEvidenceAsync(id);
+ public Task<byte[]> UploadedEvidenceAsync(long evidenceId)=>workspace.UploadedEvidenceAsync(formId,evidenceId);
+ public Task<bool> RemoveUnsentPhotoAsync(Guid evidenceId)=>RunAsync(async()=>{
+  if(!Editable)throw new InvalidOperationException("This record is read-only.");
+  await (await workspace.StoreAsync()).CancelUnsentPhotoAsync(InspectionWorkspace.LocalId("form",formId),evidenceId);
+ },"Unsent photo removed. Uploaded evidence and saved answers are retained.");
  private async Task<byte[]> ReadEvidenceAsync(Guid id)=>await (await workspace.StoreAsync()).ReadEvidenceAsync(id);
  public async Task<Guid?> CaptureAsync(long fieldId,bool camera)
  {
@@ -76,7 +81,7 @@ public sealed class FieldFormViewModel(InspectionWorkspace workspace,long formId
  }
  public Task<bool> SubmitAsync()=>RunAsync(async()=>{
   var photos=Evidence.Where(e=>e?["evidenceType"]?.GetValue<string>()=="Photo"&&e["qcFormFieldID"] is not null).Select(e=>e!["qcFormFieldID"]!.GetValue<long>()).ToHashSet();
-  foreach(var item in await LocalEvidenceAsync())if(item.Type=="Photo"&&item.Field.HasValue)photos.Add(item.Field.Value);
+  foreach(var item in await LocalEvidenceAsync())if(item.Type=="Photo"&&item.Field.HasValue&&item.Status!="Cancelled")photos.Add(item.Field.Value);
   var errors=FormInput.RequiredErrors(Form!,photos);if(errors.Count>0)throw new ArgumentException(string.Join("\n",errors));
   await workspace.QueueSubmitAsync(Form!);Message=await workspace.SyncAsync();await LoadFormOnlyAsync();
  });

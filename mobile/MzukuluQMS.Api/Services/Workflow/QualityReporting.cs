@@ -95,8 +95,8 @@ public sealed class QualityReporting(QmsDbSession session,IQCWorkflow workflow,I
  {
   var actor=await users.GetCurrentUserAsync(ct);await using var lease=await session.OpenAsync(ct);
   return (await lease.Connection.QueryAsync<NotificationRow>(new CommandDefinition("""
-   SELECT n."NotificationID",n."QCFormID",n."Kind",n."CreatedAt",n."ReadAt" FROM qms_core."Notification" n
-   JOIN public."QCForm" q ON q."QCFormID"=n."QCFormID"
+   SELECT n."NotificationID",n."QCFormID",n."Kind",n."CreatedAt",n."ReadAt",q."FormNumber",p."ProjectName" FROM qms_core."Notification" n
+   JOIN public."QCForm" q ON q."QCFormID"=n."QCFormID" JOIN public."Project" p ON p."ProjectID"=q."ProjectID"
    JOIN qms_security."ProjectAccess" pa ON pa."UserID"=@actor AND pa."ProjectID"=q."ProjectID"
    JOIN public."User" u ON u."UserID"=@actor AND u."IsActive"
    JOIN qms_security."RolePermission" rp ON rp."RoleName"=u."Role"::text AND rp."Permission"='ReadInspection'
@@ -119,4 +119,4 @@ public sealed class QualityReporting(QmsDbSession session,IQCWorkflow workflow,I
 }
 public sealed record HandoverReadiness(long ProjectID,bool IsReady,IReadOnlyList<string> Reasons,DateTimeOffset AsOf);
 public sealed record StatusCount(string Status,long Count);
-public sealed record NotificationRow {public long NotificationID {get;init;}public long QCFormID {get;init;}public string Kind {get;init;}="";public DateTimeOffset CreatedAt {get;init;}public DateTimeOffset? ReadAt {get;init;}}
+public sealed record NotificationRow {public string FormNumber {get;init;}="";public string ProjectName {get;init;}="";public long NotificationID {get;init;}public long QCFormID {get;init;}public string Kind {get;init;}="";public DateTimeOffset CreatedAt {get;init;}public DateTimeOffset? ReadAt {get;init;}}

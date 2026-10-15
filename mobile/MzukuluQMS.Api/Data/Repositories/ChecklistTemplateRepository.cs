@@ -194,6 +194,9 @@ public sealed class ChecklistTemplateRepository
             s."DisplayOrder",
             f."DisplayOrder",
             f."ChecklistFieldID";
+
+        SELECT "SignOffType" FROM qms_security."TemplateSignatureRequirement"
+        WHERE "ChecklistTemplateVersionID"=@ChecklistTemplateVersionID ORDER BY "SignOffType";
         """;
 
         await using var connection =
@@ -227,6 +230,7 @@ public sealed class ChecklistTemplateRepository
         var fieldRows =
             (await multi.ReadAsync<ChecklistFieldRow>())
             .AsList();
+        var requiredSignOffTypes=(await multi.ReadAsync<string>()).AsList();
 
         if (version is null)
         {
@@ -269,6 +273,7 @@ public sealed class ChecklistTemplateRepository
 
         return new ChecklistTemplateVersionDefinitionDto
         {
+            RequiredSignOffTypes=requiredSignOffTypes,
             ChecklistTemplateVersionID =
                 version.ChecklistTemplateVersionID,
 

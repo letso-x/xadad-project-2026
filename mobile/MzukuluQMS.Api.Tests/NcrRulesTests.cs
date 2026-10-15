@@ -13,4 +13,8 @@ public sealed class NcrRulesTests
   Assert.Throws<InvalidOperationException>(()=>NcrRules.ValidateVerification(new NcrRow{Revision=1},Guid.NewGuid(),0));
   Assert.Throws<InvalidOperationException>(()=>NcrRules.ValidateVerification(new NcrRow{ClosedAt=DateTimeOffset.UtcNow},Guid.NewGuid(),0));
  }
+ [Theory][InlineData("Approved")][InlineData("Cancelled")][InlineData("Unknown")]
+ public void Protected_QC_record_cannot_be_mutated_through_NCR_actions(string status)=>Assert.Throws<InvalidOperationException>(()=>NcrRules.RequireWritableForm(status));
+ [Theory][InlineData("Draft")][InlineData("InProgress")][InlineData("ReturnedForCorrection")][InlineData("Submitted")]
+ public void Active_NCR_workflow_remains_available_before_approval(string status)=>NcrRules.RequireWritableForm(status);
 }

@@ -41,4 +41,34 @@ public sealed class OfflineStoreTests
   await using(var store=new OfflineStore(directory,owner,keys)){Assert.Equal(bytes,await store.ReadEvidenceAsync(evidence));}
   Assert.NotEqual(bytes,await File.ReadAllBytesAsync(Directory.GetFiles(Path.Combine(directory,$"evidence-{owner:N}"))[0]));
  }
+ [Fact] public async Task Only_never_attempted_photo_can_be_cancelled_and_file_is_retained()
+ {
+  await using var store=new OfflineStore(directory,Guid.NewGuid(),new Keys());var entity=Guid.NewGuid();const string form="{\"qcFormID\":10,\"status\":\"Draft\",\"revision\":0}";
+  await store.CacheAsync(entity,10,form);using var image=new MemoryStream(new byte[]{137,80,78,71});
+  var first=await store.SaveEvidenceAsync(entity,image,"image/png","photo.png",uploadRequest:id=>new("POST","api/qc-forms/10/evidence",EvidenceId:id,EvidenceType:"Photo"),localJson:form,expectedRevision:0);
+  await store.CancelUnsentPhotoAsync(entity,first);Assert.Equal("Cancelled",Assert.Single(await store.OutboxAsync()).Status);Assert.Equal(new byte[]{137,80,78,71},await store.ReadEvidenceAsync(first));Assert.Null(await store.ClaimAsync());
+  image.Position=0;var second=await store.SaveEvidenceAsync(entity,image,"image/png","photo.png",uploadRequest:id=>new("POST","api/qc-forms/10/evidence",EvidenceId:id,EvidenceType:"Photo"),localJson:form,expectedRevision:0);
+  var attempted=await store.ClaimAsync();await store.FailAsync(attempted!,"Network interrupted",true);
+  await Assert.ThrowsAsync<InvalidOperationException>(()=>store.CancelUnsentPhotoAsync(entity,second));Assert.Equal(new byte[]{137,80,78,71},await store.ReadEvidenceAsync(second));
+ }
+ [Fact] public async Task Signature_or_pending_submission_protects_evidence_from_removal()
+ {
+  await using var store=new OfflineStore(directory,Guid.NewGuid(),new Keys());var entity=Guid.NewGuid();const string form="{\"qcFormID\":10,\"status\":\"Draft\",\"revision\":0}";
+  await store.CacheAsync(entity,10,form);using var image=new MemoryStream(new byte[]{137,80,78,71});
+  var photo=await store.SaveEvidenceAsync(entity,image,"image/png","photo.png",uploadRequest:id=>new("POST","api/qc-forms/10/evidence",EvidenceId:id,EvidenceType:"Signature"),localJson:form,expectedRevision:0);
+  await Assert.ThrowsAsync<InvalidOperationException>(()=>store.CancelUnsentPhotoAsync(entity,photo));
+  image.Position=0;var unsent=await store.SaveEvidenceAsync(entity,image,"image/png","photo.png",uploadRequest:id=>new("POST","api/qc-forms/10/evidence",EvidenceId:id,EvidenceType:"Photo"),localJson:form,expectedRevision:0);
+  await store.SaveAndEnqueueAsync(entity,form,"SubmitQCForm","{}",0);await Assert.ThrowsAsync<InvalidOperationException>(()=>store.CancelUnsentPhotoAsync(entity,unsent));
+ }
+ [Fact] public async Task Acknowledged_photo_preview_survives_restart_but_cannot_cross_forms()
+ {
+  var owner=Guid.NewGuid();var keys=new Keys();var entity=Guid.NewGuid();var bytes=new byte[]{137,80,78,71};
+  await using(var store=new OfflineStore(directory,owner,keys))
+  {
+   await store.CacheAsync(entity,71,"{\"qcFormID\":71,\"status\":\"Draft\",\"revision\":0}");using var image=new MemoryStream(bytes);
+   await store.SaveEvidenceAsync(entity,image,"image/png","photo.png",uploadRequest:id=>new("POST","api/qc-forms/71/evidence",EvidenceId:id,EvidenceType:"Photo"),localJson:"{\"qcFormID\":71,\"status\":\"Draft\",\"revision\":0}",expectedRevision:0);
+   var upload=await store.ClaimAsync();await store.CompleteAsync(upload!,null,1,resultJson:"{\"evidenceID\":9}");
+  }
+  await using(var store=new OfflineStore(directory,owner,keys)){Assert.Equal(bytes,await store.ReadAcknowledgedPhotoAsync(71,9));Assert.Null(await store.ReadAcknowledgedPhotoAsync(72,9));Assert.Null(await store.ReadAcknowledgedPhotoAsync(71,99));}
+ }
 }
