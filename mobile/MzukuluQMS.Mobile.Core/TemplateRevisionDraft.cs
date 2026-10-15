@@ -10,7 +10,7 @@ public static class TemplateRevisionDraft
   JsonObject Field(JsonNode f)=>new(){["key"]=f["fieldKey"]?.DeepClone(),["label"]=f["fieldLabel"]?.DeepClone(),["type"]=f["fieldType"]?.DeepClone(),
    ["required"]=f["isRequired"]?.DeepClone()??JsonValue.Create(false),["requiresPhoto"]=f["requiresPhoto"]?.DeepClone()??JsonValue.Create(false),
    ["requiresSignature"]=f["requiresSignature"]?.DeepClone()??JsonValue.Create(false),["helpText"]=f["helpText"]?.DeepClone(),["placeholder"]=f["placeholder"]?.DeepClone(),
-   ["options"]=Parse(f,"optionsJson",new JsonArray()),["validationRules"]=Parse(f,"validationRulesJson",new JsonObject())};
+   ["options"]=Parse(f,"options","optionsJson",new JsonArray()),["validationRules"]=Parse(f,"validationRules","validationRulesJson",new JsonObject())};
   var project=new JsonArray();foreach(var f in definition["projectFields"]!.AsArray().Where(f=>f?["isActive"]?.GetValue<bool>()!=false))project.Add(Field(f!));
   var sections=new JsonArray();foreach(var s in definition["sections"]!.AsArray())
   {
@@ -23,8 +23,10 @@ public static class TemplateRevisionDraft
    ["scope"]=definition["scope"]?.DeepClone(),["acceptanceCriteria"]=definition["acceptanceCriteria"]?.DeepClone(),
    ["projectFields"]=project,["sections"]=sections,["requiredSignOffTypes"]=definition["requiredSignOffTypes"]?.DeepClone()??new JsonArray()};
  }
- private static JsonNode Parse(JsonNode field,string key,JsonNode fallback)
+ private static JsonNode Parse(JsonNode field,string typedKey,string legacyKey,JsonNode fallback)
  {
-  var value=field[key]?.ToString();return string.IsNullOrWhiteSpace(value)?fallback:JsonNode.Parse(value)??fallback;
+  // API DTOs expose parsed JSON under options/validationRules, not repository row aliases.
+  if(field[typedKey] is {} typed)return typed.DeepClone();
+  var value=field[legacyKey]?.ToString();return string.IsNullOrWhiteSpace(value)?fallback:JsonNode.Parse(value)??fallback;
  }
 }
