@@ -7,6 +7,13 @@ public sealed class TemplateAuthoringTests
  private static TemplateFieldInput Field(string key,string type="Text",string? options=null)=>new(key,key,type,true,false,false,null,null,options is null?null:JsonDocument.Parse(options).RootElement.Clone(),null);
  private static CreateChecklistTemplateRequest Valid()=>new("QCS-TEST","Equipment inspection",null,"Rev 1",new DateOnly(2026,10,13),true,"Scope","Acceptance",[],[new("Inspection details",true,[Field("equipment_number"),Field("inspection_result","Dropdown","[\"Pass\",\"Fail\",\"N/A\"]")])],["Inspector"]);
  [Fact]public void Two_field_regression_definition_is_accepted()=>TemplateAuthoring.Validate(Valid());
+ [Fact]public void Schema_document_and_revision_limits_are_checked_before_insertion(){Assert.Throws<ArgumentException>(()=>TemplateAuthoring.Validate(Valid() with {Revision=new string('x',51)}));Assert.Throws<ArgumentException>(()=>TemplateAuthoring.Validate(Valid() with {DocumentNumber=new string('x',101)}));Assert.Throws<ArgumentException>(()=>TemplateAuthoring.Validate(Valid() with {Subtitle=new string('x',501)}));}
+ [Fact]public void Revision_cannot_rename_shared_parent_or_change_its_availability()
+ {
+  var r=Valid();TemplateAuthoring.ValidateRevisionMetadata(r,r.DocumentNumber,r.DocumentName,r.Subtitle,r.Active);
+  Assert.Throws<ArgumentException>(()=>TemplateAuthoring.ValidateRevisionMetadata(r with {DocumentName="Renamed"},r.DocumentNumber,r.DocumentName,r.Subtitle,r.Active));
+  Assert.Throws<ArgumentException>(()=>TemplateAuthoring.ValidateRevisionMetadata(r with {Active=false},r.DocumentNumber,r.DocumentName,r.Subtitle,r.Active));
+ }
  [Fact]public void Headings_without_actual_fields_are_rejected()=>Assert.Throws<ArgumentException>(()=>TemplateAuthoring.Validate(Valid() with {Sections=[new("Empty",true,[])]}));
  [Fact]public void Duplicate_stable_keys_across_project_and_checklist_are_rejected()=>Assert.Throws<ArgumentException>(()=>TemplateAuthoring.Validate(Valid() with {ProjectFields=[Field("equipment_number")]}));
  [Fact]public void Signing_policy_must_be_explicit()=>Assert.Throws<ArgumentException>(()=>TemplateAuthoring.Validate(Valid() with {RequiredSignOffTypes=[]}));

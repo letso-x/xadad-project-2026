@@ -14,6 +14,7 @@ public sealed class FieldHomePage : FlyoutPage
   if(workspace.Permissions.Contains("ReadClients"))Add("Clients",()=>new FieldClientsPage(workspace));
   if(workspace.Permissions.Contains("ReadProjects"))Add("Projects",()=>new FieldProjectsPage(workspace));
   if(workspace.Permissions.Contains("ReadTemplates"))Add("Form Library",()=>new FieldLibraryPage(workspace));
+  if(workspace.Permissions.Contains("ReadInspection"))Add("Notifications",()=>new FieldNotificationsPage(workspace));
   Add("Sync & conflicts",()=>new FieldSyncPage(workspace));
   if(workspace.Permissions.Contains("ManageTemplates"))Add("Checklist Builder",()=>new FieldTemplatesPage(workspace));
   Add("Account & security",()=>new FieldSecurityPage(session,workspace));

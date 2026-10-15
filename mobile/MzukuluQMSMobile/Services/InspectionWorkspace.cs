@@ -7,8 +7,9 @@ using System.Security.Cryptography;
 using MzukuluQMS.Mobile.Core;
 using MzukuluQMSMobile.Constants;
 namespace MzukuluQMSMobile.Services;
-public sealed class InspectionWorkspace(FieldSession session,IFieldMedia media) : IAsyncDisposable
+public sealed partial class InspectionWorkspace(FieldSession session,IFieldMedia media) : IAsyncDisposable
 {
+ private sealed class CachedDataUnavailableException(string message):InvalidOperationException(message);
  public IFieldMedia Media=>media;
  private OfflineStore? store;
  private readonly SemaphoreSlim syncGate=new(1,1);
@@ -30,7 +31,12 @@ public sealed class InspectionWorkspace(FieldSession session,IFieldMedia media) 
   request.Headers.Authorization=new AuthenticationHeaderValue("Bearer",token);
   if(body is not null)request.Content=new StringContent(body.ToJsonString(),Encoding.UTF8,"application/json");
   using var response=await client.SendAsync(request);
-  if(!response.IsSuccessStatusCode)throw new InvalidOperationException(ApiFailureMessage.Describe(response.StatusCode,await response.Content.ReadAsStringAsync()));
+  if(!response.IsSuccessStatusCode)
+  {
+   var message=ApiFailureMessage.Describe(response.StatusCode,await response.Content.ReadAsStringAsync());
+   if((int)response.StatusCode>=500||response.StatusCode==HttpStatusCode.TooManyRequests)throw new HttpRequestException(message,null,response.StatusCode);
+   throw new InvalidOperationException(message);
+  }
   var text=await response.Content.ReadAsStringAsync();return string.IsNullOrWhiteSpace(text)?new JsonObject():JsonNode.Parse(text)!;
  }
  public async Task<JsonNode> CachedGetAsync(string kind,long id,string route)
@@ -38,7 +44,7 @@ public sealed class InspectionWorkspace(FieldSession session,IFieldMedia media) 
   var local=await StoreAsync();var key=LocalId(kind,id);IsCached=false;
   try{var node=await RequestAsync("GET",route);await local.CacheAsync(key,id,node.ToJsonString());}
   catch(Exception e) when(e is HttpRequestException or TaskCanceledException)
-  {if(await local.GetAsync(key) is null)throw new InvalidOperationException("We couldn't connect to the service, and this information is not yet saved on this device.");IsCached=true;}
+  {if(await local.GetAsync(key) is null)throw new CachedDataUnavailableException("We couldn't connect to the service, and this information is not yet saved on this device.");IsCached=true;}
   var cached=(await local.GetAsync(key))!;IsCached|=cached.Dirty;return JsonNode.Parse(cached.Json)!;
  }
  public async Task LoadPermissionsAsync()
@@ -47,30 +53,63 @@ public sealed class InspectionWorkspace(FieldSession session,IFieldMedia media) 
   Permissions=node["permissions"]!.AsArray().Select(p=>p!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
  }
  public Task<JsonNode> DashboardAsync()=>CachedGetAsync("dashboard",0,"api/quality/dashboard");
+ public Task<JsonNode> NotificationsAsync()=>CachedGetAsync("notifications",0,"api/quality/notifications");
+ public Task<JsonNode> ReadNotificationAsync(long id)=>RequestAsync("POST",$"api/quality/notifications/{id}/read");
  public Task<JsonNode> ProjectsAsync()=>CachedGetAsync("projects",0,"api/projects");
  public Task<JsonNode> ClientsAsync()=>CachedGetAsync("clients",0,"api/clients");
  public Task<JsonNode> TemplatesAsync()=>CachedGetAsync("templates",0,"api/checklist-templates");
  public Task<JsonNode> TemplateAsync(long version)=>CachedGetAsync("template",version,$"api/checklist-template-versions/{version}");
- public Task<JsonNode> FormsAsync(long projectId)=>CachedGetAsync("forms",projectId,$"api/qc-forms?projectId={projectId}&pageSize=100");
- public Task<JsonNode> FormAsync(long formId)=>CachedGetAsync("form",formId,$"api/qc-forms/{formId}");
- public Task<JsonNode> HistoryAsync(long formId,string kind)=>CachedGetAsync(kind,formId,$"api/qc-forms/{formId}/{(kind=="audit"?"audit-history":kind)}");
- public Task<JsonNode> CreateTemplateAsync(JsonNode values)=>RequestAsync("POST","api/checklist-templates",values);
+ public async Task<JsonNode> FormsAsync(long projectId)
+ {
+  var local=await StoreAsync();var pending=new List<(JsonNode Form,long? Server)>();
+  foreach(var record in await local.RecordsAsync())
+  {
+   var node=JsonNode.Parse(record.Json);if(node is JsonObject form&&long.TryParse(form["qcFormID"]?.ToString(),out var id)&&id<0&&form["projectID"]?.ToString()==projectId.ToString()&&(record.Dirty||record.ServerId is null))pending.Add((form,record.ServerId));
+  }
+  JsonArray remote;try{remote=(await CachedGetAsync("forms",projectId,$"api/qc-forms?projectId={projectId}&pageSize=100")).AsArray();}
+  catch(CachedDataUnavailableException) when(pending.Count>0){remote=new JsonArray();IsCached=true;}
+  var result=new JsonArray();foreach(var item in pending)result.Add(item.Form.DeepClone());
+  foreach(var form in remote)if(!pending.Any(p=>p.Server?.ToString()==form?["qcFormID"]?.ToString()))result.Add(form?.DeepClone());return result;
+ }
+ public async Task<JsonNode> FormAsync(long formId)
+ {
+  if(formId>0)return await CachedGetAsync("form",formId,$"api/qc-forms/{formId}");
+  var local=await StoreAsync();var record=await local.GetAsync(LocalId("form",formId))??throw new InvalidOperationException("This saved record is unavailable for this account.");
+  var form=JsonNode.Parse(record.Json)!;IsCached=true;if(record.ServerId is not long serverId||record.Dirty)return form;
+  try{form=OfflineFormIdentity.Localize(await RequestAsync("GET",$"api/qc-forms/{serverId}"),form);await local.CacheAsync(record.LocalId,serverId,form.ToJsonString());IsCached=false;}
+  catch(Exception e) when(e is HttpRequestException or TaskCanceledException){ }
+  return form;
+ }
+ private async Task<long?> ServerFormIdAsync(long id)=>id>0?id:(await (await StoreAsync()).GetAsync(LocalId("form",id)))?.ServerId;
+ public async Task<JsonNode> HistoryAsync(long formId,string kind)
+ {
+  var serverId=await ServerFormIdAsync(formId);if(serverId is null)return new JsonArray();
+  var data=await CachedGetAsync(kind,formId,$"api/qc-forms/{serverId}/{(kind=="audit"?"audit-history":kind)}");
+  if(formId<0){var form=await FormAsync(formId);if(form["serverIdMap"] is not null)data=OfflineFormIdentity.Localize(data,form);}
+  return data;
+ }
+ public Task<JsonNode> CreateTemplateAsync(JsonNode values)=>RequestAsync("POST",values["revisionTemplateID"] is null?"api/checklist-templates":$"api/checklist-templates/{values["revisionTemplateID"]}/revisions?expectedVersionId={values["expectedVersionID"]}",values);
  public Task<JsonNode> CreateClientAsync(JsonNode values)=>RequestAsync("POST","api/clients",values);
  public Task<JsonNode> CreateProjectAsync(JsonNode values)=>RequestAsync("POST","api/projects",values);
  public async Task<long?> CreateFormAsync(long projectId,JsonNode template)
  {
+  if(!Permissions.Contains("PerformInspection"))throw new InvalidOperationException("You do not have permission to start an inspection.");
   var version=template["activeVersionID"]?.GetValue<long>()??throw new InvalidOperationException("No active version is available.");
-  var local=await StoreAsync();var id=Guid.NewGuid();
-  var body=new JsonObject{["projectID"]=projectId,["checklistTemplateID"]=template["checklistTemplateID"]!.GetValue<long>(),["checklistTemplateVersionID"]=version};
-  var pending=new JsonObject{["localCreate"]=true,["projectID"]=projectId,["formNumber"]="Pending creation",["status"]="Pending sync"};
-  var op=await local.SaveAndEnqueueAsync(id,pending.ToJsonString(),"CreateQCForm",JsonSerializer.Serialize(new SyncRequest("POST","api/qc-forms",body.ToJsonString())),null);
-  await SyncAsync();var saved=await local.OperationResultAsync(op);
-  return saved is null?null:JsonNode.Parse(saved)?["qcFormID"]?.GetValue<long>();
+  var definition=await TemplateAsync(version);var projects=(await ProjectsAsync()).AsArray();
+  var project=projects.FirstOrDefault(p=>p?["projectID"]?.GetValue<long>()==projectId)??throw new InvalidOperationException("This project is no longer accessible. Refresh projects before continuing.");
+  var local=await StoreAsync();long id;do{id=-Random.Shared.NextInt64(1000000,long.MaxValue);}while(await local.GetAsync(LocalId("form",id)) is not null);
+  var snapshot=OfflineFormIdentity.Create(id,projectId,definition,project,session.Owner!.Value);
+  var body=new JsonObject{["projectID"]=projectId,["checklistTemplateID"]=template["checklistTemplateID"]!.DeepClone(),["checklistTemplateVersionID"]=version};
+  await local.SaveAndEnqueueAsync(LocalId("form",id),snapshot.ToJsonString(),"CreateQCForm",JsonSerializer.Serialize(new SyncRequest("POST","api/qc-forms",body.ToJsonString())),null);
+  await SyncAsync();return id;
  }
  private async Task RequireEditableAsync(JsonNode form)
  {
   if(form["status"]!.GetValue<string>() is not ("Draft" or "InProgress" or "ReturnedForCorrection"))throw new InvalidOperationException("This record is read-only.");
-  if(await (await StoreAsync()).HasPendingTransitionAsync(LocalId("form",form["qcFormID"]!.GetValue<long>())))
+  var local=await StoreAsync();var saved=await local.GetAsync(LocalId("form",form["qcFormID"]!.GetValue<long>()));
+  var acknowledgedStatus=saved is null?null:JsonNode.Parse(saved.Json)?["status"]?.ToString();
+  if(acknowledgedStatus is not null&&!FormInput.Editable(acknowledgedStatus))throw new InvalidOperationException("This record has become read-only. Your entered draft is retained; refresh before continuing.");
+  if(await local.HasPendingTransitionAsync(LocalId("form",form["qcFormID"]!.GetValue<long>())))
    throw new InvalidOperationException("A workflow action is awaiting sync or review. Values remain retained; finish that action before editing.");
  }
  public async Task SaveValueAsync(JsonNode form,JsonNode field,JsonNode? value,bool projectField)
@@ -109,7 +148,7 @@ public sealed class InspectionWorkspace(FieldSession session,IFieldMedia media) 
   var local=await StoreAsync();if((await local.GetAsync(LocalId("form",form["qcFormID"]!.GetValue<long>())))!.Dirty)throw new InvalidOperationException("Sync all pending work before review.");
   await QueueAsync(form,approve?"ApproveQCForm":"ReturnForCorrection",new SyncRequest("POST",$"api/qc-forms/{form["qcFormID"]}/{(approve?"approve":"return-for-correction")}",approve?null:new JsonObject{["reason"]=reason}.ToJsonString()));
  }
- public async Task<Guid> SavePhotoAsync(JsonNode form,long fieldId,Stream image,string contentType,string fileName)
+ public async Task<Guid> SavePhotoAsync(JsonNode form,long? fieldId,Stream image,string contentType,string fileName)
  {
   await RequireEditableAsync(form);var id=form["qcFormID"]!.GetValue<long>();
   return await (await StoreAsync()).SaveEvidenceAsync(LocalId("form",id),image,contentType,fileName,uploadRequest:evidence=>new SyncRequest("POST",$"api/qc-forms/{id}/evidence",EvidenceId:evidence,EvidenceType:"Photo",QCFormFieldID:fieldId),localJson:form.ToJsonString(),expectedRevision:form["revision"]!.GetValue<long>());

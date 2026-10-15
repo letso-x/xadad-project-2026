@@ -24,6 +24,10 @@ public static class BusinessText
   "ReturnForCorrection" or "QCFormReturnedForCorrection"=>"Returned for correction",
   "ApproveQCForm" or "QCFormApproved"=>"QC record approved",
   "CreateSignOff" or "QCSignOffCreated"=>"Signature recorded",
+  "CorrectNcr" or "NCRCorrected"=>"NCR corrective action recorded",
+  "VerifyNcr" or "NCRVerifiedAndClosed"=>"NCR independently verified and closed",
+  "NCRVerificationFailed"=>"NCR verification failed",
+  "NCRCreated"=>"NCR raised",
   _=>"Record updated"
  };
  public static string SignOff(string? type)=>type switch

@@ -44,9 +44,9 @@ public sealed class QCFormQueries(QmsDbSession session, IQCWorkflow workflow, IQ
         await using var access=await workflow.BeginAsync(formId,null,"ReadInspection",ct);
         var currentHash=await hash.GenerateHashAsync(formId,ct);
         return (await session.Connection!.QueryAsync<SignOffHistoryRow>(new CommandDefinition("""
-            SELECT s."QCSignOffID",s."UserID",concat_ws(' ',u."FirstName",u."LastName") AS "SignerName",s."SignOffType"::text AS "SignOffType",s."SignatureEvidenceID",s."SignedAt",s."Comments",s."ContentHash",s."HashVersion",
+            SELECT s."QCSignOffID",s."UserID",concat_ws(' ',u."FirstName",u."LastName") AS "SignerName",s."SignOffType"::text AS "SignOffType",s."SignatureEvidenceID",s."SignedAt",s."Comments",s."ContentHash",s."HashVersion",e."QCFormFieldID",field."FieldLabel" AS "SignedRequirement",
               (s."HashVersion"=2 AND s."ContentHash"=@currentHash AND s."SignedAt">=q."SubmittedAt") AS "MatchesCurrentContentAndSubmission"
-            FROM public."QCSignOff" s JOIN public."QCForm" q ON q."QCFormID"=s."QCFormID" LEFT JOIN public."User" u ON u."UserID"=s."UserID"
+            FROM public."QCSignOff" s JOIN public."QCForm" q ON q."QCFormID"=s."QCFormID" LEFT JOIN public."User" u ON u."UserID"=s."UserID" LEFT JOIN public."Evidence" e ON e."EvidenceID"=s."SignatureEvidenceID" LEFT JOIN public."QCFormField" field ON field."QCFormFieldID"=e."QCFormFieldID"
             WHERE s."QCFormID"=@formId ORDER BY s."QCSignOffID"
             """,new { formId,currentHash },session.Transaction,cancellationToken:ct))).AsList();
     }
@@ -55,8 +55,10 @@ public sealed class QCFormQueries(QmsDbSession session, IQCWorkflow workflow, IQ
         await using var access=await workflow.BeginAsync(formId,null,"ReadAudit",ct);
         return (await session.Connection!.QueryAsync<AuditHistoryRow>(new CommandDefinition("""
             SELECT a."AuditEventID",a."UserID" AS "ActorUserID",a."Action",a."CreatedAt" AS "OccurredAt",
+              NULLIF(concat_ws(' ',NULLIF(btrim(u."FirstName"),''),NULLIF(btrim(u."LastName"),'')),'') AS "ActorName",
               COALESCE(a."NewValues",'{}'::jsonb)::text AS "DetailsJson"
-            FROM public."AuditEvent" a WHERE a."EntityType"='QCForm' AND a."EntityID"=@form
+            FROM public."AuditEvent" a LEFT JOIN public."User" u ON u."UserID"=a."UserID"
+            WHERE a."EntityType"='QCForm' AND a."EntityID"=@form
             ORDER BY a."CreatedAt" DESC,a."AuditEventID" DESC LIMIT 100
             """,new {form=formId.ToString(System.Globalization.CultureInfo.InvariantCulture)},session.Transaction,cancellationToken:ct))).AsList();
     }
@@ -65,14 +67,17 @@ public sealed class QCFormQueries(QmsDbSession session, IQCWorkflow workflow, IQ
         if(afterId<0 || limit<1 || limit>100) throw new ArgumentException("Invalid audit pagination.");
         await using var access=await workflow.BeginAsync(formId,null,"ReadAudit",ct);
         return (await session.Connection!.QueryAsync<AuditHistoryRow>(new CommandDefinition("""
-            SELECT "AuditEventID","ActorUserID","Action","OccurredAt","Details"::text AS "DetailsJson"
-            FROM qms_security."AuditEvent" WHERE "EntityType"='QCForm' AND "EntityID"=@formId AND "AuditEventID">@afterId
-            ORDER BY "AuditEventID" LIMIT @limit
+            SELECT a."AuditEventID",a."ActorUserID",a."Action",a."OccurredAt",a."Details"::text AS "DetailsJson",
+              NULLIF(concat_ws(' ',NULLIF(btrim(u."FirstName"),''),NULLIF(btrim(u."LastName"),'')),'') AS "ActorName"
+            FROM qms_security."AuditEvent" a LEFT JOIN public."User" u ON u."UserID"=a."ActorUserID"
+            WHERE a."EntityType"='QCForm' AND a."EntityID"=@formId AND a."AuditEventID">@afterId
+            ORDER BY a."AuditEventID" LIMIT @limit
             """,new { formId,afterId,limit },session.Transaction,cancellationToken:ct))).AsList();
     }
 }
 public sealed record SignOffHistoryRow
 {
+ public long? QCFormFieldID {get;init;}public string? SignedRequirement {get;init;}
  public long QCSignOffID {get;init;} public Guid? UserID {get;init;} public string? SignerName {get;init;} public string SignOffType {get;init;}="";
  public long SignatureEvidenceID {get;init;} public DateTimeOffset SignedAt {get;init;} public string? Comments {get;init;}
  public string ContentHash {get;init;}=""; public int HashVersion {get;init;}
@@ -82,5 +87,6 @@ public sealed record SignOffHistoryRow
 public sealed record AuditHistoryRow
 {
  public long AuditEventID {get;init;} public Guid? ActorUserID {get;init;} public string Action {get;init;}="";
+ public string? ActorName {get;init;}
  public DateTimeOffset OccurredAt {get;init;} public string DetailsJson {get;init;}="";
 }

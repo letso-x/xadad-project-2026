@@ -12,7 +12,7 @@ public static class ApiFailureMessage
  }
  public static string Describe(HttpStatusCode status,string? body)
  {
-  if(status==HttpStatusCode.BadRequest&&!string.IsNullOrWhiteSpace(body))
+  if((status is HttpStatusCode.BadRequest or HttpStatusCode.Conflict)&&!string.IsNullOrWhiteSpace(body))
   {
    try
    {
@@ -22,7 +22,7 @@ public static class ApiFailureMessage
      var messages=errors.SelectMany(e=>e.Value is JsonArray list?list.Select(v=>v?.ToString()??""):new[]{e.Value?.ToString()??""}).Select(SafeDetail).Where(s=>s is not null).Take(8);
      var text=string.Join("\n",messages);if(text.Length>0)return "Check these values:\n"+text[..Math.Min(text.Length,2000)];
     }
-    if(problem?["detail"] is JsonValue detail&&detail.TryGetValue<string>(out var message)&&SafeDetail(message) is string safe)return "Check these values: "+safe;
+    if(problem?["detail"] is JsonValue detail&&detail.TryGetValue<string>(out var message)&&SafeDetail(message) is string safe)return status==HttpStatusCode.Conflict?safe:"Check these values: "+safe;
    }
    catch(Exception e) when(e is System.Text.Json.JsonException or InvalidOperationException){ }
   }

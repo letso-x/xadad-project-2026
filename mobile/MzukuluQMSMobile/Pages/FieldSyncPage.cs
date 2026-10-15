@@ -28,7 +28,14 @@ public sealed class FieldSyncPage : FieldScreen
      var reason=await DisplayPromptAsync("Withdraw unsuccessful action","This withdraws the retry, without undoing an accepted action. Your answers, attachments and history are retained. Explain why you are withdrawing it.",maxLength:2000);
      if(reason is not null)await model.RunAsync(()=>local.WithdrawRejectedWorkflowAsync(entry.Operation.OperationId,reason));await LoadAsync();
     },true));
-   foreach(var conflict in await local.ConflictsAsync())Rows.Add(FieldUi.Card(FieldUi.Warning(conflict.Status=="Cancelled"?"This unsuccessful action was withdrawn. Both versions remain in the record history.":"This record changed while you were offline. Review the latest record with an authorised reviewer before continuing."),FieldUi.Badge(conflict.Status)));
+   foreach(var conflict in await local.ConflictsAsync())
+   {
+    var operation=outbox.FirstOrDefault(o=>o.Operation.OperationId==conflict.OperationId);
+    var record=operation is null?null:await local.GetAsync(operation.Operation.EntityId);
+    JsonNode? form=null;try{form=JsonNode.Parse(record?.Json??"null");}catch(System.Text.Json.JsonException){}
+    var comparison=ConflictPresentation.Describe(conflict,form);
+    Rows.Add(FieldUi.Card(FieldUi.Warning(conflict.Status=="Cancelled"?"This unsuccessful action was withdrawn. Both versions remain in the record history.":"This record changed while you were offline. Review the latest record with an authorised reviewer before continuing."),FieldUi.Badge(conflict.Status),FieldUi.Text(comparison.Label,16,true),FieldUi.Text("Saved on this device: "+comparison.SavedValue),FieldUi.Text("Central record: "+comparison.CentralValue)));
+   }
    Rows.Add(FieldUi.Text("Both versions are retained for review. Your answers and attachments are never automatically replaced to resolve a conflict."));
    Rows.Add(FieldUi.Text("Signing out keeps your saved work on this device for your account."));
   });
@@ -42,6 +49,14 @@ public sealed class FieldTemplatesPage : FieldScreen
  protected override async void OnAppearing()
  {
   base.OnAppearing();Rows.Clear();Heading("Administration","Checklist templates");Rows.Add(FieldUi.Action("+ Create Checklist Template",()=>Navigation.PushAsync(new FieldTemplateBuilderPage(workspace))));
-  if(await model.LoadAsync(workspace.TemplatesAsync))foreach(var template in model.Data!.AsArray())Rows.Add(FieldUi.Card(FieldUi.Text(template?["templateNumber"]?.ToString()??"",12,true),FieldUi.Text(template?["templateName"]?.ToString()??"",18,true),FieldUi.Text("Revision "+template?["revision"]),FieldUi.Badge(template?["isActive"]?.GetValue<bool>()==true?"Active":"Inactive")));
+  if(await model.LoadAsync(workspace.TemplatesAsync))foreach(var template in model.Data!.AsArray())
+  {
+   Rows.Add(FieldUi.Card(FieldUi.Text(template?["templateNumber"]?.ToString()??"",12,true),FieldUi.Text(template?["templateName"]?.ToString()??"",18,true),FieldUi.Text("Revision "+template?["revision"]),FieldUi.Badge(template?["isActive"]?.GetValue<bool>()==true?"Active":"Inactive")));
+   if(workspace.Permissions.Contains("ManageTemplates")&&template?["activeVersionID"] is not null)
+   {
+    var version=template["activeVersionID"]!.GetValue<long>();
+    Rows.Add(FieldUi.Action("Create new revision · "+template["templateNumber"],()=>Navigation.PushAsync(new FieldTemplateBuilderPage(workspace,version)),true));
+   }
+  }
  }
 }
