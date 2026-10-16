@@ -32,8 +32,19 @@ namespace MzuApplication.Views
                 return;
             }
 
+            FlatButton exportReport = new FlatButton
+            {
+                Text = "Export Report",
+                Glyph = Glyph.Download,
+                Variant = ButtonVariant.Primary,
+                Width = Dpi.S(150),
+                Height = Dpi.S(34)
+            };
+            exportReport.Click += (s, e) => ExportBrandedReport();
+
             AddPageHeader("Insight", "Quality Reports",
-                "Roll-up measures across every project, client and checklist.");
+                "Roll-up measures across every project, client and checklist.",
+                exportReport);
 
             AddKpis();
             AddResponseMix();
@@ -287,6 +298,32 @@ namespace MzuApplication.Views
             card.Height = bar.Height + table.Height + 2;
             Controls.Add(card);
             Y = card.Bottom + Dpi.S(8);
+        }
+
+        /// <summary>Exports the branded quality report (HTML) and opens it for PDF print.</summary>
+        private void ExportBrandedReport()
+        {
+            using (SaveFileDialog save = new SaveFileDialog())
+            {
+                save.Filter = "Quality report (*.html)|*.html";
+                save.FileName = "Mzukulu-Quality-Report-"
+                    + DateTime.Now.ToString("yyyyMMdd-HHmm") + ".html";
+
+                if (save.ShowDialog(Shell) != DialogResult.OK) return;
+
+                try
+                {
+                    QualityReport.Export(save.FileName);
+                    Notify("Report created — opening for preview. Use your browser's Print "
+                        + "→ Save as PDF for a PDF copy.");
+                    try { System.Diagnostics.Process.Start(save.FileName); }
+                    catch (Exception) { }
+                }
+                catch (Exception ex)
+                {
+                    Notify("Report export failed: " + ex.Message, true);
+                }
+            }
         }
 
         private void ExportProject(Project project)

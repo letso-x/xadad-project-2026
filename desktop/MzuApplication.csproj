@@ -109,6 +109,9 @@
     <Compile Include="Data\PostgresClientStore.cs" />
     <Compile Include="Data\ClientService.cs" />
     <Compile Include="Data\PostgresNcrStore.cs" />
+    <Compile Include="Data\ReportStyle.cs" />
+    <Compile Include="Data\AuditReport.cs" />
+    <Compile Include="Data\QualityReport.cs" />
     <Compile Include="Data\EmailConfig.cs" />
     <Compile Include="Data\EmailSender.cs" />
     <Compile Include="Data\MfaService.cs" />

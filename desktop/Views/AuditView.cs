@@ -51,28 +51,28 @@ namespace MzuApplication.Views
             };
             verify.Click += (s, e) => VerifyIntegrity();
 
-            FlatButton exportFull = new FlatButton
+            FlatButton exportReport = new FlatButton
             {
-                Text = "Export Full Trail",
+                Text = "Export Report",
                 Glyph = Glyph.Download,
                 Variant = ButtonVariant.Primary,
-                Width = Dpi.S(158),
+                Width = Dpi.S(150),
                 Height = Dpi.S(34)
             };
-            exportFull.Click += (s, e) => ExportTrail(fullTrail: true);
+            exportReport.Click += (s, e) => ExportBrandedReport();
 
-            FlatButton exportFiltered = new FlatButton
+            FlatButton exportCsv = new FlatButton
             {
-                Text = "Export View",
+                Text = "Export CSV",
                 Glyph = Glyph.Download,
                 Width = Dpi.S(128),
                 Height = Dpi.S(34)
             };
-            exportFiltered.Click += (s, e) => ExportTrail(fullTrail: false);
+            exportCsv.Click += (s, e) => ExportTrail(fullTrail: true);
 
             AddPageHeader("Governance", "Audit Trail",
                 "An append-only, tamper-evident record of every change, for review and handover.",
-                verify, exportFiltered, exportFull);
+                verify, exportCsv, exportReport);
 
             AddNotice();
             AddStats();
@@ -402,6 +402,37 @@ namespace MzuApplication.Views
                 LoadRows();
                 Rebuild();
             });
+        }
+
+        /// <summary>
+        /// Exports a polished, branded audit report (HTML) and opens it so it can be
+        /// reviewed and printed to PDF for a client handover pack.
+        /// </summary>
+        private void ExportBrandedReport()
+        {
+            var entries = Audit.All();
+
+            using (SaveFileDialog save = new SaveFileDialog())
+            {
+                save.Filter = "Audit report (*.html)|*.html";
+                save.FileName = "Mzukulu-Audit-Report-"
+                    + DateTime.Now.ToString("yyyyMMdd-HHmm") + ".html";
+
+                if (save.ShowDialog(Shell) != DialogResult.OK) return;
+
+                try
+                {
+                    AuditReport.Export(entries, save.FileName);
+                    Notify("Report created — opening for preview. Use your browser's Print "
+                        + "→ Save as PDF for a PDF copy.");
+                    try { System.Diagnostics.Process.Start(save.FileName); }
+                    catch (Exception) { /* file still written; just couldn't auto-open */ }
+                }
+                catch (Exception ex)
+                {
+                    Notify("Report export failed: " + ex.Message, true);
+                }
+            }
         }
 
         /// <summary>
