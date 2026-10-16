@@ -1,8 +1,5 @@
 # xadad-project-2026
 
-**Implementation status (12 October 2026): under development, NOT READY.** The module descriptions below are design goals, not verification evidence. See [current status](docs/codex/IMPLEMENTATION_STATUS.md), [acceptance evidence](docs/codex/ACCEPTANCE_TESTS.md), and [actual setup/recovery instructions](docs/codex/SETUP_AND_RECOVERY.md). Encrypted SQLite, full offline/mobile workflows and several mandatory modules remain incomplete.
-An enterprise-grade, digital Quality Management System designed to transition industrial control systems and automation environments away from slow, paper-based records and spreadsheets. 
-
 This project is being engineered over a **5-Week Work Integrated Learning (WIL) placement** by a team of five Information Technology students.
 
 ## 📋 Project Overview
