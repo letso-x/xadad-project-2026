@@ -9,12 +9,28 @@ namespace MzuApplication.Data
     /// <summary>Creates and progresses non-conformance reports.</summary>
     internal static class NcrService
     {
+        private static bool UsePostgres
+        {
+            get { return DbConfig.UsePostgres; }
+        }
+
+        /// <summary>All NCRs from the shared store when connected, else the local mirror.</summary>
+        public static List<Ncr> All()
+        {
+            if (UsePostgres)
+            {
+                try { return PostgresNcrStore.GetAll(); }
+                catch (Exception) { }
+            }
+            return Repository.Db.Ncrs;
+        }
+
         /// <summary>Allocates the next sequential NCR number.</summary>
         public static string NextNcrNo()
         {
             var numbers = new List<int>();
 
-            foreach (Ncr ncr in Repository.Db.Ncrs)
+            foreach (Ncr ncr in All())
             {
                 if (string.IsNullOrEmpty(ncr.NcrNo)) continue;
 
@@ -55,7 +71,14 @@ namespace MzuApplication.Data
                 CorrectiveAction = string.Empty
             };
 
+            // Mirror locally and write to the shared store so every user sees the NCR.
             Repository.Db.Ncrs.Add(ncr);
+            if (UsePostgres)
+            {
+                try { PostgresNcrStore.Insert(ncr); }
+                catch (Exception) { /* offline: local copy still holds it */ }
+            }
+            Repository.Save();
 
             Audit.Log(AuditAction.NcrRaised, "NCR", ncr.Id, ncr.NcrNo,
                 severity + " · " + title);
@@ -85,11 +108,24 @@ namespace MzuApplication.Data
                 Audit.Log(AuditAction.StatusChanged, "NCR", ncr.Id, ncr.NcrNo,
                     Format.NcrStateText(previous) + " → " + Format.NcrStateText(state));
             }
+
+            Persist(ncr);
+        }
+
+        /// <summary>Persists an edited NCR to the shared store (and local mirror).</summary>
+        public static void Persist(Ncr ncr)
+        {
+            if (UsePostgres)
+            {
+                try { PostgresNcrStore.Update(ncr); }
+                catch (Exception) { }
+            }
+            Repository.Save();
         }
 
         public static List<Ncr> Open()
         {
-            return Repository.Db.Ncrs
+            return All()
                 .Where(n => n.State != NcrState.Closed)
                 .OrderBy(n => n.DueDate ?? DateTime.MaxValue)
                 .ToList();
@@ -97,12 +133,12 @@ namespace MzuApplication.Data
 
         public static List<Ncr> Overdue()
         {
-            return Repository.Db.Ncrs.Where(n => n.IsOverdue).ToList();
+            return All().Where(n => n.IsOverdue).ToList();
         }
 
         public static List<Ncr> ForProject(string projectId)
         {
-            return Repository.Db.Ncrs.Where(n => n.ProjectId == projectId).ToList();
+            return All().Where(n => n.ProjectId == projectId).ToList();
         }
     }
 }

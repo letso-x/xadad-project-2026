@@ -115,6 +115,16 @@ namespace MzuApplication
         /// "Halalisile Tshireletso Seqeta" -> "HTS". Used to stamp the person working on
         /// a document into the Initials column of a checklist.
         /// </summary>
+        /// <summary>
+        /// Converts a timestamp that may be stored as UTC (from the database) into local
+        /// time for display. Values already in local/unspecified kind pass through, so
+        /// there is no double-shift and no 2-hour drift.
+        /// </summary>
+        public static DateTime ToLocal(DateTime value)
+        {
+            return value.Kind == DateTimeKind.Utc ? value.ToLocalTime() : value;
+        }
+
         public static string FullInitials(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return string.Empty;

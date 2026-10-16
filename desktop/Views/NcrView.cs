@@ -63,7 +63,7 @@ namespace MzuApplication.Views
 
         private void AddCounters()
         {
-            var all = Repository.Db.Ncrs;
+            var all = NcrService.All();
 
             var tiles = new List<Tuple<Glyph, string, string, bool>>
             {
@@ -152,7 +152,7 @@ namespace MzuApplication.Views
                 ? _stateFilter.SelectedItem.ToString()
                 : "All";
 
-            IEnumerable<Ncr> source = Repository.Db.Ncrs;
+            IEnumerable<Ncr> source = NcrService.All();
 
             switch (state)
             {
@@ -337,14 +337,14 @@ namespace MzuApplication.Views
 
                     if (target != ncr.State)
                     {
-                        NcrService.SetState(ncr, target);
+                        NcrService.SetState(ncr, target); // persists to the shared store
                     }
                     else
                     {
                         Audit.Log(AuditAction.Updated, "NCR", ncr.Id, ncr.NcrNo, "Details updated");
+                        NcrService.Persist(ncr);          // save field edits to the shared store
                     }
 
-                    Repository.Save();
                     dialog.DialogResult = DialogResult.OK;
                 });
 
@@ -378,9 +378,9 @@ namespace MzuApplication.Views
 
                 try
                 {
-                    Exporter.ExportNcrs(Repository.Db.Ncrs.ToList(), save.FileName);
-                    Repository.Save();
-                    Notify("Exported " + Repository.Db.Ncrs.Count + " NCRs.");
+                    var ncrs = NcrService.All().ToList();
+                    Exporter.ExportNcrs(ncrs, save.FileName);
+                    Notify("Exported " + ncrs.Count + " NCRs.");
                 }
                 catch (Exception ex)
                 {

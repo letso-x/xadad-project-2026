@@ -27,11 +27,34 @@ namespace MzuApplication.Data
         private const string RoleSiteUser = "SiteUser";
 
         /// <summary>Opens a connection using the configured string.</summary>
+        private static bool _schemaEnsured;
+
         private static NpgsqlConnection Open()
         {
             var conn = new NpgsqlConnection(DbConfig.ConnectionString);
             conn.Open();
+            EnsureSchema(conn);
             return conn;
+        }
+
+        /// <summary>
+        /// Adds a dedicated LastLoginAt column to the shared User table if it is not
+        /// already present, so sign-in time is tracked separately from LastModifiedAt.
+        /// Stored as timestamptz so the instant is timezone-correct.
+        /// </summary>
+        private static void EnsureSchema(NpgsqlConnection conn)
+        {
+            if (_schemaEnsured) return;
+            try
+            {
+                using (var cmd = new NpgsqlCommand(
+                    "alter table \"User\" add column if not exists \"LastLoginAt\" timestamptz", conn))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception) { /* lacking DDL rights: fall back to LastModifiedAt on read */ }
+            _schemaEnsured = true;
         }
 
         /// <summary>
@@ -152,7 +175,8 @@ update ""User"" set
     ""PasswordHash"" = @hash,
     ""Role"" = @role,
     ""IsActive"" = @active,
-    ""LastModifiedAt"" = @modified
+    ""LastModifiedAt"" = @modified,
+    ""LastLoginAt"" = @lastlogin
 where ""UserID"" = @id";
 
             using (var conn = Open())
@@ -179,7 +203,8 @@ where ""UserID"" = @id";
 
         private const string SelectColumns =
             "select \"UserID\", \"FirstName\", \"LastName\", \"Email\", "
-            + "\"PasswordHash\", \"Role\", \"IsActive\", \"CreatedAt\", \"LastModifiedAt\"";
+            + "\"PasswordHash\", \"Role\", \"IsActive\", \"CreatedAt\", \"LastModifiedAt\", "
+            + "\"LastLoginAt\"";
 
         private static UserAccount Map(NpgsqlDataReader r)
         {
@@ -197,7 +222,11 @@ where ""UserID"" = @id";
                 Active = !r.IsDBNull(6) && r.GetBoolean(6),
                 MustChangePassword = false,
                 CreatedAt = r.IsDBNull(7) ? DateTime.Now : r.GetDateTime(7),
-                LastLoginAt = r.IsDBNull(8) ? (DateTime?)null : r.GetDateTime(8)
+                // Column 9 is the dedicated LastLoginAt (timestamptz). Keep it as UTC so
+                // the UI can convert to local time correctly (no 2-hour drift).
+                LastLoginAt = r.IsDBNull(9)
+                    ? (DateTime?)null
+                    : DateTime.SpecifyKind(r.GetDateTime(9).ToUniversalTime(), DateTimeKind.Utc)
             };
 
             // UnpackHash also restores the must-change-password flag packed in the column.
@@ -219,6 +248,9 @@ where ""UserID"" = @id";
             cmd.Parameters.AddWithValue("active", a.Active);
             cmd.Parameters.AddWithValue("created", a.CreatedAt == default(DateTime) ? DateTime.Now : a.CreatedAt);
             cmd.Parameters.AddWithValue("modified", (object)DateTime.Now);
+            // Persist the login time (UTC) so the Users panel reflects the real sign-in.
+            cmd.Parameters.AddWithValue("lastlogin",
+                a.LastLoginAt.HasValue ? (object)a.LastLoginAt.Value.ToUniversalTime() : DBNull.Value);
         }
 
         private static int ParseId(string id)

@@ -141,7 +141,8 @@ namespace MzuApplication.Views
                 row.Cells.Add(new TableCell(statusText) { PillBack = back, PillFore = fore });
 
                 row.Cells.Add(new TableCell(
-                    user.LastLoginAt.HasValue ? Format.Relative(user.LastLoginAt.Value) : "never")
+                    user.LastLoginAt.HasValue
+                        ? Format.Relative(Format.ToLocal(user.LastLoginAt.Value)) : "never")
                 { Muted = true });
 
                 row.Cells.Add(new TableCell("Manage") { Muted = true });
@@ -172,7 +173,8 @@ namespace MzuApplication.Views
                     : "Active");
                 dialog.AddReadOnlyField("Enrolled", Format.Date(user.CreatedAt));
                 dialog.AddReadOnlyField("Last sign-in",
-                    user.LastLoginAt.HasValue ? Format.DateTimeLong(user.LastLoginAt.Value) : "Never");
+                    user.LastLoginAt.HasValue
+                        ? Format.DateTimeLong(Format.ToLocal(user.LastLoginAt.Value)) : "Never");
 
                 if (isSelf)
                 {
