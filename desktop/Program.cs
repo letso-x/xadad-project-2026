@@ -110,6 +110,10 @@ namespace MzuApplication
             bool required = Repository.Db.Settings.RequireMfa && EmailConfig.IsConfigured;
             if (!required) return true; // MFA off or email not set up on this machine
 
+            // Administrators are exempt from two-step verification — only standard users
+            // are challenged for an emailed code.
+            if (Auth.Current.Role == UserRole.Admin) return true;
+
             // If this machine was verified by the same user within the trust window
             // (14 days), skip the code entirely — like a remembered Windows device.
             if (DeviceTrust.IsTrusted(Auth.Current)) return true;

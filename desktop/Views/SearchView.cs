@@ -37,24 +37,23 @@ namespace MzuApplication.Views
             {
                 Location = new Point(Left1, Y),
                 Width = InnerWidth,
-                Height = Dpi.S(96),
                 Fill = Color.White,
                 BorderTint = Theme.Slate150,
                 Radius = Theme.Radius
             };
 
+            // Input leaves room for the Search button on its right.
+            int buttonWidth = Dpi.S(120);
             _input = new TextInput
             {
                 Glyph = Glyph.Search,
                 Placeholder = "Search clients, projects, QC document numbers, record numbers, status...",
                 Location = new Point(Dpi.S(20), Dpi.S(20)),
-                Width = InnerWidth - 40,
+                Width = InnerWidth - Dpi.S(40) - buttonWidth - Dpi.S(10),
                 Height = Dpi.S(40),
                 Font = Theme.Body,
                 Value = _initialQuery
             };
-            // Searching re-runs against whatever is currently typed, not just the value
-            // the view was opened with, so typing and pressing Enter (or the button) works.
             _input.Submitted += (s, e) => RunSearch();
             box.Controls.Add(_input);
 
@@ -63,22 +62,21 @@ namespace MzuApplication.Views
                 Text = "Search",
                 Glyph = Glyph.Search,
                 Variant = ButtonVariant.Primary,
-                Width = Dpi.S(110),
+                Width = buttonWidth,
                 Height = Dpi.S(40),
-                Location = new Point(_input.Right - Dpi.S(110) - Dpi.S(0), _input.Bottom + Dpi.S(8))
+                Location = new Point(_input.Right + Dpi.S(10), Dpi.S(20))
             };
-            // Place the button neatly under the right edge of the input.
-            go.Location = new Point(InnerWidth - Dpi.S(110) + Dpi.S(0), _input.Bottom + Dpi.S(6));
             go.Click += (s, e) => RunSearch();
+            box.Controls.Add(go);
 
             Label help = Ui.Help("Try a client name, project name, document number (e.g. MZT-QC-301), "
                                  + "or a QC record number (e.g. QC-0001).");
-            help.Location = new Point(20, _input.Bottom + 10);
-            help.Width = InnerWidth - Dpi.S(140);
+            help.Location = new Point(Dpi.S(20), _input.Bottom + Dpi.S(10));
+            help.Width = InnerWidth - Dpi.S(40);
             help.Height = Dpi.S(16);
             box.Controls.Add(help);
-            box.Controls.Add(go);
 
+            box.Height = help.Bottom + Dpi.S(16);
             Controls.Add(box);
             Y = box.Bottom + 20;
 
@@ -100,7 +98,9 @@ namespace MzuApplication.Views
         {
             var results = new List<ResultEntry>();
 
-            foreach (Client client in Repository.Db.Clients)
+            // Clients come from the shared store so results include clients added by
+            // other users, not just those cached locally.
+            foreach (Client client in ClientService.All())
             {
                 if (Contains(needle, client.Name, client.Contact))
                 {
@@ -111,6 +111,24 @@ namespace MzuApplication.Views
                         Label = client.Name,
                         Detail = client.Contact ?? string.Empty,
                         Navigate = () => Shell.Navigate(new ClientsView(Shell))
+                    });
+                }
+            }
+
+            // NCRs from the shared store.
+            foreach (Ncr ncr in NcrService.All())
+            {
+                if (Contains(needle, ncr.NcrNo, ncr.Title, ncr.Description,
+                             ncr.AssignedTo, Format.NcrStateText(ncr.State)))
+                {
+                    results.Add(new ResultEntry
+                    {
+                        Type = "NCR",
+                        Glyph = Glyph.Alert,
+                        Label = ncr.NcrNo + " — " + ncr.Title,
+                        Detail = ncr.Severity + " · " + Format.NcrStateText(ncr.State)
+                            + (string.IsNullOrEmpty(ncr.AssignedTo) ? string.Empty : " · " + ncr.AssignedTo),
+                        Navigate = () => Shell.Navigate(new NcrView(Shell))
                     });
                 }
             }
