@@ -1,0 +1,19 @@
+# Secrets — the real connection string lives here and must never be committed.
+database.config
+
+# Secrets — SMTP credentials for sending MFA codes.
+email.config
+
+# Per-machine "trust this device" tokens for MFA (machine-specific, not source).
+device-trust.dat
+
+# NuGet packages (restored from packages.config)
+packages/
+
+# Build output
+[Bb]in/
+[Oo]bj/
+.vs/
+
+# Packaged installer output — contains the real configs (secrets); never commit.
+dist/
