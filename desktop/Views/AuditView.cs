@@ -422,7 +422,8 @@ namespace MzuApplication.Views
 
                 try
                 {
-                    AuditReport.Export(entries, save.FileName);
+                    LoadingOverlay.Run(Shell, "Preparing audit report…",
+                        () => AuditReport.Export(entries, save.FileName));
                     Notify("Report created — opening for preview. Use your browser's Print "
                         + "→ Save as PDF for a PDF copy.");
                     try { System.Diagnostics.Process.Start(save.FileName); }

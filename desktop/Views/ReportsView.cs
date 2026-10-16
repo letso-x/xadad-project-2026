@@ -313,7 +313,8 @@ namespace MzuApplication.Views
 
                 try
                 {
-                    QualityReport.Export(save.FileName);
+                    LoadingOverlay.Run(Shell, "Preparing quality report…",
+                        () => QualityReport.Export(save.FileName));
                     Notify("Report created — opening for preview. Use your browser's Print "
                         + "→ Save as PDF for a PDF copy.");
                     try { System.Diagnostics.Process.Start(save.FileName); }
