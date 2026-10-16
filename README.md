@@ -109,7 +109,6 @@ Code **cannot** be merged if it fails our Quality Gate:
 
 ### Quick Start
 
-Follow [setup and recovery](docs/codex/SETUP_AND_RECOVERY.md) for exact project paths, sequential restore/build/test commands, server User Secrets, unapplied migrations and denied-by-default permission bootstrap. Never place database/service-role credentials in source-controlled appsettings or mobile code.
 
 ---
 
