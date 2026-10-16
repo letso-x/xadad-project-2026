@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A297CEC2-945B-47BB-9691-D9BB6399FCE1}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>MzuApplication</RootNamespace>
+    <AssemblyName>MzuApplication</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <!-- Npgsql (PostgreSQL / Supabase) and its net472 dependency chain -->
+    <Reference Include="Npgsql">
+      <HintPath>packages\Npgsql.6.0.11\lib\netstandard2.0\Npgsql.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.HashCode">
+      <HintPath>packages\Microsoft.Bcl.HashCode.1.1.1\lib\net461\Microsoft.Bcl.HashCode.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Buffers">
+      <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>packages\System.Collections.Immutable.6.0.0\lib\net461\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Diagnostics.DiagnosticSource">
+      <HintPath>packages\System.Diagnostics.DiagnosticSource.6.0.0\lib\net461\System.Diagnostics.DiagnosticSource.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web">
+      <HintPath>packages\System.Text.Encodings.Web.6.0.0\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>packages\System.Text.Json.6.0.0\lib\net461\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Channels">
+      <HintPath>packages\System.Threading.Channels.6.0.0\lib\net461\System.Threading.Channels.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions">
+      <HintPath>packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="AppIcon.cs" />
+    <Compile Include="Dpi.cs" />
+    <Compile Include="Theme.cs" />
+    <Compile Include="Format.cs" />
+    <Compile Include="Models\Models.cs" />
+    <Compile Include="Data\Repository.cs" />
+    <Compile Include="Models\Enterprise.cs" />
+    <Compile Include="Data\Audit.cs" />
+    <Compile Include="Data\Auth.cs" />
+    <Compile Include="Data\DbConfig.cs" />
+    <Compile Include="Data\PostgresUserStore.cs" />
+    <Compile Include="Data\EmailConfig.cs" />
+    <Compile Include="Data\EmailSender.cs" />
+    <Compile Include="Data\MfaService.cs" />
+    <Compile Include="Data\DeviceTrust.cs" />
+    <Compile Include="Data\Exporter.cs" />
+    <Compile Include="Data\NcrService.cs" />
+    <Compile Include="Data\Analytics.cs" />
+    <Compile Include="Data\Seed.cs" />
+    <Compile Include="Controls\PaintScope.cs" />
+    <Compile Include="Controls\Glyphs.cs" />
+    <Compile Include="Controls\Card.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Pill.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\FlatButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\NavLink.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TextInput.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ProgressTrack.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\BrandMark.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\DataTable.cs" />
+    <Compile Include="Controls\ActivityRow.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ResponseSelector.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Toast.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Ui.cs" />
+    <Compile Include="Forms\LoginForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\RegisterForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ChangePasswordForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\MfaForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\IdlePromptForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CommandPaletteForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\UsersView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Forms\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Dialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\ViewBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\DashboardView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\ClientsView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\ProjectsView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\ProjectDetailView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\LibraryView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\TemplatesView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\TemplateEditorView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\FormFillView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\RegisterView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MzukuluLogo.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\StatTile.cs" />
+    <Compile Include="Views\NcrView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\AuditView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\ReportsView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\SettingsView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Views\SearchView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="app.manifest" />
+    <None Include="packages.config" />
+    <None Include="Data\schema.sql" />
+    <Content Include="database.config.sample">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- The real database.config is gitignored; copy it to output if present so the
+         exe can read it at runtime. -->
+    <Content Include="database.config" Condition="Exists('database.config')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="email.config.sample">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- The real email.config is gitignored; copy it to output if present. -->
+    <Content Include="email.config" Condition="Exists('email.config')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- Drop the real artwork here as Assets\logo.png; it is copied next to the exe
+         and picked up automatically by MzukuluLogo. -->
+    <Content Include="Assets\logo.png" Condition="Exists('Assets\logo.png')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
