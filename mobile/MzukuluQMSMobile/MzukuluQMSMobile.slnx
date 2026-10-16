@@ -4,6 +4,8 @@
   </Folder>
   <Project Path="../MzukuluQMS.Api.Tests/MzukuluQMS.Api.Tests.csproj" />
   <Project Path="../MzukuluQMS.Api/MzukuluQMS.Api.csproj" Id="6aa1f766-9fce-4c97-8d00-f4b12d824ced" />
+  <Project Path="../MzukuluQMS.Mobile.Core/MzukuluQMS.Mobile.Core.csproj" />
+  <Project Path="../MzukuluQMS.Mobile.Core.Tests/MzukuluQMS.Mobile.Core.Tests.csproj" />
   <Project Path="MzukuluQMSMobile.csproj">
     <Deploy Solution="Debug|*" />
   </Project>

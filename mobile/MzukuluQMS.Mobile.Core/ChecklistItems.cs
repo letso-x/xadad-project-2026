@@ -61,5 +61,5 @@ public static class ChecklistItems
     }
 
     public static bool IsResultOptions(IReadOnlyCollection<string> options) => options.Count==3&&
-        (options.ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"A","R","N/A"})||options.ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"Pass","Fail","N/A"}));
+        (options.ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"A","R","N/A"})||options.ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"Pass","Fail","N/A"})||options.ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"Accepted","Rejected","N/A"}));
 }

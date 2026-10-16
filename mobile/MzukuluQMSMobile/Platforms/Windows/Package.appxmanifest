@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
@@ -36,6 +36,7 @@
         <uap:DefaultTile Square71x71Logo="$placeholder$.png" Wide310x150Logo="$placeholder$.png" Square310x310Logo="$placeholder$.png" />
         <uap:SplashScreen Image="$placeholder$.png" />
       </uap:VisualElements>
+    <Extensions><uap:Extension Category="windows.protocol"><uap:Protocol Name="mzukuluqms"><uap:DisplayName>QMS password recovery</uap:DisplayName></uap:Protocol></uap:Extension></Extensions>
     </Application>
   </Applications>
 
