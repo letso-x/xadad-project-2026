@@ -342,7 +342,19 @@ namespace MzuApplication.Forms
                 return;
             }
 
-            _error.Text = Auth.Describe(result);
+            if (result == AuthResult.AccountLocked)
+            {
+                int mins = Auth.LockMinutesRemaining(_username.Value);
+                _error.Text = mins > 0
+                    ? "Too many failed attempts. Account locked — try again in "
+                        + mins + " minute" + (mins == 1 ? "" : "s") + "."
+                    : Auth.Describe(result);
+            }
+            else
+            {
+                _error.Text = Auth.Describe(result);
+            }
+
             _password.Value = string.Empty;
             _password.Focus();
         }

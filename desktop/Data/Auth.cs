@@ -13,7 +13,8 @@ namespace MzuApplication.Data
         UsernameTaken = 2,
         AccountDisabled = 3,
         WeakPassword = 4,
-        MissingFields = 5
+        MissingFields = 5,
+        AccountLocked = 6
     }
 
     /// <summary>
@@ -30,6 +31,75 @@ namespace MzuApplication.Data
         private const int SaltBytes = 16;
         private const int HashBytes = 32;
         private const int Iterations = 100_000;
+
+        // ---- Brute-force lockout -------------------------------------------
+        /// <summary>Failed attempts allowed before an account is temporarily locked.</summary>
+        private const int MaxFailedAttempts = 5;
+        /// <summary>How long an account stays locked after too many failed attempts.</summary>
+        private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
+        private sealed class LockInfo
+        {
+            public int Failures;
+            public DateTime? LockedUntilUtc;
+        }
+
+        // Keyed by lower-cased login name. In-memory: a brute-force defence that resets on
+        // restart, which is the standard first line and keeps the demo self-contained.
+        private static readonly System.Collections.Generic.Dictionary<string, LockInfo> _locks =
+            new System.Collections.Generic.Dictionary<string, LockInfo>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Minutes remaining on a lock for the given login name, or 0 if not locked.</summary>
+        public static int LockMinutesRemaining(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username)) return 0;
+            LockInfo info;
+            if (!_locks.TryGetValue(username.Trim(), out info) || !info.LockedUntilUtc.HasValue)
+                return 0;
+
+            double mins = (info.LockedUntilUtc.Value - DateTime.UtcNow).TotalMinutes;
+            return mins > 0 ? (int)Math.Ceiling(mins) : 0;
+        }
+
+        private static bool IsLocked(string username)
+        {
+            LockInfo info;
+            if (!_locks.TryGetValue(username, out info) || !info.LockedUntilUtc.HasValue)
+                return false;
+
+            if (DateTime.UtcNow >= info.LockedUntilUtc.Value)
+            {
+                // Lock expired — clear it so the user can try again.
+                info.LockedUntilUtc = null;
+                info.Failures = 0;
+                return false;
+            }
+            return true;
+        }
+
+        private static void RecordFailure(string username, UserAccount account)
+        {
+            LockInfo info;
+            if (!_locks.TryGetValue(username, out info))
+            {
+                info = new LockInfo();
+                _locks[username] = info;
+            }
+
+            info.Failures++;
+            if (info.Failures >= MaxFailedAttempts)
+            {
+                info.LockedUntilUtc = DateTime.UtcNow.Add(LockoutDuration);
+                Audit.Log(AuditAction.Updated, "Session",
+                    account != null ? account.Id : null, username,
+                    "Account locked after " + info.Failures + " failed sign-in attempts");
+            }
+        }
+
+        private static void ClearFailures(string username)
+        {
+            _locks.Remove(username);
+        }
 
         /// <summary>The currently signed-in account, or null.</summary>
         public static UserAccount Current { get; private set; }
@@ -184,12 +254,21 @@ namespace MzuApplication.Data
                 return AuthResult.MissingFields;
             }
 
-            UserAccount account = FindUser(username.Trim());
+            string key = username.Trim();
+
+            // Brute-force defence: if the account is locked, refuse before doing any work.
+            if (IsLocked(key))
+            {
+                return AuthResult.AccountLocked;
+            }
+
+            UserAccount account = FindUser(key);
             if (account == null)
             {
                 // Hash anyway so a missing user and a wrong password take similar time.
                 Hash(password, new byte[SaltBytes], Iterations);
-                return AuthResult.InvalidCredentials;
+                RecordFailure(key, null);
+                return IsLocked(key) ? AuthResult.AccountLocked : AuthResult.InvalidCredentials;
             }
 
             if (!account.Active)
@@ -201,7 +280,8 @@ namespace MzuApplication.Data
             // predates this app's hashing) can never be verified; treat as invalid.
             if (string.IsNullOrEmpty(account.PasswordSalt))
             {
-                return AuthResult.InvalidCredentials;
+                RecordFailure(key, account);
+                return IsLocked(key) ? AuthResult.AccountLocked : AuthResult.InvalidCredentials;
             }
 
             byte[] salt;
@@ -211,15 +291,20 @@ namespace MzuApplication.Data
             }
             catch (FormatException)
             {
-                return AuthResult.InvalidCredentials;
+                RecordFailure(key, account);
+                return IsLocked(key) ? AuthResult.AccountLocked : AuthResult.InvalidCredentials;
             }
 
             string attempt = Hash(password, salt, account.HashIterations);
 
             if (!FixedTimeEquals(attempt, account.PasswordHash))
             {
-                return AuthResult.InvalidCredentials;
+                RecordFailure(key, account);
+                return IsLocked(key) ? AuthResult.AccountLocked : AuthResult.InvalidCredentials;
             }
+
+            // Correct password — clear any failed-attempt history for this account.
+            ClearFailures(key);
 
             account.LastLoginAt = DateTime.Now;
             Current = account;
@@ -476,6 +561,9 @@ namespace MzuApplication.Data
                 case AuthResult.AccountDisabled: return "This account has been disabled.";
                 case AuthResult.WeakPassword: return PasswordRule;
                 case AuthResult.MissingFields: return "Please complete all required fields.";
+                case AuthResult.AccountLocked:
+                    return "Too many failed attempts. This account is temporarily locked. "
+                        + "Please try again later.";
                 default: return string.Empty;
             }
         }
