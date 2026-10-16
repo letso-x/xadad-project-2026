@@ -62,6 +62,9 @@ namespace MzuApplication.Views
             };
             newForm.Click += (s, e) => Shell.Navigate(new LibraryView(Shell, project.Id));
             actions.Add(newForm);
+            FlatButton itp = new FlatButton { Text = "Inspection & Test Plans", Width = Dpi.S(200) };
+            itp.Click += (s, e) => Shell.Navigate(new ItpView(Shell, project.Id));
+            actions.Add(itp);
 
             AddPageHeader(client != null ? client.Name : string.Empty,
                 project.Name,

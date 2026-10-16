@@ -367,16 +367,12 @@ namespace MzuApplication.Views
             };
             addRow.Click += (s, e) =>
             {
-                _register.Cables.Add(new CableRow
+                using (var dialog = new Dialog("Add cable", 480))
                 {
-                    Id = Repository.NewId("cab"),
-                    No = _register.Cables.Count + 1,
-                    CableNo = string.Empty, From = string.Empty, To = string.Empty,
-                    CableType = string.Empty, DrumNo = string.Empty, Length = string.Empty,
-                    IrCert = string.Empty, ContCert = string.Empty
-                });
-                Repository.Save();
-                Rebuild();
+                    var number = dialog.AddTextField("Cable number", "");
+                    dialog.AddAsyncAction("Add", async () => { try { await CableData.AddAsync(_register, number.Value.Trim()); dialog.DialogResult = DialogResult.OK; } catch (Exception ex) { Notify(ex.Message, true); } });
+                    if (dialog.ShowDialog(Shell) == DialogResult.OK) Rebuild();
+                }
             };
             card.Controls.Add(addRow);
 
@@ -624,7 +620,7 @@ namespace MzuApplication.Views
                 Value = entry.Name ?? string.Empty,
                 Placeholder = "Name (" + roleHint + ")"
             };
-            name.ValueChanged += (s, e) => entry.Name = name.Value;
+            name.Enabled = false;
             block.Controls.Add(name);
 
             TextInput signature = new TextInput
@@ -635,7 +631,7 @@ namespace MzuApplication.Views
                 Value = entry.Signature ?? string.Empty,
                 Placeholder = "Signature (type initials)"
             };
-            signature.ValueChanged += (s, e) => entry.Signature = signature.Value;
+            signature.Enabled = false;
             block.Controls.Add(signature);
 
             DateTimePicker date = new DateTimePicker
@@ -656,7 +652,7 @@ namespace MzuApplication.Views
             {
                 date.Checked = false;
             }
-            date.ValueChanged += (s, e) => entry.Date = date.Checked ? date.Value.Date : (DateTime?)null;
+            date.Enabled = false;
             block.Controls.Add(date);
 
             block.Height = date.Bottom + 16;
@@ -712,33 +708,20 @@ namespace MzuApplication.Views
             Y = save.Bottom + 6;
         }
 
-        private void SaveDraft()
+        private bool _saving;
+        private async void SaveDraft()
         {
-            _register.Status = RecordStatus.InProgress;
-            _register.UpdatedAt = DateTime.Now;
-
-            int done = _register.Cables.Count(c => c.Complete);
-            Audit.Log(AuditAction.Updated, "Register", _register.Id,
-                CableRegister.DocNumber + " · " + _register.QcRecordNo,
-                done + " of " + _register.Cables.Count + " cables complete");
-
-            Repository.Save();
-            Notify("Register saved.");
-            Rebuild();
+            if (_saving) return; _saving = true; Enabled = false;
+            try { await CableData.SaveAsync(_register); Notify("Register saved to the shared service."); }
+            catch (Exception ex) { Notify(ex.Message, true); }
+            finally { _saving = false; if (!IsDisposed) { Enabled = true; Rebuild(); } }
         }
-
-        private void MarkComplete()
+        private async void MarkComplete()
         {
-            _register.Status = RecordStatus.CompleteAccepted;
-            _register.UpdatedAt = DateTime.Now;
-
-            Audit.Log(AuditAction.Submitted, "Register", _register.Id,
-                CableRegister.DocNumber + " · " + _register.QcRecordNo,
-                "Register marked complete");
-
-            Repository.Save();
-            Notify("Register marked complete.");
-            Rebuild();
+            if (_saving) return; _saving = true; Enabled = false;
+            try { await CableData.VerifyAsync(_register); Notify("Register independently verified by the shared service."); }
+            catch (Exception ex) { Notify(ex.Message, true); }
+            finally { _saving = false; if (!IsDisposed) { Enabled = true; Rebuild(); } }
         }
 
         /// <summary>Exports the cable grid to CSV.</summary>
@@ -755,7 +738,7 @@ namespace MzuApplication.Views
                 try
                 {
                     Exporter.ExportRegister(_register, save.FileName);
-                    Repository.Save();
+
                     Notify("Exported " + _register.QcRecordNo + ".");
                 }
                 catch (Exception ex)

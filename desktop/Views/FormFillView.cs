@@ -1,1162 +1,170 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using MzuApplication.Controls;
 using MzuApplication.Data;
 using MzuApplication.Forms;
 using MzuApplication.Models;
-
 namespace MzuApplication.Views
 {
-    /// <summary>
-    /// Fills in a checklist instance: header info, scope box, the A/R/NA item grid,
-    /// NCR capture, remarks and the three sign-off blocks.
-    /// </summary>
-    public class FormFillView : ViewBase
+ public class FormFillView:ViewBase
+ {
+  private readonly string id;private QcForm form;private string error="Loading QC record…";private bool loading,busy,conflict;
+  private Dictionary<string,object> pending=new Dictionary<string,object>();
+  private readonly Timer timer=new Timer{Interval=30000};
+  public FormFillView(MainForm shell,string formId):base(shell){id=formId;HandleCreated+=async(s,e)=>{if(loading)return;loading=true;await LoadAsync();};timer.Tick+=async(s,e)=>{if(pending.Count>0&&!busy&&!conflict)await SaveAsync();};timer.Start();}
+  public override string RouteKey{get{return "library";}}
+  private async Task LoadAsync()
+  {
+   try
+   {
+    var remote=await FormData.LoadAsync(id);var cached=LocalDrafts.Read(id);form=remote;
+    if(cached!=null){pending=Json.Map(Json.Get(cached,"values"));if(pending.Count>0){var baseline=Json.Id(cached,"revision");conflict=baseline!=form.Revision;form.Revision=baseline;}}
+    error=conflict?"Saved local changes refer to an older server revision. Review them before discarding or reconciling.":pending.Count>0?"Restored unsent changes. Save to send them to the service.":"";
+   }
+   catch(Exception ex){form=null;error="Could not load this record or its encrypted draft. Any existing draft is retained. "+ex.Message;}
+   if(!IsDisposed)Rebuild();
+  }
+  protected override void BuildContent()
+  {
+   if(form==null){AddPageHeader("QC RECORD","QC record",error);return;}
+   var project=Repository.GetProject(form.ProjectId);
+   AddCrumbs(project==null?"Projects":project.Name,()=>Shell.Navigate(new ProjectDetailView(Shell,form.ProjectId)),form.QcRecordNo);
+   AddPageHeader("QC RECORD",form.QcRecordNo,form.ServerStatus+(error.Length>0?" · "+error:""));
+   Buttons(new[]{"Save Draft","Submit","Refresh","Export CSV","Back to Project"},new Action[]{async()=>await SaveAsync(),async()=>await ActionAsync("/submit"),async()=>await RefreshAsync(),()=>ExportCsv(),()=>Shell.Navigate(new ProjectDetailView(Shell,form.ProjectId))});
+   Group("PROJECT INFORMATION",body=>
+   {
+    if(project!=null)body.Controls.Add(Ui.Body(project.Name+" · "+project.Number+" · "+project.Site));
+    foreach(var field in Json.Rows(form.RemoteDetails,"projectFields"))AddField(body,field,true);
+   });
+   var snapshot=Json.Get(form.RemoteDetails,"documentSnapshot");
+   Group("SCOPE & ACCEPTANCE CRITERIA",body=>{body.Controls.Add(Ui.Wrapped(Json.Text(snapshot,"scope"),Theme.Small,Theme.Navy950,InnerWidth-60));body.Controls.Add(Ui.Wrapped(Json.Text(snapshot,"acceptanceCriteria"),Theme.SmallBold,Theme.Navy950,InnerWidth-60));});
+   // Always render the QC execution snapshot. Never substitute a newer live template.
+   foreach(var section in Json.Rows(form.RemoteDetails,"sections"))Group(Json.Text(section,"sectionName"),body=>{foreach(var field in Json.Rows(section,"fields"))AddField(body,field,false);});
+   Group("REMARKS / OBSERVATIONS / DEVIATIONS",body=>
+   {
+    var remarks=new TextInput{Multiline=true,Height=Dpi.S(80),Width=InnerWidth-Dpi.S(60),Value=Convert.ToString(Value("remarks",form.Remarks))};remarks.ReadOnlyValue=!Writable();remarks.ValueChanged+=(s,e)=>Changed("remarks",remarks.Value,false);body.Controls.Add(remarks);
+   });
+   Group("SIGN-OFF",body=>
+   {
+    body.Controls.Add(Ui.Wrapped("Submit first, then sign with your own account. Historical signatures remain on the server; approval checks current signatures.",Theme.Small,Theme.Slate700,InnerWidth-60));
+    var capacities=Json.Get(form.RemoteDetails,"requiredSignOffTypes") as object[]??new object[0];
+    foreach(var capacity in capacities){var name=Convert.ToString(capacity);var sign=new FlatButton{Text="Sign as "+name,Width=220,Enabled=form.ServerStatus=="Submitted"};sign.Click+=async(s,e)=>await SignAsync(name,null);body.Controls.Add(sign);}
+    var history=new FlatButton{Text="Sign-off history",Width=220};history.Click+=async(s,e)=>await ShowHistoryAsync();body.Controls.Add(history);
+   });
+   Buttons(new[]{"Approve","Return for correction","NCRs"},new Action[]{async()=>await ActionAsync("/approve"),()=>ReturnForCorrection(),()=>Shell.Navigate(new NcrView(Shell))});
+  }
+  private bool Writable(){return form.ServerStatus=="Draft"||form.ServerStatus=="InProgress"||form.ServerStatus=="ReturnedForCorrection";}
+  private object Value(string key,object original){object value;return pending.TryGetValue(key,out value)?value:original;}
+  private void Changed(string key,object value,bool immediate)
+  {
+   pending[key]=value;
+   try{LocalDrafts.Save(id,form.Revision,pending);}catch(Exception ex){Notify("Could not cache unsent input: "+ex.Message,true);}
+   if(immediate&&!busy&&!conflict)SaveOutcome();
+  }
+  private async void SaveOutcome(){await SaveAsync();}
+  private void AddField(FlowLayoutPanel body,Dictionary<string,object> field,bool header)
+  {
+   var key=(header?"header:":"response:")+Json.Text(field,header?"qcFormProjectFieldID":"qcResponseID");
+   body.Controls.Add(Ui.Wrapped(Json.Text(field,"fieldLabel")+(Json.Bool(field,"isRequired")?" *":""),Theme.SmallBold,Theme.Navy950,InnerWidth-60));
+   var type=Json.Text(field,"fieldType");
+   if(type!="Photo"&&type!="Signature")
+   {
+    var editor=ApiFieldEditor.Create(field,Value(key,Json.Get(field,"value")),value=>Changed(key,value,type=="Dropdown"));editor.Width=Math.Min(editor.Width,InnerWidth-Dpi.S(60));editor.Enabled=Writable();body.Controls.Add(editor);
+   }
+   else body.Controls.Add(Ui.Body(type=="Photo"?"Attach photographic evidence below.":"Signature evidence is added after submission."));
+   if(!header && (type=="Photo"||Json.Bool(field,"requiresPhoto")))
+   {
+    var photo=new FlatButton{Text="Attach photo",Width=180,Enabled=Writable()};photo.Click+=async(s,e)=>await PhotoAsync(Json.Text(field,"qcFormFieldID"));body.Controls.Add(photo);
+   }
+   if(!header && (type=="Signature"||Json.Bool(field,"requiresSignature")))
+   {
+    var sign=new FlatButton{Text="Sign this requirement",Width=240,Enabled=form.ServerStatus=="Submitted"};sign.Click+=(s,e)=>ChooseSignature(Json.Text(field,"qcFormFieldID"));body.Controls.Add(sign);
+   }
+   var help=Json.Text(field,"helpText");if(help.Length>0)body.Controls.Add(Ui.Wrapped(help,Theme.Small,Theme.Slate500,InnerWidth-60));
+  }
+  private void Group(string title,Action<FlowLayoutPanel> fill)
+  {
+   var card=AddPanelCard(title,30);var body=new FlowLayoutPanel{Location=new Point(Dpi.S(18),card.Controls[0].Bottom+Dpi.S(12)),Width=InnerWidth-Dpi.S(36),FlowDirection=FlowDirection.TopDown,WrapContents=false,AutoSize=true,AutoSizeMode=AutoSizeMode.GrowAndShrink};card.Controls.Add(body);fill(body);body.PerformLayout();card.Height=body.Bottom+Dpi.S(18);Y=card.Bottom+Dpi.S(16);
+  }
+  private void Buttons(string[] names,Action[] actions)
+  {
+   var row=new FlowLayoutPanel{Location=new Point(Left1,Y),Width=InnerWidth,Height=Dpi.S(78),WrapContents=true};
+   for(int i=0;i<names.Length;i++){var action=actions[i];var button=new FlatButton{Text=names[i],Width=Dpi.S(Math.Max(130,names[i].Length*9)),Height=Dpi.S(34)};button.Click+=(s,e)=>action();row.Controls.Add(button);}Controls.Add(row);Y=row.Bottom+12;
+  }
+  private async Task<bool> SaveAsync()
+  {
+   if(busy)return false;if(conflict){Notify("Reload/reconcile the conflicting record before saving.",true);return false;}
+   busy=true;Enabled=false;
+   try
+   {
+    foreach(var entry in pending.ToList())
     {
-        private readonly string _formId;
-        private QcForm _form;
-        private ChecklistTemplate _template;
-        private Project _project;
-
-        private ProgressTrack _progress;
-        private Label _progressLabel;
-        private Pill _statusPill;
-        private TextInput _ncrInput;
-
-        // Autosave: periodically persist the in-progress form so work is never lost on
-        // an inactivity sign-out, crash or power cut. Submitted forms are not autosaved.
-        private const int AutosaveSeconds = 30;
-        private System.Windows.Forms.Timer _autosaveTimer;
-        private Label _autosaveStatus;
-
-        public FormFillView(MainForm shell, string formId) : base(shell)
-        {
-            _formId = formId;
-        }
-
-        public override string RouteKey
-        {
-            get { return "library"; }
-        }
-
-        protected override void BuildContent()
-        {
-            _form = Repository.GetForm(_formId);
-            if (_form == null)
-            {
-                Label missing = Ui.Body("Form not found.");
-                missing.Location = new Point(Left1, Y);
-                Controls.Add(missing);
-                Y = missing.Bottom + 20;
-                return;
-            }
-
-            _template = Repository.GetTemplate(_form.TemplateId);
-            _project = Repository.GetProject(_form.ProjectId);
-
-            if (_template == null || _project == null)
-            {
-                Label missing = Ui.Body("This form references a missing template or project.");
-                missing.Location = new Point(Left1, Y);
-                Controls.Add(missing);
-                Y = missing.Bottom + 20;
-                return;
-            }
-
-            AddCrumbs(_project.Name,
-                () => Shell.Navigate(new ProjectDetailView(Shell, _project.Id)),
-                _template.DocNumber);
-
-            AddFormHeaderBar();
-            AddProjectInfoCard();
-            AddScopeBox();
-            AddItemsCard();
-            AddLegend();
-            AddNcrCard();
-            AddRemarksCard();
-            AddSignoffCard();
-            AddAuditLine();
-            AddBottomActions();
-
-            StartAutosave();
-        }
-
-        #region Autosave
-
-        /// <summary>
-        /// Starts the periodic autosave for an in-progress form. Idempotent across the
-        /// view's rebuilds (resize re-runs BuildContent), and a no-op for submitted forms.
-        /// </summary>
-        private void StartAutosave()
-        {
-            if (_form.Status != RecordStatus.InProgress) return;
-            if (_autosaveTimer != null) return; // already running
-
-            _autosaveTimer = new System.Windows.Forms.Timer { Interval = AutosaveSeconds * 1000 };
-            _autosaveTimer.Tick += (s, e) => Autosave();
-            _autosaveTimer.Start();
-        }
-
-        private void Autosave()
-        {
-            // Don't autosave a form that has since been submitted.
-            if (_form == null || _form.Status != RecordStatus.InProgress) return;
-
-            _form.UpdatedAt = DateTime.Now;
-            Repository.Save();
-
-            if (_autosaveStatus != null && !_autosaveStatus.IsDisposed)
-            {
-                _autosaveStatus.Text = "Draft autosaved " + DateTime.Now.ToString("HH:mm");
-            }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && _autosaveTimer != null)
-            {
-                _autosaveTimer.Stop();
-                _autosaveTimer.Dispose();
-                _autosaveTimer = null;
-
-                // Final save on leaving the view, so nothing in-progress is lost.
-                if (_form != null && _form.Status == RecordStatus.InProgress)
-                {
-                    _form.UpdatedAt = DateTime.Now;
-                    Repository.Save();
-                }
-            }
-            base.Dispose(disposing);
-        }
-
-        #endregion
-
-        #region Header bar
-
-        private void AddFormHeaderBar()
-        {
-            Card bar = new Card
-            {
-                Location = new Point(Left1, Y),
-                Width = InnerWidth,
-                Fill = Color.White,
-                BorderTint = Theme.Slate150,
-                Radius = Theme.Radius
-            };
-
-            Label eyebrow = new Label
-            {
-                AutoSize = true,
-                Font = Theme.Eyebrow,
-                ForeColor = Theme.Brick600,
-                Location = new Point(Dpi.S(18), Dpi.S(16)),
-                Text = _template.DocNumber + " · " + _template.Revision + " · " + _form.QcRecordNo
-            };
-            bar.Controls.Add(eyebrow);
-
-            Label title = new Label
-            {
-                AutoSize = false,
-                Font = new Font("Segoe UI", 11.5F, FontStyle.Bold),
-                ForeColor = Theme.Navy950,
-                Location = new Point(17, eyebrow.Bottom + 4),
-                Width = InnerWidth - 220,
-                Height = Dpi.S(26),
-                Text = _template.DocName
-            };
-            bar.Controls.Add(title);
-
-            Label project = new Label
-            {
-                AutoSize = true,
-                Font = Theme.Small,
-                ForeColor = Theme.Slate600,
-                Location = new Point(18, title.Bottom + 2),
-                Text = _project.Name
-            };
-            bar.Controls.Add(project);
-
-            _statusPill = new Pill { Height = 24 };
-            _statusPill.ApplyStatus(_form.Status);
-            _statusPill.Location = new Point(InnerWidth - _statusPill.Width - 18, 16);
-            bar.Controls.Add(_statusPill);
-
-            // Autosave indicator (only meaningful while the form is in progress).
-            _autosaveStatus = new Label
-            {
-                AutoSize = false,
-                Font = Theme.Tiny,
-                ForeColor = Theme.Slate400,
-                BackColor = Color.Transparent,
-                TextAlign = ContentAlignment.MiddleRight,
-                Location = new Point(InnerWidth - Dpi.S(220), _statusPill.Bottom + Dpi.S(4)),
-                Width = Dpi.S(202),
-                Height = Dpi.S(16),
-                Text = _form.Status == RecordStatus.InProgress
-                    ? "Changes autosave every " + AutosaveSeconds + "s"
-                    : string.Empty
-            };
-            bar.Controls.Add(_autosaveStatus);
-
-            // Progress row.
-            int progressTop = project.Bottom + 14;
-
-            _progress = new ProgressTrack
-            {
-                Location = new Point(18, progressTop + 5),
-                Width = InnerWidth - 210,
-                Height = Dpi.S(7)
-            };
-            bar.Controls.Add(_progress);
-
-            _progressLabel = new Label
-            {
-                AutoSize = true,
-                Font = Theme.Tiny,
-                ForeColor = Theme.Slate600,
-                Location = new Point(_progress.Right + 12, progressTop)
-            };
-            bar.Controls.Add(_progressLabel);
-
-            UpdateProgress();
-
-            // Action row.
-            int actionTop = progressTop + 26;
-
-            FlatButton saveDraft = new FlatButton
-            {
-                Text = "Save Draft",
-                Glyph = Glyph.CheckCircle,
-                Width = Dpi.S(124),
-                Height = Dpi.S(34),
-                Location = new Point(18, actionTop)
-            };
-            saveDraft.Click += (s, e) => SaveDraft();
-            bar.Controls.Add(saveDraft);
-
-            FlatButton submit = new FlatButton
-            {
-                Text = "Submit / Finalise",
-                Glyph = Glyph.Check,
-                Variant = ButtonVariant.Primary,
-                Width = Dpi.S(164),
-                Height = Dpi.S(34),
-                Location = new Point(saveDraft.Right + 8, actionTop)
-            };
-            submit.Click += (s, e) => Submit();
-            bar.Controls.Add(submit);
-
-            FlatButton export = new FlatButton
-            {
-                Text = "Export",
-                Glyph = Glyph.Download,
-                Width = Dpi.S(104),
-                Height = Dpi.S(34),
-                Location = new Point(submit.Right + Dpi.S(8), actionTop)
-            };
-            export.Click += (s, e) => ExportForm();
-            bar.Controls.Add(export);
-
-            int nextLeft = export.Right + Dpi.S(8);
-
-            // Only offer the NCR shortcut once a line has actually been rejected.
-            if (_form.HasRejected)
-            {
-                FlatButton raise = new FlatButton
-                {
-                    Text = "Raise NCR",
-                    Glyph = Glyph.Alert,
-                    Variant = ButtonVariant.Danger,
-                    Width = Dpi.S(124),
-                    Height = Dpi.S(34),
-                    Location = new Point(nextLeft, actionTop)
-                };
-                raise.Click += (s, e) => RaiseNcrFromForm();
-                bar.Controls.Add(raise);
-                nextLeft = raise.Right + Dpi.S(8);
-            }
-
-            FlatButton back = new FlatButton
-            {
-                Text = "Back to Project",
-                Variant = ButtonVariant.Ghost,
-                Width = Dpi.S(132),
-                Height = Dpi.S(34),
-                Location = new Point(nextLeft, actionTop)
-            };
-            back.Click += (s, e) => Shell.Navigate(new ProjectDetailView(Shell, _project.Id));
-            bar.Controls.Add(back);
-
-            bar.Height = actionTop + Dpi.S(34) + Dpi.S(16);
-            Controls.Add(bar);
-            Y = bar.Bottom + 18;
-        }
-
-        private void UpdateProgress()
-        {
-            int total = _template.AllItems().Count;
-            int answered = _form.AnsweredCount;
-            int percent = total == 0 ? 0 : (int)Math.Round(answered * 100.0 / total);
-
-            _progress.Percent = percent;
-            _progress.ApplyTone(_form.HasRejected);
-
-            _progressLabel.Text = answered + " / " + total + " items · " + percent + "%";
-        }
-
-        #endregion
-
-        #region Project info and scope
-
-        private void AddProjectInfoCard()
-        {
-            Client client = Repository.GetClient(_project.ClientId);
-
-            var cells = new List<Tuple<string, string, bool>>
-            {
-                Tuple.Create("Client", client != null ? client.Name : "—", false),
-                Tuple.Create("Project", _project.Name, false),
-                Tuple.Create("Project No.", _project.Number, false),
-                Tuple.Create("Contract / Order No.",
-                    string.IsNullOrEmpty(_project.ContractNo) ? "—" : _project.ContractNo, false),
-                Tuple.Create("Area / Location",
-                    string.IsNullOrEmpty(_project.Site) ? "—" : _project.Site, false),
-                Tuple.Create("QC Record No.", _form.QcRecordNo, true)
-            };
-
-            const int perRow = 3;
-            const int gap = 16;
-            int colWidth = (InnerWidth - 36 - gap * (perRow - 1)) / perRow;
-
-            Card card = new Card
-            {
-                Location = new Point(Left1, Y),
-                Width = InnerWidth,
-                Fill = Color.White,
-                BorderTint = Theme.Slate150,
-                Radius = Theme.Radius
-            };
-
-            Card bar = Ui.SectionBar("Project Information", InnerWidth);
-            card.Controls.Add(bar);
-
-            int bodyTop = bar.Height + 16;
-            int rowHeight = 52;
-
-            for (int i = 0; i < cells.Count; i++)
-            {
-                int row = i / perRow;
-                int col = i % perRow;
-                var cell = cells[i];
-
-                int x = 18 + col * (colWidth + gap);
-                int y = bodyTop + row * rowHeight;
-
-                Label label = Ui.FieldLabel(cell.Item1);
-                label.Location = new Point(x, y);
-                card.Controls.Add(label);
-
-                if (cell.Item3)
-                {
-                    // QC record number gets the mono chip treatment.
-                    Label chip = new Label
-                    {
-                        AutoSize = true,
-                        Font = Theme.MonoSmall,
-                        ForeColor = Theme.Navy900,
-                        BackColor = Theme.Slate100,
-                        Padding = new Padding(Dpi.S(8), Dpi.S(4), Dpi.S(8), Dpi.S(4)),
-                        Location = new Point(x, label.Bottom + 4),
-                        Text = cell.Item2
-                    };
-                    card.Controls.Add(chip);
-                }
-                else
-                {
-                    Label value = new Label
-                    {
-                        AutoSize = false,
-                        Font = Theme.Body,
-                        ForeColor = Theme.Slate900,
-                        Location = new Point(x, label.Bottom + 4),
-                        Width = colWidth,
-                        Height = Dpi.S(18),
-                        Text = cell.Item2
-                    };
-                    card.Controls.Add(value);
-                }
-            }
-
-            int rows = (int)Math.Ceiling(cells.Count / (double)perRow);
-            int nextY = bodyTop + rows * rowHeight;
-
-            // Editable template-specific header fields.
-            if (_template.ProjectFields.Count > 0)
-            {
-                for (int i = 0; i < _template.ProjectFields.Count; i++)
-                {
-                    string field = _template.ProjectFields[i];
-                    int col = i % perRow;
-                    int row = i / perRow;
-
-                    int x = 18 + col * (colWidth + gap);
-                    int y = nextY + row * 62;
-
-                    Label label = Ui.FieldLabel(field);
-                    label.Location = new Point(x, y);
-                    card.Controls.Add(label);
-
-                    string current;
-                    _form.FieldValues.TryGetValue(field, out current);
-
-                    TextInput input = new TextInput
-                    {
-                        Location = new Point(x, label.Bottom + 5),
-                        Width = colWidth,
-                        Height = Dpi.S(32),
-                        Value = current ?? string.Empty
-                    };
-
-                    string key = field;
-                    input.ValueChanged += (s, e) => _form.FieldValues[key] = input.Value;
-                    card.Controls.Add(input);
-                }
-
-                int fieldRows = (int)Math.Ceiling(_template.ProjectFields.Count / (double)perRow);
-                nextY += fieldRows * 62;
-            }
-
-            card.Height = nextY + 10;
-            Controls.Add(card);
-            Y = card.Bottom + 16;
-        }
-
-        private void AddScopeBox()
-        {
-            int textWidth = InnerWidth - 44;
-
-            Label heading = Ui.Eyebrow("Scope & Acceptance Criteria");
-            Label scope = Ui.Wrapped(_template.Scope ?? string.Empty, Theme.Small, Theme.Slate800, textWidth);
-            Label acceptance = Ui.Wrapped(_template.Acceptance ?? string.Empty,
-                Theme.SmallBold, Theme.Slate900, textWidth);
-
-            Card box = new Card
-            {
-                Location = new Point(Left1, Y),
-                Width = InnerWidth,
-                Fill = Theme.Brick050,
-                BorderTint = Theme.Brick100,
-                Radius = Theme.RadiusSm,
-                LeftAccentWidth = 4,
-                LeftAccentColor = Theme.Brick600
-            };
-
-            heading.ForeColor = Theme.Brick700;
-            heading.Location = new Point(Dpi.S(20), Dpi.S(15));
-            box.Controls.Add(heading);
-
-            scope.Location = new Point(20, heading.Bottom + 7);
-            box.Controls.Add(scope);
-
-            acceptance.Location = new Point(20, scope.Bottom + 6);
-            box.Controls.Add(acceptance);
-
-            box.Height = acceptance.Bottom + 16;
-            Controls.Add(box);
-            Y = box.Bottom + 16;
-        }
-
-        #endregion
-
-        #region Checklist items
-
-        private void AddItemsCard()
-        {
-            Card card = new Card
-            {
-                Location = new Point(Left1, Y),
-                Width = InnerWidth,
-                Fill = Color.White,
-                BorderTint = Theme.Slate150,
-                Radius = Theme.Radius
-            };
-
-            Card bar = Ui.SectionBar("Inspection / Test Requirements", InnerWidth);
-            card.Controls.Add(bar);
-
-            int y = bar.Height;
-            int itemNumber = 0;
-
-            foreach (TemplateSection section in _template.Sections)
-            {
-                if (!string.IsNullOrWhiteSpace(section.Title))
-                {
-                    Panel sectionBar = Ui.SubSectionBar(section.Title, InnerWidth - 2);
-                    sectionBar.Location = new Point(1, y);
-                    card.Controls.Add(sectionBar);
-                    y = sectionBar.Bottom + 12;
-                }
-                else
-                {
-                    y += 12;
-                }
-
-                foreach (TemplateItem item in section.Items)
-                {
-                    itemNumber++;
-                    y = AddItemCard(card, item, itemNumber, y);
-                }
-            }
-
-            card.Height = y + 8;
-            Controls.Add(card);
-            Y = card.Bottom + 12;
-        }
-
-        /// <summary>
-        /// Initials of the signed-in user working on the document, stamped into the
-        /// read-only Initials column. Prefers the authenticated account's full name,
-        /// falling back to the repository session name.
-        /// </summary>
-        private static string CurrentUserInitials()
-        {
-            string name = Auth.Current != null && !string.IsNullOrWhiteSpace(Auth.Current.FullName)
-                ? Auth.Current.FullName
-                : Repository.CurrentUserName;
-
-            return Format.FullInitials(name);
-        }
-
-        private int AddItemCard(Card parent, TemplateItem item, int number, int y)
-        {
-            FormItemResult result = _form.Items.FirstOrDefault(i => i.ItemId == item.Id);
-            if (result == null)
-            {
-                // Template gained an item after this form was created; back-fill it.
-                result = new FormItemResult
-                {
-                    ItemId = item.Id,
-                    Response = ItemResponse.Unanswered,
-                    Ref = string.Empty,
-                    Initials = string.Empty
-                };
-                _form.Items.Add(result);
-            }
-
-            int cardWidth = InnerWidth - 36;
-            int textWidth = cardWidth - 36;
-
-            Color fill, border;
-            ResolveItemTone(result.Response, out fill, out border);
-
-            Card itemCard = new Card
-            {
-                Location = new Point(18, y),
-                Width = cardWidth,
-                Fill = fill,
-                BorderTint = border,
-                Radius = Theme.Radius
-            };
-
-            // Numbered requirement text.
-            Label numberLabel = new Label
-            {
-                AutoSize = true,
-                Font = Theme.MonoSmall,
-                ForeColor = Theme.Slate400,
-                BackColor = Color.Transparent,
-                Location = new Point(Dpi.S(17), Dpi.S(17)),
-                Text = number + "."
-            };
-            itemCard.Controls.Add(numberLabel);
-
-            Label text = Ui.Wrapped(item.Text, Theme.Small, Theme.Slate900,
-                textWidth - numberLabel.Width - 6);
-            text.Location = new Point(numberLabel.Right + 4, 16);
-            itemCard.Controls.Add(text);
-
-            int controlsTop = Math.Max(text.Bottom, numberLabel.Bottom) + 14;
-
-            // Result / reference / initials / date columns.
-            int columns = item.HasRef ? 4 : 3;
-            int gap = 12;
-            int colWidth = (textWidth - gap * (columns - 1)) / columns;
-            int selectorWidth = Math.Max(168, colWidth);
-
-            int x = 17;
-
-            Label resultLabel = Ui.FieldLabel("Result");
-            resultLabel.Location = new Point(x, controlsTop);
-            itemCard.Controls.Add(resultLabel);
-
-            ResponseSelector selector = new ResponseSelector
-            {
-                Location = new Point(x, resultLabel.Bottom + 5),
-                Width = selectorWidth,
-                Height = Dpi.S(34),
-                Value = result.Response
-            };
-            itemCard.Controls.Add(selector);
-
-            x += selectorWidth + gap;
-            int remaining = textWidth - (x - 17);
-            int fieldColumns = item.HasRef ? 3 : 2;
-            int fieldWidth = (remaining - gap * (fieldColumns - 1)) / fieldColumns;
-
-            TextInput refInput = null;
-            if (item.HasRef)
-            {
-                Label refLabel = Ui.FieldLabel(item.RefLabel + (item.RefRequired ? " *" : string.Empty));
-                refLabel.Location = new Point(x, controlsTop);
-                itemCard.Controls.Add(refLabel);
-
-                refInput = new TextInput
-                {
-                    Location = new Point(x, refLabel.Bottom + 5),
-                    Width = fieldWidth,
-                    Height = Dpi.S(34),
-                    Value = result.Ref ?? string.Empty
-                };
-                refInput.ValueChanged += (s, e) => result.Ref = refInput.Value;
-                itemCard.Controls.Add(refInput);
-
-                x += fieldWidth + gap;
-            }
-
-            Label initialsLabel = Ui.FieldLabel("Initials");
-            initialsLabel.Location = new Point(x, controlsTop);
-            itemCard.Controls.Add(initialsLabel);
-
-            // The initials of the person working on the document are stamped
-            // automatically from the signed-in user and cannot be edited, so the
-            // record always reflects who actually completed the line.
-            string stamp = CurrentUserInitials();
-            result.Initials = stamp;
-
-            TextInput initials = new TextInput
-            {
-                Location = new Point(x, initialsLabel.Bottom + 5),
-                Width = fieldWidth,
-                Height = Dpi.S(34),
-                Value = stamp,
-                ReadOnlyValue = true
-            };
-            itemCard.Controls.Add(initials);
-
-            x += fieldWidth + gap;
-
-            Label dateLabel = Ui.FieldLabel("Date");
-            dateLabel.Location = new Point(x, controlsTop);
-            itemCard.Controls.Add(dateLabel);
-
-            DateTimePicker date = new DateTimePicker
-            {
-                Format = DateTimePickerFormat.Custom,
-                CustomFormat = "yyyy-MM-dd",
-                ShowCheckBox = true,
-                Font = Theme.Body,
-                Location = new Point(x, dateLabel.Bottom + 8),
-                Width = fieldWidth
-            };
-            if (result.Date.HasValue)
-            {
-                date.Value = result.Date.Value;
-                date.Checked = true;
-            }
-            else
-            {
-                date.Checked = false;
-            }
-            date.ValueChanged += (s, e) => result.Date = date.Checked ? date.Value.Date : (DateTime?)null;
-            itemCard.Controls.Add(date);
-
-            int bottom = Math.Max(selector.Bottom, date.Bottom);
-
-            // NCR reminder shown only while the line is rejected.
-            Label ncrHint = null;
-            if (result.Response == ItemResponse.Rejected)
-            {
-                ncrHint = new Label
-                {
-                    AutoSize = false,
-                    Font = Theme.TinyBold,
-                    ForeColor = Theme.Red700,
-                    BackColor = Color.Transparent,
-                    Location = new Point(17, bottom + 8),
-                    Width = selectorWidth + 40,
-                    Height = Dpi.S(18),
-                    Text = "Raise an NCR below"
-                };
-                itemCard.Controls.Add(ncrHint);
-                bottom = ncrHint.Bottom;
-            }
-
-            itemCard.Height = bottom + 16;
-
-            // Changing the response repaints tone and may add/remove the NCR panel,
-            // so the whole view is rebuilt to keep layout honest.
-            selector.ValueChanged += (s, e) =>
-            {
-                result.Response = selector.Value;
-
-                if (result.Response != ItemResponse.Unanswered && !result.Date.HasValue)
-                {
-                    result.Date = DateTime.Today;
-                }
-
-                Rebuild();
-            };
-
-            parent.Controls.Add(itemCard);
-            return itemCard.Bottom + 12;
-        }
-
-        private static void ResolveItemTone(ItemResponse response, out Color fill, out Color border)
-        {
-            switch (response)
-            {
-                case ItemResponse.Accepted:
-                    fill = Theme.Green050; border = Theme.Green100; break;
-                case ItemResponse.Rejected:
-                    fill = Theme.Red050; border = Theme.Red600; break;
-                case ItemResponse.NotApplicable:
-                    fill = Theme.Slate50; border = Theme.Slate150; break;
-                default:
-                    fill = Color.White; border = Theme.Slate150; break;
-            }
-        }
-
-        private void AddLegend()
-        {
-            Label legend = Ui.Wrapped(
-                "A = Accepted / conforms   ·   R = Rejected — raise an NCR and record the number   "
-                + "·   N/A = Not applicable. Every rejected line must be closed out before sign-off.",
-                Theme.Tiny, Theme.Slate500, InnerWidth);
-            legend.Location = new Point(Left1, Y);
-            Controls.Add(legend);
-            Y = legend.Bottom + 16;
-        }
-
-        #endregion
-
-        #region NCR, remarks, sign-off
-
-        private void AddNcrCard()
-        {
-            if (!_form.HasRejected) return;
-
-            Card card = new Card
-            {
-                Location = new Point(Left1, Y),
-                Width = InnerWidth,
-                Fill = Color.White,
-                BorderTint = Theme.Slate150,
-                Radius = Theme.Radius
-            };
-
-            Card bar = Ui.SectionBar("Non-Conformance", InnerWidth, Theme.Red700);
-            card.Controls.Add(bar);
-
-            Label warning = new Label
-            {
-                AutoSize = true,
-                Font = Theme.SmallBold,
-                ForeColor = Theme.Red700,
-                Location = new Point(38, bar.Bottom + 16),
-                Text = "This form contains rejected items — an NCR number is required."
-            };
-            card.Controls.Add(warning);
-
-            Card iconHost = new Card
-            {
-                Location = new Point(18, bar.Bottom + 15),
-                Size = new Size(Dpi.S(16), Dpi.S(16)),
-                BorderWidth = 0,
-                Fill = Color.Transparent
-            };
-            iconHost.Paint += (s, e) =>
-            {
-                Glyphs.Draw(e.Graphics, Glyph.Alert, new Rectangle(0, 1, 15, 15), Theme.Red700, 1.7f);
-            };
-            card.Controls.Add(iconHost);
-
-            Label label = Ui.FieldLabel("NCR Number");
-            label.Location = new Point(18, warning.Bottom + 14);
-            card.Controls.Add(label);
-
-            _ncrInput = new TextInput
-            {
-                Location = new Point(18, label.Bottom + 5),
-                Width = Math.Min(280, InnerWidth - 36),
-                Height = Dpi.S(34),
-                Value = _form.NcrNo ?? string.Empty,
-                Placeholder = "e.g. NCR-0007"
-            };
-            _ncrInput.ValueChanged += (s, e) => _form.NcrNo = _ncrInput.Value;
-            card.Controls.Add(_ncrInput);
-
-            card.Height = _ncrInput.Bottom + 18;
-            Controls.Add(card);
-            Y = card.Bottom + 16;
-        }
-
-        private void AddRemarksCard()
-        {
-            Card card = new Card
-            {
-                Location = new Point(Left1, Y),
-                Width = InnerWidth,
-                Fill = Color.White,
-                BorderTint = Theme.Slate150,
-                Radius = Theme.Radius
-            };
-
-            Card bar = Ui.SectionBar("Remarks / Observations / Deviations", InnerWidth);
-            card.Controls.Add(bar);
-
-            TextInput remarks = new TextInput
-            {
-                Location = new Point(18, bar.Bottom + 16),
-                Width = InnerWidth - 36,
-                Height = Dpi.S(92),
-                Multiline = true,
-                Value = _form.Remarks ?? string.Empty
-            };
-            remarks.ValueChanged += (s, e) => _form.Remarks = remarks.Value;
-            card.Controls.Add(remarks);
-
-            card.Height = remarks.Bottom + 18;
-            Controls.Add(card);
-            Y = card.Bottom + 16;
-        }
-
-        private void AddSignoffCard()
-        {
-            Card card = new Card
-            {
-                Location = new Point(Left1, Y),
-                Width = InnerWidth,
-                Fill = Color.White,
-                BorderTint = Theme.Slate150,
-                Radius = Theme.Radius
-            };
-
-            Card bar = Ui.SectionBar("Sign-Off", InnerWidth);
-            card.Controls.Add(bar);
-
-            const int gap = 16;
-            int blockWidth = (InnerWidth - 36 - gap * 2) / 3;
-            int top = bar.Bottom + 16;
-
-            int h1 = AddSignoffBlock(card, "Inspected / Tested By", _form.Inspected,
-                new Point(18, top), blockWidth);
-            int h2 = AddSignoffBlock(card, "Reviewed By", _form.Reviewed,
-                new Point(18 + blockWidth + gap, top), blockWidth);
-            int h3 = AddSignoffBlock(card, "Approved By", _form.Approved,
-                new Point(18 + (blockWidth + gap) * 2, top), blockWidth);
-
-            card.Height = top + Math.Max(h1, Math.Max(h2, h3)) + 18;
-            Controls.Add(card);
-            Y = card.Bottom + 16;
-        }
-
-        /// <summary>Renders one sign-off block and returns its height.</summary>
-        private int AddSignoffBlock(Card parent, string title, SignoffEntry entry,
-                                    Point location, int width)
-        {
-            bool signed = entry.IsSigned;
-
-            Card block = new Card
-            {
-                Location = location,
-                Width = width,
-                Fill = signed ? Theme.Green050 : Color.White,
-                BorderTint = signed ? Theme.Green100 : Theme.Slate150,
-                Radius = Theme.Radius
-            };
-
-            Label label = Ui.FieldLabel(title);
-            label.Location = new Point(Dpi.S(16), Dpi.S(15));
-            block.Controls.Add(label);
-
-            Label status = new Label
-            {
-                AutoSize = true,
-                Font = Theme.Label,
-                ForeColor = signed ? Theme.Green700 : Theme.Amber700,
-                Location = new Point(16, label.Bottom + 6),
-                Text = signed ? "SIGNED" : "PENDING"
-            };
-            block.Controls.Add(status);
-
-            TextInput name = new TextInput
-            {
-                Location = new Point(16, status.Bottom + 8),
-                Width = width - 32,
-                Height = Dpi.S(32),
-                Value = entry.Name ?? string.Empty,
-                Placeholder = "Name"
-            };
-            name.ValueChanged += (s, e) => entry.Name = name.Value;
-            block.Controls.Add(name);
-
-            TextInput signature = new TextInput
-            {
-                Location = new Point(16, name.Bottom + 8),
-                Width = width - 32,
-                Height = Dpi.S(32),
-                Value = entry.Signature ?? string.Empty,
-                Placeholder = "Signature (type initials)"
-            };
-            signature.ValueChanged += (s, e) => entry.Signature = signature.Value;
-            block.Controls.Add(signature);
-
-            DateTimePicker date = new DateTimePicker
-            {
-                Format = DateTimePickerFormat.Custom,
-                CustomFormat = "yyyy-MM-dd",
-                ShowCheckBox = true,
-                Font = Theme.Body,
-                Location = new Point(16, signature.Bottom + 8),
-                Width = width - 32
-            };
-            if (entry.Date.HasValue)
-            {
-                date.Value = entry.Date.Value;
-                date.Checked = true;
-            }
-            else
-            {
-                date.Checked = false;
-            }
-            date.ValueChanged += (s, e) => entry.Date = date.Checked ? date.Value.Date : (DateTime?)null;
-            block.Controls.Add(date);
-
-            block.Height = date.Bottom + 16;
-            parent.Controls.Add(block);
-
-            return block.Height;
-        }
-
-        private void AddAuditLine()
-        {
-            Label audit = Ui.Wrapped(
-                "Created " + Format.DateTimeLong(_form.CreatedAt) + " by " + _form.CreatedBy
-                + " · Last updated " + Format.DateTimeLong(_form.UpdatedAt),
-                Theme.Tiny, Theme.Slate500, InnerWidth);
-            audit.Location = new Point(Left1, Y);
-            Controls.Add(audit);
-            Y = audit.Bottom + 16;
-        }
-
-        private void AddBottomActions()
-        {
-            FlatButton save = new FlatButton
-            {
-                Text = "Save Draft",
-                Width = Dpi.S(116),
-                Height = Dpi.S(34),
-                Location = new Point(Left1, Y)
-            };
-            save.Click += (s, e) => SaveDraft();
-            Controls.Add(save);
-
-            FlatButton submit = new FlatButton
-            {
-                Text = "Submit / Finalise",
-                Variant = ButtonVariant.Primary,
-                Width = Dpi.S(150),
-                Height = Dpi.S(34),
-                Location = new Point(save.Right + 8, Y)
-            };
-            submit.Click += (s, e) => Submit();
-            Controls.Add(submit);
-
-            FlatButton back = new FlatButton
-            {
-                Text = "Back to Project",
-                Width = Dpi.S(134),
-                Height = Dpi.S(34),
-                Location = new Point(submit.Right + 8, Y)
-            };
-            back.Click += (s, e) => Shell.Navigate(new ProjectDetailView(Shell, _project.Id));
-            Controls.Add(back);
-
-            Y = save.Bottom + 6;
-        }
-
-        #endregion
-
-        #region Persist
-
-        private void SaveDraft()
-        {
-            _form.UpdatedAt = DateTime.Now;
-
-            int total = _template.AllItems().Count;
-            Audit.Log(AuditAction.Updated, "Form", _form.Id,
-                _template.DocNumber + " · " + _form.QcRecordNo,
-                _form.AnsweredCount + " of " + total + " items answered");
-
-            Repository.Save();
-            Notify("Form saved.");
-            Rebuild();
-        }
-
-        /// <summary>Exports this checklist, including every line result, to CSV.</summary>
-        private void ExportForm()
-        {
-            using (SaveFileDialog save = new SaveFileDialog())
-            {
-                save.Filter = "CSV file (*.csv)|*.csv";
-                save.FileName = Exporter.SafeFileName(
-                    _template.DocNumber + "-" + _form.QcRecordNo) + ".csv";
-
-                if (save.ShowDialog(Shell) != DialogResult.OK) return;
-
-                try
-                {
-                    Exporter.ExportForm(_form, save.FileName);
-                    Repository.Save();
-                    Notify("Exported " + _form.QcRecordNo + ".");
-                }
-                catch (Exception ex)
-                {
-                    Notify("Export failed: " + ex.Message, true);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Raises a tracked NCR from this form and writes the number back onto it, so
-        /// the free-text field and the NCR register stay in step.
-        /// </summary>
-        private void RaiseNcrFromForm()
-        {
-            using (Dialog dialog = new Dialog("Raise NCR from " + _form.QcRecordNo, Dpi.S(560)))
-            {
-                var rejected = _form.Items
-                    .Where(i => i.Response == ItemResponse.Rejected)
-                    .Select(i => _template.FindItem(i.ItemId))
-                    .Where(i => i != null)
-                    .ToList();
-
-                string suggested = rejected.Count > 0
-                    ? rejected[0].Text
-                    : _template.DocName + " non-conformance";
-
-                if (suggested.Length > 90) suggested = suggested.Substring(0, 90) + "...";
-
-                dialog.AddReadOnlyField("Source", _template.DocNumber + " · " + _form.QcRecordNo);
-                dialog.AddReadOnlyField("Rejected lines", rejected.Count.ToString());
-
-                TextInput title = dialog.AddTextField("Title", suggested);
-                TextInput detail = dialog.AddTextArea("Detail",
-                    rejected.Count > 0
-                        ? string.Join(Environment.NewLine,
-                            rejected.Select((r, idx) => (idx + 1) + ". " + r.Text))
-                        : string.Empty);
-                ComboBox severity = dialog.AddDropdown("Severity",
-                    new[] { "Minor", "Major", "Critical" }, "Major");
-                TextInput owner = dialog.AddTextField("Assign to", string.Empty);
-
-                dialog.AddPrimaryAction("Raise", () =>
-                {
-                    if (string.IsNullOrWhiteSpace(title.Value))
-                    {
-                        Notify("A title is required.", true);
-                        return;
-                    }
-
-                    NcrSeverity sev = (NcrSeverity)Enum.Parse(
-                        typeof(NcrSeverity), (string)severity.SelectedItem);
-
-                    Ncr ncr = NcrService.Raise(_project.Id, _form.Id, title.Value.Trim(),
-                        detail.Value.Trim(), sev, owner.Value.Trim());
-
-                    _form.NcrNo = ncr.NcrNo;
-                    _form.UpdatedAt = DateTime.Now;
-
-                    Repository.Save();
-                    dialog.DialogResult = DialogResult.OK;
-                });
-
-                if (dialog.ShowDialog(Shell) == DialogResult.OK)
-                {
-                    Notify("NCR raised and linked to " + _form.QcRecordNo + ".");
-                    Rebuild();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Validates the form against the acceptance rules, then finalises it as either
-        /// accepted or NCR-raised.
-        /// </summary>
-        private void Submit()
-        {
-            var items = _template.AllItems();
-
-            if (_form.AnsweredCount < items.Count)
-            {
-                Notify("All checklist items must be marked A, R or N/A before submitting.", true);
-                return;
-            }
-
-            // A required reading must be present on any accepted line.
-            foreach (FormItemResult result in _form.Items)
-            {
-                if (result.Response != ItemResponse.Accepted) continue;
-
-                TemplateItem item = _template.FindItem(result.ItemId);
-                if (item != null && item.RefRequired && string.IsNullOrWhiteSpace(result.Ref))
-                {
-                    Notify("A required reference / reading is missing on an accepted item.", true);
-                    return;
-                }
-            }
-
-            // NCR enforcement is a configurable policy, set in Organisation Settings.
-            if (Repository.Db.Settings.EnforceNcrOnReject
-                && _form.HasRejected
-                && string.IsNullOrWhiteSpace(_form.NcrNo))
-            {
-                Notify("Record the NCR number before submitting a form with rejected items.", true);
-                return;
-            }
-
-            if (!_form.Inspected.IsSigned)
-            {
-                Notify("\"Inspected / Tested By\" sign-off is required before submitting.", true);
-                return;
-            }
-
-            // Optional second signature, also policy-driven.
-            if (Repository.Db.Settings.RequireDualSignoff && !_form.Reviewed.IsSigned)
-            {
-                Notify("Organisation policy requires a \"Reviewed By\" signature before submitting.", true);
-                return;
-            }
-
-            _form.Status = _form.HasRejected
-                ? RecordStatus.CompleteNcrRaised
-                : RecordStatus.CompleteAccepted;
-            _form.UpdatedAt = DateTime.Now;
-
-            Audit.Log(AuditAction.Submitted, "Form", _form.Id,
-                _template.DocNumber + " · " + _form.QcRecordNo,
-                "Submitted — " + Format.StatusText(_form.Status)
-                    + (string.IsNullOrWhiteSpace(_form.NcrNo)
-                        ? string.Empty : " · " + _form.NcrNo));
-
-            Repository.Save();
-            Notify("Form submitted — " + Format.StatusText(_form.Status) + ".");
-            Rebuild();
-        }
-
-        #endregion
+     await FormData.SaveValueAsync(form,entry.Key,entry.Value);
+     pending.Remove(entry.Key);LocalDrafts.Save(id,form.Revision,pending);
     }
+    error="Saved to the shared service.";return true;
+   }
+   catch(ApiException ex){conflict=ex.IsRevisionConflict;error=ex.Message;Notify(error,true);return false;}
+   catch(Exception ex){error=ex.Message;Notify(error,true);return false;}
+   finally{busy=false;if(!IsDisposed){Enabled=true;Rebuild();}}
+  }
+  private async Task ActionAsync(string suffix,object body=null)
+  {
+   if(busy)return;if(pending.Count>0 && !await SaveAsync())return;
+   await RunAsync(async()=>{await FormData.WriteAsync(form,"POST",suffix,body);form=await FormData.LoadAsync(id);LocalDrafts.Save(id,form.Revision,pending);error="Saved to the shared service.";});
+  }
+  private async Task RunAsync(Func<Task> action)
+  {
+   if(busy)return;busy=true;Enabled=false;
+   try{await action();}catch(ApiException ex){conflict=ex.IsRevisionConflict;error=ex.Message;Notify(error,true);}catch(Exception ex){error=ex.Message;Notify(error,true);}finally{busy=false;if(!IsDisposed){Enabled=true;Rebuild();}}
+  }
+  private async Task RefreshAsync()
+  {
+   if(pending.Count>0){if(MessageBox.Show(Shell,"Discard the cached unsent changes and reload the server version?","Reload QC record",MessageBoxButtons.YesNo,MessageBoxIcon.Warning)!=DialogResult.Yes)return;pending.Clear();}
+   await RunAsync(async()=>{form=await FormData.LoadAsync(id);conflict=false;LocalDrafts.Save(id,form.Revision,pending);error="Reloaded from the service.";});
+  }
+  private async Task PhotoAsync(string field)
+  {
+   using(var picker=new OpenFileDialog{Filter="Photos|*.jpg;*.jpeg;*.png"})
+   {
+    if(picker.ShowDialog(Shell)!=DialogResult.OK)return;
+    await RunAsync(async()=>{await FormData.UploadAsync(form,File.ReadAllBytes(picker.FileName),Path.GetFileName(picker.FileName),Path.GetExtension(picker.FileName).ToLowerInvariant()==".png"?"image/png":"image/jpeg","Photo",field);error="Photo uploaded.";LocalDrafts.Save(id,form.Revision,pending);});
+   }
+  }
+  private void ChooseSignature(string field)
+  {
+   using(var dialog=new Dialog("Signing capacity",480)){var type=dialog.AddDropdown("Sign as",new[]{"Inspector","Technician","Supervisor","Client"},null);dialog.AddAsyncAction("Continue",async()=>{if(type.SelectedItem==null)return;await SignAsync(Convert.ToString(type.SelectedItem),field);dialog.DialogResult=DialogResult.OK;});dialog.ShowDialog(Shell);}
+  }
+  private async Task SignAsync(string capacity,string field)
+  {
+   using(var ink=new SignatureForm())
+   {
+    if(ink.ShowDialog(Shell)!=DialogResult.OK)return;
+    await RunAsync(async()=>{var evidence=await FormData.UploadAsync(form,ink.Png,"signature.png","image/png","Signature",field);await FormData.WriteAsync(form,"POST","/sign-offs",new{signOffType=capacity,signatureEvidenceID=Json.Id(evidence,"evidenceID"),comments="Signed in the desktop application"});error="Signature recorded.";LocalDrafts.Save(id,form.Revision,pending);});
+   }
+  }
+  private void ReturnForCorrection()
+  {
+   using(var dialog=new Dialog("Return for correction",520)){var reason=dialog.AddTextArea("Reason","");dialog.AddAsyncAction("Return",async()=>{await ActionAsync("/return-for-correction",new{reason=reason.Value});dialog.DialogResult=DialogResult.OK;});dialog.ShowDialog(Shell);}
+  }
+  private async Task ShowHistoryAsync()
+  {
+   await RunAsync(async()=>{var history=Json.Rows(await ApiClient.Shared.SendAsync("GET","api/qc-forms/"+id+"/sign-offs"));using(var dialog=new Dialog("Sign-off history",600)){foreach(var item in history)dialog.AddReadOnlyField(Json.Text(item,"signerName")+" · "+Json.Text(item,"signOffType"),Json.Text(item,"signedAt")+(Json.Bool(item,"matchesCurrentContentAndSubmission")?" · Current content":" · Historical content"));dialog.ShowDialog(Shell);}});
+  }
+  private async void ExportCsv()
+  {
+   if(busy)return;if(pending.Count>0&&!await SaveAsync())return;
+   using(var save=new SaveFileDialog{Filter="CSV file (*.csv)|*.csv",FileName=Exporter.SafeFileName(form.QcRecordNo)+".csv"})
+   {
+    if(save.ShowDialog(Shell)!=DialogResult.OK)return;
+    await RunAsync(async()=>{form=await FormData.LoadAsync(id);Exporter.ExportForm(form,save.FileName);error="Exported the server execution snapshot.";});
+   }
+  }
+  protected override void Dispose(bool disposing){if(disposing){timer.Stop();timer.Dispose();}base.Dispose(disposing);}
+ }
 }

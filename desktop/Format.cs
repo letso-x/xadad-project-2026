@@ -34,6 +34,9 @@ namespace MzuApplication
             {
                 case RecordStatus.CompleteAccepted: return "Complete — Accepted";
                 case RecordStatus.CompleteNcrRaised: return "Complete — NCR Raised";
+                case RecordStatus.Submitted: return "Submitted";
+                case RecordStatus.ReturnedForCorrection: return "Returned for correction";
+                case RecordStatus.Cancelled: return "Cancelled";
                 default: return "In Progress";
             }
         }

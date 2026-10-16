@@ -25,7 +25,8 @@ namespace MzuApplication.Views
         private TextInput _search;
         private ComboBox _typeFilter;
 
-        public AuditView(MainForm shell) : base(shell) { }
+        private bool _loaded;
+        public AuditView(MainForm shell) : base(shell) { HandleCreated += async(s,e) => { if(_loaded)return;_loaded=true;try{await ReportingData.LoadAuditAsync();Rebuild();}catch(Exception ex){Notify(ex.Message,true);} }; }
 
         public override string RouteKey
         {
@@ -36,7 +37,7 @@ namespace MzuApplication.Views
         {
             // Administrator-only: the trail records who did what, so it is a
             // supervisory tool rather than something every site user should browse.
-            if (!Repository.IsAdmin)
+            if (!DesktopSession.Current.Can("ReadAudit"))
             {
                 TemplatesView.AddAccessDenied(this);
                 return;
@@ -134,7 +135,7 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Small,
                 ForeColor = Theme.Slate500,
-                Text = Repository.Db.Audit.Count + " entries recorded"
+                Text = Repository.Db.Audit.Count + " entries for accessible QC records (historical bridge: latest 100 per form)"
             };
             Controls.Add(count);
             count.Location = new Point(Left1 + InnerWidth - count.Width, Y + Dpi.S(10));
@@ -180,9 +181,9 @@ namespace MzuApplication.Views
                 row.Cells.Add(new TableCell(entry.User)
                 {
                     Bold = true,
-                    SubText = Format.RoleBadge(entry.Role)
+                    SubText = "Shared service"
                 });
-                row.Cells.Add(new TableCell(Audit.ActionText(entry.Action))
+                row.Cells.Add(new TableCell(string.IsNullOrEmpty(entry.ServerAction) ? Audit.ActionText(entry.Action) : ReportingData.ActionText(entry.ServerAction))
                 {
                     PillBack = ActionBack(entry.Action),
                     PillFore = ActionFore(entry.Action)

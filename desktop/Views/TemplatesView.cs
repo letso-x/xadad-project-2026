@@ -23,7 +23,7 @@ namespace MzuApplication.Views
         protected override void BuildContent()
         {
             // Guard the route the same way the spec's requireAdmin wrapper does.
-            if (!Repository.IsAdmin)
+            if (!DesktopSession.Current.Can("ManageTemplates"))
             {
                 AddAccessDenied(this);
                 return;

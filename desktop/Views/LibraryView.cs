@@ -59,9 +59,11 @@ namespace MzuApplication.Views
             _projectPicker.Location = new Point(Dpi.S(20), label.Bottom + Dpi.S(8));
 
             var projects = Repository.Db.Projects;
+            _projectPicker.DisplayMember = "Name";
+            _projectPicker.ValueMember = "Id";
             foreach (Project project in projects)
             {
-                _projectPicker.Items.Add(project.Name);
+                _projectPicker.Items.Add(project);
             }
 
             if (projects.Count == 0)
@@ -95,10 +97,7 @@ namespace MzuApplication.Views
         /// <summary>Resolves the project currently chosen in the picker.</summary>
         private Project SelectedProject()
         {
-            var projects = Repository.Db.Projects;
-            if (projects.Count == 0 || _projectPicker.SelectedIndex < 0) return null;
-            if (_projectPicker.SelectedIndex >= projects.Count) return null;
-            return projects[_projectPicker.SelectedIndex];
+            return _projectPicker.SelectedItem as Project;
         }
 
         private void AddChecklists()
@@ -264,7 +263,7 @@ namespace MzuApplication.Views
             return card;
         }
 
-        private void StartForm(ChecklistTemplate template)
+        private async void StartForm(ChecklistTemplate template)
         {
             Project project = SelectedProject();
             if (project == null)
@@ -273,52 +272,10 @@ namespace MzuApplication.Views
                 return;
             }
 
-            QcForm form = CreateForm(template, project);
-            Repository.Db.Forms.Add(form);
-
-            Audit.Log(AuditAction.Created, "Form", form.Id,
-                template.DocNumber + " · " + form.QcRecordNo,
-                "Checklist started on " + project.Name);
-
-            Repository.Save();
-
+            QcForm form;
+            try { form = await FormData.CreateAsync(template, project); }
+            catch (Exception ex) { Notify(ex.Message, true); return; }
             Shell.Navigate(new FormFillView(Shell, form.Id));
-        }
-
-        /// <summary>Builds an empty form instance with one result row per template item.</summary>
-        private static QcForm CreateForm(ChecklistTemplate template, Project project)
-        {
-            QcForm form = new QcForm
-            {
-                Id = Repository.NewId("frm"),
-                TemplateId = template.Id,
-                ProjectId = project.Id,
-                QcRecordNo = Repository.NextQcRecordNo(),
-                Status = RecordStatus.InProgress,
-                Remarks = string.Empty,
-                NcrNo = string.Empty,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                CreatedBy = Repository.CurrentUserName
-            };
-
-            foreach (string field in template.ProjectFields)
-            {
-                form.FieldValues[field] = string.Empty;
-            }
-
-            foreach (TemplateItem item in template.AllItems())
-            {
-                form.Items.Add(new FormItemResult
-                {
-                    ItemId = item.Id,
-                    Response = ItemResponse.Unanswered,
-                    Ref = string.Empty,
-                    Initials = string.Empty
-                });
-            }
-
-            return form;
         }
 
         private void StartRegister()
@@ -330,52 +287,21 @@ namespace MzuApplication.Views
                 return;
             }
 
-            Client client = Repository.GetClient(project.ClientId);
-
-            CableRegister register = new CableRegister
+            using (var dialog = new Dialog("Create cable register", 520))
             {
-                Id = Repository.NewId("reg"),
-                ProjectId = project.Id,
-                QcRecordNo = Repository.NextQcRecordNo(),
-                Status = RecordStatus.InProgress,
-                Notes = string.Empty,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                CreatedBy = Repository.CurrentUserName
-            };
-
-            register.FieldValues["Project"] = project.Name;
-            register.FieldValues["Project N°"] = project.Number;
-            register.FieldValues["Client"] = client != null ? client.Name : string.Empty;
-            register.FieldValues["Contract / Order N°"] = project.ContractNo ?? string.Empty;
-            register.FieldValues["Area / Location"] = project.Site ?? string.Empty;
-            register.FieldValues["Drawing N° & Rev."] = string.Empty;
-            register.FieldValues["Cable Schedule Ref. & Rev."] = string.Empty;
-            register.FieldValues["Register Revision"] = "Rev 1";
-
-            register.Cables.Add(new CableRow
-            {
-                Id = Repository.NewId("cab"),
-                No = 1,
-                CableNo = string.Empty, From = string.Empty, To = string.Empty,
-                CableType = string.Empty, DrumNo = string.Empty, Length = string.Empty,
-                IrCert = string.Empty, ContCert = string.Empty
-            });
-
-            Repository.Db.Registers.Add(register);
-
-            Audit.Log(AuditAction.Created, "Register", register.Id,
-                CableRegister.DocNumber + " · " + register.QcRecordNo,
-                "Register started on " + project.Name);
-
-            Repository.Save();
-
-            Shell.Navigate(new RegisterView(Shell, register.Id));
+                var number = dialog.AddTextField("Register number", "");
+                dialog.AddAsyncAction("Create", async () =>
+                {
+                    try { var register = await CableData.CreateAsync(project.Id, number.Value.Trim()); dialog.Tag = register; dialog.DialogResult = DialogResult.OK; }
+                    catch (Exception ex) { Notify(ex.Message, true); }
+                });
+                if (dialog.ShowDialog(Shell) == DialogResult.OK) Shell.Navigate(new RegisterView(Shell, ((CableRegister)dialog.Tag).Id));
+            }
         }
 
         private void AddAdminHint()
         {
-            if (!Repository.IsAdmin) return;
+            if (!DesktopSession.Current.Can("ManageTemplates")) return;
 
             Label hint = new Label
             {

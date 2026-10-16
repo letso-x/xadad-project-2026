@@ -25,6 +25,7 @@ namespace MzuApplication.Views
 
         protected override void BuildContent()
         {
+            if (SharedData.Loading) { AddPageHeader("Overview", "QC Control Centre", "Loading shared data…"); return; }
             Database db = Repository.Db;
 
             // Admins get the branded landing banner; site users keep the plain header.
@@ -34,7 +35,7 @@ namespace MzuApplication.Views
             }
 
             AddPageHeader("Overview", "QC Control Centre",
-                "What's happening across every project, at a glance.");
+                SharedData.LoadStatus);
 
             AddStatTiles(db);
             AddActivityAndProgress(db);
@@ -97,18 +98,20 @@ namespace MzuApplication.Views
             int totalProjects = db.Projects.Count;
             int activeProjects = db.Projects.Count(p => p.Status == "Active");
 
-            int inProgress = db.Forms.Count(f => f.Status == RecordStatus.InProgress)
+            int inProgress = db.Forms.Count(f => f.Status == RecordStatus.InProgress || f.Status == RecordStatus.ReturnedForCorrection)
                              + db.Registers.Count(r => r.Status == RecordStatus.InProgress);
 
-            int completed = db.Forms.Count(f => f.Status != RecordStatus.InProgress)
-                            + db.Registers.Count(r => r.Status != RecordStatus.InProgress);
+            int completed = db.Forms.Count(f => f.Status == RecordStatus.CompleteAccepted)
+                            + db.Registers.Count(r => r.Status == RecordStatus.CompleteAccepted);
 
             int totalRecords = db.Forms.Count + db.Registers.Count;
 
             // "Requiring attention" counts raised NCRs plus drafts that already have a
             // rejected line, matching the dashboard rule in the spec.
-            int attention = db.Forms.Count(f => f.Status == RecordStatus.CompleteNcrRaised
-                                                || (f.Status == RecordStatus.InProgress && f.HasRejected));
+            int attention = db.Ncrs.Count(n => n.State != NcrState.Closed);
+
+            var portfolio = ReportingData.Portfolio;
+            if(portfolio!=null) { totalProjects=(int)Json.Id(portfolio,"totalProjects");activeProjects=(int)Json.Id(portfolio,"activeProjects");inProgress=(int)Json.Id(portfolio,"formsInProgress");completed=(int)Json.Id(portfolio,"approvedForms");totalRecords=(int)Json.Id(portfolio,"totalQcRecords");attention=(int)Json.Id(portfolio,"openNcrCount"); }
 
             var tiles = new List<Tuple<Glyph, string, string, bool>>
             {

@@ -24,6 +24,7 @@ namespace MzuApplication.Models
     /// </summary>
     public class AuditEntry
     {
+        public string ServerAction { get; set; }
         public string Id { get; set; }
         public DateTime At { get; set; }
         public string User { get; set; }
@@ -66,6 +67,7 @@ namespace MzuApplication.Models
     /// </summary>
     public class Ncr
     {
+        public Dictionary<string,object> RemoteRecord { get; set; }
         public string Id { get; set; }
         public string NcrNo { get; set; }
         public string ProjectId { get; set; }
@@ -101,87 +103,23 @@ namespace MzuApplication.Models
         }
     }
 
-    /// <summary>A saved organisation-level setting.</summary>
+    /// <summary>Local display/session preferences only; shared quality and MFA policy live on the server.</summary>
     public class OrgSettings
     {
-        public string CompanyName { get; set; }
-        public string DocumentPrefix { get; set; }
-
-        /// <summary>Require a second signature before a form counts as approved.</summary>
-        public bool RequireDualSignoff { get; set; }
-
-        /// <summary>Block submitting a form that has any rejected line without an NCR.</summary>
-        public bool EnforceNcrOnReject { get; set; }
-
-        /// <summary>Default number of days allowed to close out a new NCR.</summary>
-        public int NcrDueDays { get; set; }
-
-        /// <summary>
-        /// Require email-based two-step verification at sign-in. Only takes effect when
-        /// SMTP email is configured on the machine (email.config).
-        /// </summary>
-        public bool RequireMfa { get; set; }
-
-        /// <summary>Minutes of inactivity before the user is prompted and signed out.</summary>
-        public int IdleTimeoutMinutes { get; set; }
-
-        /// <summary>Days a device stays trusted after passing MFA before a code is needed again.</summary>
-        public int DeviceTrustDays { get; set; }
-
-        public OrgSettings()
-        {
-            CompanyName = "Mzukulu Technologies (Pty) Ltd";
-            DocumentPrefix = "QC";
-            RequireDualSignoff = false;
-            EnforceNcrOnReject = true;
-            NcrDueDays = 14;
-            RequireMfa = true;
-            IdleTimeoutMinutes = 2;
-            DeviceTrustDays = 14;
-        }
+        public int IdleTimeoutMinutes { get; set; } = 15;
     }
 }
 
 namespace MzuApplication.Models
 {
-    /// <summary>
-    /// A registered user account. Passwords are never stored directly — only a salted
-    /// PBKDF2 hash and the salt used to produce it, so the stored data cannot be
-    /// reversed into the original password.
-    /// </summary>
+    /// <summary>Presentation identity returned by api/auth/me. No local account or password store.</summary>
     public class UserAccount
     {
         public string Id { get; set; }
-
-        /// <summary>Login name, matched case-insensitively.</summary>
         public string Username { get; set; }
-
-        /// <summary>Full display name shown in the UI and audit trail.</summary>
         public string FullName { get; set; }
-
         public string Email { get; set; }
-
-        /// <summary>Base64 PBKDF2 hash of the password.</summary>
-        public string PasswordHash { get; set; }
-
-        /// <summary>Base64 random salt mixed into the hash.</summary>
-        public string PasswordSalt { get; set; }
-
-        /// <summary>PBKDF2 iteration count used, stored so it can be raised later.</summary>
-        public int HashIterations { get; set; }
-
         public UserRole Role { get; set; }
-
-        /// <summary>Disabled accounts cannot sign in.</summary>
         public bool Active { get; set; }
-
-        /// <summary>
-        /// When true, the user is forced to set a new password at their next sign-in.
-        /// Set after an administrator resets the password.
-        /// </summary>
-        public bool MustChangePassword { get; set; }
-
-        public DateTime CreatedAt { get; set; }
-        public DateTime? LastLoginAt { get; set; }
     }
 }

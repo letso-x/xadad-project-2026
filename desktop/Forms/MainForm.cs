@@ -84,6 +84,14 @@ namespace MzuApplication.Forms
             BuildSidebar();
 
             Navigate(new DashboardView(this));
+            Shown += async (s, e) =>
+            {
+                UseWaitCursor = true; _sidebar.Enabled = _contentHost.Enabled = _topBar.Enabled = false;
+                try { await SharedData.RefreshAsync(); Navigate(new DashboardView(this)); }
+                catch (Exception ex) { Notify(ex.Message, true); }
+                finally { if(!IsDisposed) { UseWaitCursor = false; _sidebar.Enabled = _contentHost.Enabled = _topBar.Enabled = true; Navigate(new DashboardView(this)); } }
+            };
+
 
             StartIdleMonitor();
 
@@ -112,7 +120,7 @@ namespace MzuApplication.Forms
                 new CommandPaletteForm.Command { Label = "Non-Conformance (NCR)", Keywords = "ncr defects issues", Route = "ncr" }
             };
 
-            if (Repository.IsAdmin)
+            if (Repository.IsAdmin || DesktopSession.Current.Can("ManageTemplates") || DesktopSession.Current.Can("ReadReports") || DesktopSession.Current.Can("ReadAudit"))
             {
                 commands.Add(new CommandPaletteForm.Command { Label = "Reports", Keywords = "insight kpi analytics", Route = "reports" });
                 commands.Add(new CommandPaletteForm.Command { Label = "Checklist Builder", Keywords = "templates editor", Route = "templates" });
@@ -481,7 +489,7 @@ namespace MzuApplication.Forms
 
             // Administration group is admin-only, matching the route guards.
             // Reports lives here now: it is a supervisory roll-up, not a site-user tool.
-            if (Repository.IsAdmin)
+            if (Repository.IsAdmin || DesktopSession.Current.Can("ManageTemplates") || DesktopSession.Current.Can("ReadReports") || DesktopSession.Current.Can("ReadAudit"))
             {
                 AddNavGroup(navHost, "Administration", y + Dpi.S(6), new[]
                 {
@@ -610,7 +618,7 @@ namespace MzuApplication.Forms
         /// <summary>Signs out and returns to the login screen.</summary>
         private void SwitchUser()
         {
-            Repository.SignOut();
+            Auth.SignOut();
             DialogResult = DialogResult.Retry;
             Close();
         }

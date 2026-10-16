@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace MzuApplication.Models
 {
-    /// <summary>Access level of the signed-in demo user.</summary>
+    /// <summary>Legacy presentation category; server permissions remain authoritative.</summary>
     public enum UserRole
     {
         None = 0,
@@ -33,7 +33,10 @@ namespace MzuApplication.Models
     {
         InProgress = 0,
         CompleteAccepted = 1,
-        CompleteNcrRaised = 2
+        CompleteNcrRaised = 2,
+        Submitted = 3,
+        ReturnedForCorrection = 4,
+        Cancelled = 5
     }
 
     public class Client
@@ -95,6 +98,9 @@ namespace MzuApplication.Models
     /// <summary>A configurable MZT-QC-3xx checklist definition.</summary>
     public class ChecklistTemplate
     {
+        public long VersionId { get; set; }
+        public Dictionary<string, object> RemoteDefinition { get; set; }
+        public List<string> RequiredSignOffTypes { get; set; } = new List<string>();
         public string Id { get; set; }
         public string DocNumber { get; set; }
         public string DocName { get; set; }
@@ -154,6 +160,9 @@ namespace MzuApplication.Models
     /// <summary>A completed (or in-progress) instance of a checklist template.</summary>
     public class QcForm
     {
+        public string ServerStatus { get; set; }
+        public long Revision { get; set; }
+        public Dictionary<string, object> RemoteDetails { get; set; }
         public string Id { get; set; }
         public string TemplateId { get; set; }
         public string ProjectId { get; set; }
@@ -198,6 +207,9 @@ namespace MzuApplication.Models
     /// <summary>One cable line in the MZT-QC-203 register.</summary>
     public class CableRow
     {
+        public long Revision { get; set; }
+        public Dictionary<string,object> RemoteRecord { get; set; }
+        public string SavedInput { get; set; }
         public string Id { get; set; }
         public int No { get; set; }
         public string CableNo { get; set; }
@@ -217,6 +229,9 @@ namespace MzuApplication.Models
     /// <summary>The MZT-QC-203 Cable Schedule &amp; Installation Register.</summary>
     public class CableRegister
     {
+        public long Revision { get; set; }
+        public Dictionary<string,object> RemoteRecord { get; set; }
+        public string SavedInput { get; set; }
         public const string DocNumber = "MZT-QC-203";
         public const string DocName = "Cable Schedule & Installation Register";
 
@@ -242,9 +257,10 @@ namespace MzuApplication.Models
         }
     }
 
-    /// <summary>Root of the persisted demo database.</summary>
+    /// <summary>In-memory presentation cache of shared API data.</summary>
     public class Database
     {
+        public Dictionary<string,object> Portfolio {get;set;}
         public List<Client> Clients { get; set; }
         public List<Project> Projects { get; set; }
         public List<ChecklistTemplate> Templates { get; set; }

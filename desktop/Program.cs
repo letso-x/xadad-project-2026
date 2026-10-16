@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using MzuApplication.Data;
@@ -37,22 +37,6 @@ namespace MzuApplication
 
             Repository.Load();
 
-            // If configured for Postgres, verify the connection up front. On failure,
-            // tell the user and fall back to the local store so a demo still runs.
-            if (DbConfig.UsePostgres)
-            {
-                string error = PostgresUserStore.Initialise();
-                if (error != null)
-                {
-                    DbConfig.DisablePostgres();
-                    MessageBox.Show(
-                        "Could not connect to the Supabase database:\r\n\r\n" + error
-                        + "\r\n\r\nThe app will use the local offline account store instead.",
-                        "Database connection failed",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-
             // Outer loop: sign-in / registration cycle. Breaks out only on a
             // successful authenticated session or when the user quits.
             while (true)
@@ -62,25 +46,11 @@ namespace MzuApplication
                     return; // user closed the login window
                 }
 
-                // Second factor: email a one-time code and require it before entering.
+                // Shared Supabase TOTP verification is required before opening the shell.
                 if (!RunMfaIfRequired())
                 {
                     Auth.SignOut();
                     continue; // verification failed/cancelled -> back to login
-                }
-
-                // A reset password forces the user to choose a new one before entering.
-                if (Auth.CurrentMustChangePassword)
-                {
-                    using (ChangePasswordForm change = new ChangePasswordForm())
-                    {
-                        if (change.ShowDialog() != DialogResult.OK)
-                        {
-                            // Refused to set a new password: sign out and return to login.
-                            Auth.SignOut();
-                            continue;
-                        }
-                    }
                 }
 
                 using (MainForm main = new MainForm())
@@ -98,36 +68,13 @@ namespace MzuApplication
             }
         }
 
-        /// <summary>
-        /// If the organisation requires MFA and email is configured, issues a one-time
-        /// code to the signed-in user and shows the verification dialog. Returns true to
-        /// allow entry (verified, or MFA not applicable), false to send them back to login.
-        /// </summary>
+        /// <summary>Requires the shared Supabase AAL2 session; there is no local MFA bypass.</summary>
         private static bool RunMfaIfRequired()
         {
             if (Auth.Current == null) return false;
-
-            bool required = Repository.Db.Settings.RequireMfa && EmailConfig.IsConfigured;
-            if (!required) return true; // MFA off or email not set up on this machine
-
-            // If this machine was verified by the same user within the trust window
-            // (14 days), skip the code entirely — like a remembered Windows device.
-            if (DeviceTrust.IsTrusted(Auth.Current)) return true;
-
-            // The form appears immediately and sends the code in the background, so there
-            // is no blank freeze while the mail server is contacted.
             using (MfaForm mfa = new MfaForm(Auth.Current))
-            {
-                if (mfa.ShowDialog() != DialogResult.OK) return false;
+                return mfa.ShowDialog() == DialogResult.OK && DesktopSession.Current.Verified;
 
-                // Only trust this device if the user ticked "Don't ask again". Otherwise
-                // a fresh code is required at every sign-in.
-                if (mfa.TrustThisDevice)
-                {
-                    DeviceTrust.Trust(Auth.Current);
-                }
-                return true;
-            }
         }
 
         /// <summary>
@@ -145,16 +92,6 @@ namespace MzuApplication
                     if (result == DialogResult.OK)
                     {
                         return true; // Auth.Current is set
-                    }
-
-                    if (login.RegisterRequested)
-                    {
-                        using (RegisterForm register = new RegisterForm())
-                        {
-                            register.ShowDialog();
-                            // Whether they registered or cancelled, loop back to login.
-                        }
-                        continue;
                     }
 
                     return false; // closed/cancelled -> quit

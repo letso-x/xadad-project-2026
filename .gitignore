@@ -1,4 +1,4 @@
-﻿################################################################################
+################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
@@ -9,3 +9,10 @@
 [Oo]bj/
 # Test-run output; reviewed redacted evidence is retained under docs/codex/evidence.
 **/TestResults/
+# Local packaging/signing material and generated task outputs.
+.private/
+artifacts/
+
+# Retain retired per-machine credential files privately if present.
+**/database.config
+**/email.config

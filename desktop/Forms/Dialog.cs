@@ -245,6 +245,27 @@ namespace MzuApplication.Forms
             AddAction(text, ButtonVariant.Primary, onClick);
         }
 
+        public void AddAsyncAction(string text, Func<System.Threading.Tasks.Task> onClick)
+        {
+            bool running = false;
+            AddPrimaryAction(text, async () =>
+            {
+                if (running) return;
+                running = true; Enabled = false;
+                try { await onClick(); }
+                catch (Exception ex) { MessageBox.Show(this, ex is System.Net.Http.HttpRequestException ? "Check your connection and try again. The operation has not been confirmed." : ex.Message, "Shared service", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+                finally { running = false; if (!IsDisposed) Enabled = true; }
+            });
+        }
+
+        public void AddControl(Control control)
+        {
+            control.Location = new Point(24, _cursorY);
+            control.Width = _fieldWidth;
+            _body.Controls.Add(control);
+            _cursorY = control.Bottom + 12;
+        }
+
         /// <summary>Adds a destructive (red) footer action.</summary>
         public void AddDangerAction(string text, Action onClick)
         {

@@ -29,7 +29,7 @@ namespace MzuApplication.Views
         {
             Control[] actions = new Control[0];
 
-            if (Repository.IsAdmin)
+            if (DesktopSession.Current.Can("ManageProjects"))
             {
                 FlatButton add = new FlatButton
                 {
@@ -104,6 +104,7 @@ namespace MzuApplication.Views
         /// <summary>Shared create/edit dialog, also used from the project detail page.</summary>
         internal static void EditProjectDialog(MainForm shell, Project existing, Action onSaved)
         {
+            if (existing != null) { shell.Notify("Project editing is not exposed by the shared API. Existing details are read-only.", true); return; }
             var clients = Repository.Db.Clients;
             if (clients.Count == 0)
             {
@@ -117,6 +118,8 @@ namespace MzuApplication.Views
                 ComboBox client = dialog.AddDropdown("Client",
                     clients.Select(c => c.Name),
                     currentClient != null ? currentClient.Name : null);
+                client.Items.Clear(); client.DisplayMember = "Name"; client.ValueMember = "Id";
+                client.Items.AddRange(clients.Cast<object>().ToArray()); client.SelectedIndex = clients.Count > 0 ? 0 : -1;
 
                 TextInput name = dialog.AddTextField("Project Name", existing != null ? existing.Name : string.Empty);
                 TextInput number = dialog.AddTextField("Project No.", existing != null ? existing.Number : string.Empty);
@@ -125,12 +128,11 @@ namespace MzuApplication.Views
                 TextInput site = dialog.AddTextField("Site / Location", existing != null ? existing.Site : string.Empty);
                 TextInput description = dialog.AddTextArea("Description",
                     existing != null ? existing.Description : string.Empty);
-                ComboBox status = dialog.AddDropdown("Status", StatusOptions,
-                    existing != null ? existing.Status : "Planning");
+                dialog.AddReadOnlyField("Status", "Assigned by the shared API");
                 DateTimePicker start = dialog.AddDateField("Start Date", existing != null ? existing.StartDate : null);
                 DateTimePicker end = dialog.AddDateField("End Date", existing != null ? existing.EndDate : null);
 
-                dialog.AddPrimaryAction("Save", () =>
+                dialog.AddAsyncAction("Save", async () =>
                 {
                     if (string.IsNullOrWhiteSpace(name.Value))
                     {
@@ -138,14 +140,14 @@ namespace MzuApplication.Views
                         return;
                     }
 
-                    Client picked = clients.FirstOrDefault(c => c.Name == (string)client.SelectedItem);
+                    Client picked = client.SelectedItem as Client;
                     if (picked == null)
                     {
                         shell.Notify("Select a client.", true);
                         return;
                     }
 
-                    Project target = existing ?? new Project { Id = Repository.NewId("prj") };
+                    Project target = new Project();
 
                     target.ClientId = picked.Id;
                     target.Name = name.Value.Trim();
@@ -153,13 +155,12 @@ namespace MzuApplication.Views
                     target.ContractNo = contract.Value.Trim();
                     target.Site = site.Value.Trim();
                     target.Description = description.Value.Trim();
-                    target.Status = (string)status.SelectedItem;
+
                     target.StartDate = start.Checked ? start.Value.Date : (DateTime?)null;
                     target.EndDate = end.Checked ? end.Value.Date : (DateTime?)null;
 
-                    if (existing == null) Repository.Db.Projects.Add(target);
-
-                    Repository.Save();
+                    try { await SharedData.CreateProjectAsync(target); }
+                    catch (Exception ex) { shell.Notify(ex.Message, true); return; }
                     dialog.DialogResult = DialogResult.OK;
                 });
 

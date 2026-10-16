@@ -31,6 +31,7 @@ namespace MzuApplication.Forms
             Font = Theme.Body;
             AppIcon.Apply(this);
 
+            FormClosed += (s,e) => { if(DialogResult != DialogResult.OK) Auth.SignOut(); };
             BuildCard();
             Resize += (s, e) => CenterCard();
             CenterCard();
@@ -132,7 +133,7 @@ namespace MzuApplication.Forms
             _card.Controls.Add(prompt);
             y = prompt.Bottom + Dpi.S(14);
 
-            Label userLabel = Ui.FieldLabel("Username");
+            Label userLabel = Ui.FieldLabel("Email");
             userLabel.Location = new Point(left, y);
             _card.Controls.Add(userLabel);
             y = userLabel.Bottom + Dpi.S(5);
@@ -232,14 +233,12 @@ namespace MzuApplication.Forms
                 ForeColor = Theme.Navy700,
                 BackColor = Color.Transparent,
                 Location = new Point(noAccount.Right + Dpi.S(4), 0),
-                Text = "Create an account",
+                Text = "Account access",
                 Cursor = Cursors.Hand
             };
             registerLink.Click += (s, e) =>
             {
-                RegisterRequested = true;
-                DialogResult = DialogResult.Retry;
-                Close();
+                _error.Text = "Account provisioning requires your Supabase/QMS administrator.";
             };
             registerRow.Controls.Add(registerLink);
 
@@ -248,7 +247,7 @@ namespace MzuApplication.Forms
 
             // ---- Demo credentials hint --------------------------------------
             Label hint = Ui.Wrapped(
-                "Demo accounts — admin / admin123  ·  siteuser / user123",
+                "Sign in with your shared Mzukulu account email.",
                 Theme.Tiny, Theme.Slate400, fieldWidth);
             hint.Location = new Point(left, y);
             _card.Controls.Add(hint);
@@ -273,78 +272,23 @@ namespace MzuApplication.Forms
         /// </summary>
         private void ForgotPassword()
         {
-            string prefill = _username.Value;
-
-            using (Dialog dialog = new Dialog("Reset your password", Dpi.S(380)))
-            {
-                dialog.AddNote(
-                    "Enter the email address for your account. We'll generate a new "
-                    + "temporary password that you'll be asked to change on your next sign-in.");
-
-                TextInput emailField = dialog.AddTextField(
-                    "Account email", prefill, "e.g. you@mzukulu.co.za");
-
-                dialog.AddPrimaryAction("Reset Password", () =>
-                {
-                    string temp;
-                    bool ok = Auth.ForgotPassword(emailField.Value, out temp);
-                    dialog.DialogResult = DialogResult.OK;
-                    dialog.Tag = ok ? temp : null;
-                });
-
-                if (dialog.ShowDialog(this) != DialogResult.OK) return;
-
-                string generated = dialog.Tag as string;
-                ShowResetResult(generated, emailField.Value);
-            }
+            _error.Text = "Use the mobile password recovery flow or contact your administrator. Desktop recovery callbacks are not registered.";
         }
 
-        /// <summary>Shows the generated temporary password, or a neutral message.</summary>
-        private void ShowResetResult(string temporaryPassword, string email)
+        private bool _signingIn;
+        private async void AttemptSignIn()
         {
-            using (Dialog result = new Dialog("Password reset", Dpi.S(380)))
+            if (_signingIn) return;
+            _signingIn = true; _error.Text = "Signing in…"; _username.Enabled = _password.Enabled = false;
+            try
             {
-                if (!string.IsNullOrEmpty(temporaryPassword))
-                {
-                    result.AddReadOnlyField("Your temporary password", temporaryPassword);
-                    result.AddNote(
-                        "Sign in with this temporary password. You will be required to set a "
-                        + "new password immediately. Copy it now — it will not be shown again.");
-
-                    // Pre-fill the login fields so the user can sign in straight away.
-                    _username.Value = email;
-                    _password.Value = temporaryPassword;
-                }
-                else
-                {
-                    result.AddNote(
-                        "If an account exists for that email, a temporary password has been "
-                        + "generated. Please check with your administrator if you cannot sign in.");
-                }
-
-                result.AddPrimaryAction("Done", () => { result.DialogResult = DialogResult.OK; });
-                result.ShowDialog(this);
-            }
-
-            _error.Text = string.Empty;
-            if (!string.IsNullOrEmpty(temporaryPassword)) _password.Focus();
-        }
-
-        private void AttemptSignIn()
-        {
-            _error.Text = string.Empty;
-
-            AuthResult result = Auth.SignIn(_username.Value, _password.Value);
-            if (result == AuthResult.Success)
-            {
+                await Auth.SignInAsync(_username.Value, _password.Value);
+                if(IsDisposed)return;
                 DialogResult = DialogResult.OK;
                 Close();
-                return;
             }
-
-            _error.Text = Auth.Describe(result);
-            _password.Value = string.Empty;
-            _password.Focus();
+            catch (Exception ex) { if(!IsDisposed) _error.Text = ex is System.Net.Http.HttpRequestException ? "Check your connection and try again." : ex.Message; }
+            finally { _signingIn = false; if (!IsDisposed) { _password.Value = ""; _username.Enabled = _password.Enabled = true; } }
         }
     }
 }

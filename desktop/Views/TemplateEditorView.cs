@@ -31,7 +31,7 @@ namespace MzuApplication.Views
 
         protected override void BuildContent()
         {
-            if (!Repository.IsAdmin)
+            if (!DesktopSession.Current.Can("ManageTemplates"))
             {
                 TemplatesView.AddAccessDenied(this);
                 return;
@@ -55,6 +55,11 @@ namespace MzuApplication.Views
                 return;
             }
 
+            if (_templateId != null && !TemplateData.CanEdit(Repository.GetTemplate(_templateId)))
+            {
+                AddPageHeader("CHECKLIST BUILDER", "Template is read-only in this editor", "This template has dynamic fields that the legacy editor cannot preserve. Use the existing mobile builder to revise it. QC forms still render all fields.");
+                return;
+            }
             AddCrumbs("Checklist Templates",
                 () => Shell.Navigate(new TemplatesView(Shell)),
                 _templateId == null ? "New Template" : _draft.DocNumber);
@@ -68,6 +73,12 @@ namespace MzuApplication.Views
             AddScopeCard();
             AddSectionsHeading();
             AddSections();
+            var capacityLabel = Ui.Body("Required signing capacity"); capacityLabel.Location = new Point(Left1, Y); Controls.Add(capacityLabel); Y = capacityLabel.Bottom + 5;
+            var capacity = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = Dpi.S(220), Location = new Point(Left1, Y) };
+            capacity.Items.AddRange(new object[] { "Inspector", "Technician", "Supervisor", "Client" });
+            if (_draft.RequiredSignOffTypes.Count == 1) capacity.SelectedItem = _draft.RequiredSignOffTypes[0];
+            capacity.SelectedIndexChanged += (s,e) => { _draft.RequiredSignOffTypes = new List<string> { (string)capacity.SelectedItem }; };
+            Controls.Add(capacity); Y = capacity.Bottom + 16;
             AddSaveRow();
         }
 
@@ -97,6 +108,9 @@ namespace MzuApplication.Views
             ChecklistTemplate copy = new ChecklistTemplate
             {
                 Id = source.Id,
+                VersionId = source.VersionId,
+                RemoteDefinition = source.RemoteDefinition,
+                RequiredSignOffTypes = new List<string>(source.RequiredSignOffTypes),
                 DocNumber = source.DocNumber,
                 DocName = source.DocName,
                 Description = source.Description,
@@ -630,7 +644,8 @@ namespace MzuApplication.Views
             Y = save.Bottom + 6;
         }
 
-        private void SaveTemplate()
+        private bool _saving;
+        private async void SaveTemplate()
         {
             if (string.IsNullOrWhiteSpace(_draft.DocNumber) || string.IsNullOrWhiteSpace(_draft.DocName))
             {
@@ -644,34 +659,17 @@ namespace MzuApplication.Views
                 return;
             }
 
-            if (_draft.Id == null)
-            {
-                _draft.Id = Repository.NewId("tpl");
-                Repository.Db.Templates.Add(_draft);
-            }
-            else
-            {
-                int index = Repository.Db.Templates.FindIndex(t => t.Id == _draft.Id);
-                if (index >= 0) Repository.Db.Templates[index] = _draft;
-                else Repository.Db.Templates.Add(_draft);
-            }
-
-            Repository.Save();
+            if(_saving)return;_saving=true;Enabled=false;
+            try { await TemplateData.SaveAsync(_draft); }
+            catch (Exception ex) { Notify(ex.Message, true); return; }
+            finally { _saving=false;if(!IsDisposed)Enabled=true; }
             Notify("Checklist template saved.");
             Shell.Navigate(new TemplatesView(Shell));
         }
 
         private void ToggleArchive()
         {
-            ChecklistTemplate stored = Repository.GetTemplate(_draft.Id);
-            if (stored == null) return;
-
-            stored.Active = !stored.Active;
-            _draft.Active = stored.Active;
-
-            Repository.Save();
-            Notify(stored.Active ? "Template reactivated." : "Template archived.");
-            Rebuild();
+            Notify("Archiving/reactivation has no dedicated API endpoint. Publish an explicitly revised template from the shared builder.", true);
         }
 
         #endregion

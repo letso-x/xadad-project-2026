@@ -40,70 +40,23 @@ namespace MzuApplication.Data
         /// <summary>Exports one filled checklist, including every line result.</summary>
         public static void ExportForm(QcForm form, string path)
         {
-            ChecklistTemplate template = Repository.GetTemplate(form.TemplateId);
-            Project project = Repository.GetProject(form.ProjectId);
-            Client client = project != null ? Repository.GetClient(project.ClientId) : null;
-
-            StringBuilder sb = new StringBuilder();
-
-            sb.AppendLine(Row("Document", template != null ? template.DocNumber : string.Empty));
-            sb.AppendLine(Row("Title", template != null ? template.DocName : string.Empty));
-            sb.AppendLine(Row("Revision", template != null ? template.Revision : string.Empty));
-            sb.AppendLine(Row("QC Record No.", form.QcRecordNo));
-            sb.AppendLine(Row("Client", client != null ? client.Name : string.Empty));
-            sb.AppendLine(Row("Project", project != null ? project.Name : string.Empty));
-            sb.AppendLine(Row("Project No.", project != null ? project.Number : string.Empty));
-            sb.AppendLine(Row("Status", Format.StatusText(form.Status)));
-            sb.AppendLine(Row("NCR No.", form.NcrNo));
-            sb.AppendLine(Row("Created", form.CreatedAt.ToString("yyyy-MM-dd HH:mm")));
-            sb.AppendLine(Row("Last updated", form.UpdatedAt.ToString("yyyy-MM-dd HH:mm")));
-
-            foreach (var kv in form.FieldValues)
-            {
-                sb.AppendLine(Row(kv.Key, kv.Value));
-            }
-
-            sb.AppendLine();
-            sb.AppendLine(Row("No.", "Section", "Requirement", "Result", "Reference", "Initials", "Date"));
-
-            int number = 0;
-            if (template != null)
-            {
-                foreach (TemplateSection section in template.Sections)
-                {
-                    foreach (TemplateItem item in section.Items)
-                    {
-                        number++;
-                        FormItemResult result = form.Items.FirstOrDefault(i => i.ItemId == item.Id);
-
-                        sb.AppendLine(Row(
-                            number.ToString(CultureInfo.InvariantCulture),
-                            section.Title ?? string.Empty,
-                            item.Text,
-                            result != null ? Format.ResponseCode(result.Response) : string.Empty,
-                            result != null ? result.Ref : string.Empty,
-                            result != null ? result.Initials : string.Empty,
-                            result != null ? Format.Iso(result.Date) : string.Empty));
-                    }
-                }
-            }
-
-            sb.AppendLine();
-            sb.AppendLine(Row("Remarks", form.Remarks));
-            sb.AppendLine();
-            sb.AppendLine(Row("Sign-off", "Name", "Signature", "Date"));
-            sb.AppendLine(Row("Inspected / Tested By", form.Inspected.Name,
-                form.Inspected.Signature, Format.Iso(form.Inspected.Date)));
-            sb.AppendLine(Row("Reviewed By", form.Reviewed.Name,
-                form.Reviewed.Signature, Format.Iso(form.Reviewed.Date)));
-            sb.AppendLine(Row("Approved By", form.Approved.Name,
-                form.Approved.Signature, Format.Iso(form.Approved.Date)));
-
-            Write(path, sb.ToString());
-
-            Audit.Log(AuditAction.Exported, "Form", form.Id,
-                (template != null ? template.DocNumber + " · " : string.Empty) + form.QcRecordNo,
-                "Exported to CSV");
+            if (form.RemoteDetails == null) throw new InvalidOperationException("Load the server execution snapshot before exporting.");
+            var sb = new StringBuilder();
+            sb.AppendLine(Row("QC record", form.QcRecordNo));
+            sb.AppendLine(Row("Status", form.ServerStatus));
+            foreach (var field in Json.Rows(form.RemoteDetails,"projectFields")) sb.AppendLine(Row(Json.Text(field,"fieldLabel"), DisplayValue(Json.Get(field,"value"))));
+            sb.AppendLine(Row("Section","Requirement","Value","Answered by","Answered at"));
+            foreach (var section in Json.Rows(form.RemoteDetails,"sections"))
+                foreach (var field in Json.Rows(section,"fields"))
+                    sb.AppendLine(Row(Json.Text(section,"sectionName"),Json.Text(field,"fieldLabel"),DisplayValue(Json.Get(field,"value")),Json.Text(field,"answeredByName"),Json.Text(field,"answeredAt")));
+            sb.AppendLine(Row("Remarks",form.Remarks));
+            Write(path,sb.ToString());
+        }
+        private static string DisplayValue(object value)
+        {
+            if(value==null)return string.Empty;
+            if(value is object[])return string.Join("; ",((object[])value).Select(Convert.ToString));
+            return Convert.ToString(value,CultureInfo.InvariantCulture);
         }
 
         /// <summary>Exports the cable register grid.</summary>
@@ -246,8 +199,8 @@ namespace MzuApplication.Data
                 sb.AppendLine(Row(
                     entry.At.ToString("yyyy-MM-dd HH:mm:ss"),
                     entry.User,
-                    Format.RoleName(entry.Role),
-                    Audit.ActionText(entry.Action),
+                    string.IsNullOrEmpty(entry.ServerAction) ? Format.RoleName(entry.Role) : "",
+                    string.IsNullOrEmpty(entry.ServerAction) ? Audit.ActionText(entry.Action) : ReportingData.ActionText(entry.ServerAction),
                     entry.EntityType,
                     entry.EntityLabel,
                     entry.Detail));

@@ -24,7 +24,8 @@ namespace MzuApplication.Views
         private TextInput _filter;
         private ComboBox _stateFilter;
 
-        public NcrView(MainForm shell) : base(shell) { }
+        private bool _loaded;
+        public NcrView(MainForm shell) : base(shell) { HandleCreated += async(s,e) => { if(_loaded)return;_loaded=true;try{await NcrData.LoadAsync();if(!IsDisposed)Rebuild();}catch(Exception ex){if(!IsDisposed)Notify(ex.Message,true);} }; }
 
         public override string RouteKey
         {
@@ -94,9 +95,7 @@ namespace MzuApplication.Views
 
         private static string BuildAverageCaption()
         {
-            int closed;
-            double days = Analytics.AverageNcrCloseDays(out closed);
-            return closed == 0 ? "—" : Math.Round(days, 1).ToString("0.#");
+            return "Unavailable";
         }
 
         private void AddFilters()
@@ -230,129 +229,41 @@ namespace MzuApplication.Views
         }
 
         private void RaiseNcr()
-        {
-            if (Repository.Db.Projects.Count == 0)
-            {
-                Notify("Create a project before raising an NCR.", true);
-                return;
-            }
-
-            using (Dialog dialog = new Dialog("Raise Non-Conformance", Dpi.S(560)))
-            {
-                ComboBox project = dialog.AddDropdown("Project",
-                    Repository.Db.Projects.Select(p => p.Name), null);
-                TextInput title = dialog.AddTextField("Title", string.Empty,
-                    "Short description of the non-conformance");
-                TextInput description = dialog.AddTextArea("Detail", string.Empty);
-                ComboBox severity = dialog.AddDropdown("Severity",
-                    new[] { "Minor", "Major", "Critical" }, "Minor");
-                TextInput owner = dialog.AddTextField("Assign to", string.Empty, "Responsible person");
-
-                dialog.AddNote("The due date is set automatically from the organisation's "
-                               + "close-out window (currently "
-                               + Repository.Db.Settings.NcrDueDays + " days).");
-
-                dialog.AddPrimaryAction("Raise", () =>
-                {
-                    if (string.IsNullOrWhiteSpace(title.Value))
-                    {
-                        Notify("A title is required.", true);
-                        return;
-                    }
-
-                    Project picked = Repository.Db.Projects
-                        .FirstOrDefault(p => p.Name == (string)project.SelectedItem);
-                    if (picked == null)
-                    {
-                        Notify("Select a project.", true);
-                        return;
-                    }
-
-                    NcrSeverity sev = (NcrSeverity)Enum.Parse(
-                        typeof(NcrSeverity), (string)severity.SelectedItem);
-
-                    NcrService.Raise(picked.Id, null, title.Value.Trim(),
-                        description.Value.Trim(), sev, owner.Value.Trim());
-
-                    Repository.Save();
-                    dialog.DialogResult = DialogResult.OK;
-                });
-
-                if (dialog.ShowDialog(Shell) == DialogResult.OK)
-                {
-                    Notify("Non-conformance raised.");
-                    Rebuild();
-                }
-            }
-        }
+        { Notify("Standalone NCR creation is not exposed by the API. Mark the QC requirement R to raise its NCR automatically.", true); }
 
         /// <summary>Opens an NCR for review, allowing state and close-out edits.</summary>
         private void OpenNcr(Ncr ncr)
         {
-            Project project = Repository.GetProject(ncr.ProjectId);
-
             using (Dialog dialog = new Dialog(ncr.NcrNo + " — " + ncr.Title, Dpi.S(600)))
             {
-                dialog.AddReadOnlyField("Project", project != null ? project.Name : "—");
-                dialog.AddReadOnlyField("Severity", ncr.Severity.ToString());
-                dialog.AddReadOnlyField("Raised", ncr.RaisedBy + " · " + Format.DateTimeLong(ncr.RaisedAt));
-                dialog.AddReadOnlyField("Detail",
-                    string.IsNullOrWhiteSpace(ncr.Description) ? "—" : ncr.Description);
-
-                ComboBox state = dialog.AddDropdown("State", new[]
+                dialog.AddReadOnlyField("Requirement", ncr.Title);
+                dialog.AddReadOnlyField("Raised by", ncr.RaisedBy);
+                dialog.AddReadOnlyField("State", Format.NcrStateText(ncr.State));
+                dialog.AddReadOnlyField("Corrective action", ncr.CorrectiveAction);
+                if (Json.Bool(ncr.RemoteRecord, "isLegacyOnly"))
+                { dialog.AddNote("This historical NCR is read-only through the current API."); dialog.ShowDialog(Shell); return; }
+                ComboBox severity = dialog.AddDropdown("Severity", new[] { "Minor", "Major", "Critical" }, ncr.Severity.ToString());
+                TextInput classification = dialog.AddTextField("Classification", Json.Text(ncr.RemoteRecord, "classification"));
+                CheckBox blocking = dialog.AddCheckField("Blocking", Json.Bool(ncr.RemoteRecord, "isBlocking"));
+                TextInput disposition = dialog.AddTextField("Disposition", Json.Text(ncr.RemoteRecord, "disposition"));
+                TextInput action = dialog.AddTextArea("Corrective action / verification comments", ncr.CorrectiveAction);
+                dialog.AddNote("Correction requires photographic evidence. Independent verification and permitted transitions are enforced by the service.");
+                dialog.AddAsyncAction("Correct", async () =>
                 {
-                    "Open", "In Remediation", "Awaiting Verification", "Closed"
-                }, Format.NcrStateText(ncr.State));
-
-                TextInput owner = dialog.AddTextField("Assigned to", ncr.AssignedTo);
-                DateTimePicker due = dialog.AddDateField("Due date", ncr.DueDate);
-                TextInput rootCause = dialog.AddTextArea("Root cause", ncr.RootCause, Dpi.S(64));
-                TextInput action = dialog.AddTextArea("Corrective action", ncr.CorrectiveAction, Dpi.S(64));
-
-                if (ncr.State == NcrState.Closed)
-                {
-                    dialog.AddReadOnlyField("Closed",
-                        ncr.ClosedBy + " · " + Format.DateTimeLong(ncr.ClosedAt));
-                }
-
-                dialog.AddPrimaryAction("Save", () =>
-                {
-                    NcrState target = ParseState((string)state.SelectedItem);
-
-                    // Closing out requires evidence, the same way a paper NCR would.
-                    if (target == NcrState.Closed)
+                    using (var picker = new OpenFileDialog { Filter = "Photos|*.jpg;*.jpeg;*.png" })
                     {
-                        if (string.IsNullOrWhiteSpace(rootCause.Value)
-                            || string.IsNullOrWhiteSpace(action.Value))
+                        if (picker.ShowDialog(Shell) != DialogResult.OK) return;
+                        try
                         {
-                            Notify("Record the root cause and corrective action before closing.", true);
-                            return;
+                            await NcrData.CorrectAsync(ncr, Convert.ToString(severity.SelectedItem), classification.Value, blocking.Checked, disposition.Value, action.Value, System.IO.File.ReadAllBytes(picker.FileName), System.IO.Path.GetFileName(picker.FileName), System.IO.Path.GetExtension(picker.FileName).ToLowerInvariant() == ".png" ? "image/png" : "image/jpeg");
+                            dialog.DialogResult = DialogResult.OK;
                         }
+                        catch (Exception ex) { Notify(ex.Message, true); }
                     }
-
-                    ncr.AssignedTo = owner.Value.Trim();
-                    ncr.DueDate = due.Checked ? due.Value.Date : (DateTime?)null;
-                    ncr.RootCause = rootCause.Value.Trim();
-                    ncr.CorrectiveAction = action.Value.Trim();
-
-                    if (target != ncr.State)
-                    {
-                        NcrService.SetState(ncr, target);
-                    }
-                    else
-                    {
-                        Audit.Log(AuditAction.Updated, "NCR", ncr.Id, ncr.NcrNo, "Details updated");
-                    }
-
-                    Repository.Save();
-                    dialog.DialogResult = DialogResult.OK;
                 });
-
-                if (dialog.ShowDialog(Shell) == DialogResult.OK)
-                {
-                    Notify(ncr.NcrNo + " updated.");
-                    Rebuild();
-                }
+                dialog.AddAsyncAction("Verify passed", async () => { try { await NcrData.VerifyAsync(ncr, true, action.Value); dialog.DialogResult = DialogResult.OK; } catch (Exception ex) { Notify(ex.Message, true); } });
+                dialog.AddAsyncAction("Verify failed", async () => { try { await NcrData.VerifyAsync(ncr, false, action.Value); dialog.DialogResult = DialogResult.OK; } catch (Exception ex) { Notify(ex.Message, true); } });
+                if (dialog.ShowDialog(Shell) == DialogResult.OK) { Notify("NCR updated by the shared service."); Rebuild(); }
             }
         }
 
@@ -379,7 +290,7 @@ namespace MzuApplication.Views
                 try
                 {
                     Exporter.ExportNcrs(Repository.Db.Ncrs.ToList(), save.FileName);
-                    Repository.Save();
+
                     Notify("Exported " + Repository.Db.Ncrs.Count + " NCRs.");
                 }
                 catch (Exception ex)

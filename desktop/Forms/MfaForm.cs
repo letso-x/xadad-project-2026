@@ -14,27 +14,19 @@ namespace MzuApplication.Forms
     /// </summary>
     public class MfaForm : Form
     {
-        private readonly UserAccount _account;
         private Card _card;
         private TextInput _code;
         private Label _error;
         private Label _info;
-        private CheckBox _trustDevice;
-
-        /// <summary>
-        /// True if the user ticked "Don't ask again" — the shell then trusts this device
-        /// so no code is required for the trust window. Default off: a code every sign-in.
-        /// </summary>
-        public bool TrustThisDevice
-        {
-            get { return _trustDevice != null && _trustDevice.Checked; }
-        }
+        private Label _setupKeyLink;
+        private FlatButton _verifyButton;
+        private Label _setupLink;
+        private bool _busy;
 
         public MfaForm(UserAccount account)
         {
-            _account = account;
 
-            Text = "Mzukulu QMS — Verify it's you";
+            Text = "Mzukulu QMS â€” Verify it's you";
             ClientSize = new Size(Dpi.S(760), Dpi.S(560));
             MinimumSize = new Size(Dpi.S(520), Dpi.S(520));
             StartPosition = FormStartPosition.CenterScreen;
@@ -125,8 +117,9 @@ namespace MzuApplication.Forms
             int y = header.Bottom + Dpi.S(18);
 
             Label intro = Ui.Wrapped(
-                "We've emailed a 6-digit verification code to " + MaskEmail(_account.Email)
-                + ". Enter it below to finish signing in.",
+                DesktopSession.Current.FactorId == null
+                    ? "Set up an authenticator app to protect your existing account."
+                    : "Enter the 6-digit code from your authenticator app to finish signing in.",
                 Theme.Small, Theme.Slate700, fieldWidth);
             intro.Location = new Point(left, y);
             _card.Controls.Add(intro);
@@ -171,17 +164,14 @@ namespace MzuApplication.Forms
                 Location = new Point(left, y)
             };
             verify.Click += (s, e) => Verify();
+            _verifyButton = verify;
             _card.Controls.Add(verify);
             y = verify.Bottom + Dpi.S(10);
 
-            // "Don't ask again" — when ticked, this device is trusted after verifying so
-            // no code is needed for the trust window (default 14 days).
-            _trustDevice = Ui.Check("Don't ask again for "
-                + DeviceTrust.TrustDays + " days on this device");
-            _trustDevice.Location = new Point(left, y);
-            _trustDevice.Width = fieldWidth;
-            _card.Controls.Add(_trustDevice);
-            y = _trustDevice.Bottom + Dpi.S(10);
+            _setupKeyLink = new Label { AutoSize = true, Font = Theme.SmallBold, ForeColor = Theme.Navy700, BackColor = Color.Transparent, Location = new Point(left,y), Text = "Show setup key", Cursor = Cursors.Hand, Visible = false };
+            _setupKeyLink.Click += (s,e) => ShowSetupKey();
+            _card.Controls.Add(_setupKeyLink);
+            y = _setupKeyLink.Bottom + Dpi.S(10);
 
             Label resend = new Label
             {
@@ -190,10 +180,12 @@ namespace MzuApplication.Forms
                 ForeColor = Theme.Navy700,
                 BackColor = Color.Transparent,
                 Location = new Point(left, y),
-                Text = "Resend code",
+                Text = "Set up authenticator",
                 Cursor = Cursors.Hand
             };
-            resend.Click += (s, e) => Resend();
+            _setupLink = resend;
+            resend.Visible = DesktopSession.Current.FactorId == null;
+            resend.Click += (s, e) => BeginEnrollment();
             _card.Controls.Add(resend);
 
             Label cancel = new Label
@@ -208,7 +200,7 @@ namespace MzuApplication.Forms
             };
             cancel.Click += (s, e) =>
             {
-                MfaService.Clear(_account);
+                if (_busy) return;
                 DialogResult = DialogResult.Cancel;
                 Close();
             };
@@ -224,7 +216,7 @@ namespace MzuApplication.Forms
                 Location = new Point(left, y),
                 Width = fieldWidth,
                 Height = Dpi.S(16),
-                Text = "Sending a code to your email…"
+                Text = "Sending a code to your emailâ€¦"
             };
             _card.Controls.Add(_info);
 
@@ -234,39 +226,35 @@ namespace MzuApplication.Forms
             ActiveControl = _code;
         }
 
-        /// <summary>
-        /// Once the branded form is on screen, send the code on a background thread so the
-        /// window never freezes while the mail server is contacted. Status updates are
-        /// marshalled back to the UI thread.
-        /// </summary>
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            IssueCodeAsync();
+            _verifyButton.Enabled = _code.Enabled = DesktopSession.Current.FactorId != null;
+            SetInfo(DesktopSession.Current.FactorId == null ? "Choose Set up authenticator to begin." : "Enter a current code from your authenticator app.", false);
         }
-
-        private void IssueCodeAsync()
+        private async void BeginEnrollment()
         {
-            SetInfo("Sending a code to your email…", false);
-
-            System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+            if (_busy) return; _busy = true; _setupLink.Enabled = _verifyButton.Enabled = false;
+            try
             {
-                string err = MfaService.Issue(_account);
-
-                if (IsDisposed || !IsHandleCreated) return;
-                BeginInvoke((Action)(() =>
-                {
-                    if (err == null)
-                    {
-                        SetInfo("Code sent. It is valid for "
-                            + MfaService.ValidityMinutesValue + " minutes.", false);
-                    }
-                    else
-                    {
-                        SetInfo(err, true);
-                    }
-                }));
-            });
+                await DesktopSession.Current.EnrollAsync();
+                if (IsDisposed) return;
+                _setupLink.Visible = false; _setupKeyLink.Visible = DesktopSession.Current.SetupKey != null;
+                _code.Enabled = true;
+                SetInfo("Add the setup key in your authenticator app, then enter its code.", false);
+            }
+            catch (Exception ex) { if(!IsDisposed) SetInfo(ex is System.Net.Http.HttpRequestException ? "Check your connection and try again." : ex.Message, true); }
+            finally { _busy = false; if (!IsDisposed) { _setupLink.Enabled = true; _verifyButton.Enabled = DesktopSession.Current.FactorId != null; } }
+        }
+        private void ShowSetupKey()
+        {
+            using (var dialog = new Dialog("Authenticator setup key", Dpi.S(540)))
+            {
+                dialog.AddNote("Can't scan a code? Add this key manually in your authenticator app. Keep it private.");
+                var key = dialog.AddTextField("Setup key", DesktopSession.Current.SetupKey); key.ReadOnlyValue = true;
+                dialog.AddPrimaryAction("Done", () => dialog.DialogResult = DialogResult.OK);
+                dialog.ShowDialog(this); key.Value = string.Empty;
+            }
         }
 
         private void SetInfo(string text, bool isError)
@@ -283,51 +271,17 @@ namespace MzuApplication.Forms
             _card.Top = Math.Max(Dpi.S(16), (ClientSize.Height - _card.Height) / 2);
         }
 
-        private void Verify()
+        private async void Verify()
         {
-            _error.Text = string.Empty;
-
-            MfaResult result = MfaService.Verify(_account, _code.Value);
-            if (result == MfaResult.Success)
+            if (_busy) return; _busy = true; _verifyButton.Enabled = _setupLink.Enabled = false; _error.Text = string.Empty;
+            try
             {
-                DialogResult = DialogResult.OK;
-                Close();
-                return;
+                await DesktopSession.Current.VerifyAsync(_code.Value.Trim());
+                if (IsDisposed) return;
+                _code.Value = string.Empty; DialogResult = DialogResult.OK; Close();
             }
-
-            _error.Text = MfaService.Describe(result);
-            _code.Value = string.Empty;
-            _code.Focus();
-
-            // A dead challenge (expired / too many attempts) means they must start over.
-            if (result == MfaResult.Expired || result == MfaResult.TooManyAttempts
-                || result == MfaResult.NotRequested)
-            {
-                DialogResult = DialogResult.Cancel;
-                Close();
-            }
-        }
-
-        private void Resend()
-        {
-            _error.Text = string.Empty;
-            _code.Value = string.Empty;
-            IssueCodeAsync();
-        }
-
-        /// <summary>Masks an email for display, e.g. "jo****@example.com".</summary>
-        private static string MaskEmail(string email)
-        {
-            if (string.IsNullOrEmpty(email)) return "your email";
-            int at = email.IndexOf('@');
-            if (at <= 1) return email;
-
-            string name = email.Substring(0, at);
-            string domain = email.Substring(at);
-            string shown = name.Length <= 2
-                ? name.Substring(0, 1)
-                : name.Substring(0, 2);
-            return shown + new string('*', Math.Max(2, name.Length - shown.Length)) + domain;
+            catch (Exception ex) { if (!IsDisposed) { _error.Text = ex is System.Net.Http.HttpRequestException ? "Check your connection and try again." : ex.Message; _code.Value = string.Empty; } }
+            finally { _busy = false; if(!IsDisposed) { _verifyButton.Enabled = DesktopSession.Current.FactorId != null; _setupLink.Enabled = true; } }
         }
     }
 }

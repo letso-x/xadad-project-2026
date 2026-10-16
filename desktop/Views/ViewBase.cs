@@ -204,7 +204,7 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Tiny,
                 ForeColor = Theme.Slate400,
-                Text = "Mzukulu Technologies (Pty) Ltd — Quality Management System · Demo data environment"
+                Text = "Mzukulu Technologies (Pty) Ltd — Quality Management System · Shared API"
             };
             Controls.Add(credit);
             credit.Location = new Point(Left1 + Math.Max(0, (InnerWidth - credit.Width) / 2), Y);

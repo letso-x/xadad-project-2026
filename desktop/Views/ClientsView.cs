@@ -27,7 +27,7 @@ namespace MzuApplication.Views
         {
             Control[] actions = new Control[0];
 
-            if (Repository.IsAdmin)
+            if (DesktopSession.Current.Can("ManageProjects"))
             {
                 FlatButton add = new FlatButton
                 {
@@ -105,7 +105,7 @@ namespace MzuApplication.Views
                     ? "No projects yet."
                     : string.Join(Environment.NewLine, projects.Select(p => p.Name + "  (" + p.Status + ")")));
 
-                if (Repository.IsAdmin)
+                if (DesktopSession.Current.Can("ManageProjects"))
                 {
                     dialog.AddPrimaryAction("Edit", () => dialog.DialogResult = DialogResult.Yes);
                 }
@@ -122,11 +122,13 @@ namespace MzuApplication.Views
             using (Dialog dialog = new Dialog(existing == null ? "New Client" : "Edit Client", 480))
             {
                 TextInput name = dialog.AddTextField("Client Name", existing != null ? existing.Name : string.Empty);
-                TextInput contact = dialog.AddTextField("Contact Information",
-                    existing != null ? existing.Contact : string.Empty, "Name · email · phone");
+                object record = existing != null && SharedData.ClientRecords.ContainsKey(existing.Id) ? SharedData.ClientRecords[existing.Id] : null;
+                TextInput contact = dialog.AddTextField("Contact name", Json.Text(record,"contactName"));
+                TextInput email = dialog.AddTextField("Contact email", Json.Text(record,"contactEmail"));
+                TextInput phone = dialog.AddTextField("Contact phone", Json.Text(record,"contactPhone"));
                 CheckBox active = dialog.AddCheckField("Active", existing == null || existing.Active);
 
-                dialog.AddPrimaryAction("Save", () =>
+                dialog.AddAsyncAction("Save", async () =>
                 {
                     if (string.IsNullOrWhiteSpace(name.Value))
                     {
@@ -134,24 +136,11 @@ namespace MzuApplication.Views
                         return;
                     }
 
-                    if (existing == null)
+                    try
                     {
-                        Repository.Db.Clients.Add(new Client
-                        {
-                            Id = Repository.NewId("cli"),
-                            Name = name.Value.Trim(),
-                            Contact = contact.Value.Trim(),
-                            Active = active.Checked
-                        });
+                        await SharedData.SaveClientAsync(existing, name.Value.Trim(), contact.Value.Trim(), email.Value.Trim(), phone.Value.Trim(), active.Checked);
                     }
-                    else
-                    {
-                        existing.Name = name.Value.Trim();
-                        existing.Contact = contact.Value.Trim();
-                        existing.Active = active.Checked;
-                    }
-
-                    Repository.Save();
+                    catch (Exception ex) { Notify(ex.Message, true); return; }
                     dialog.DialogResult = DialogResult.OK;
                 });
 

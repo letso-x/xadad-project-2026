@@ -196,7 +196,7 @@ namespace MzuApplication.Forms
             _card.Top = Math.Max(Dpi.S(16), (ClientSize.Height - _card.Height) / 2);
         }
 
-        private void Apply()
+        private async void Apply()
         {
             _error.Text = string.Empty;
 
@@ -206,15 +206,11 @@ namespace MzuApplication.Forms
                 return;
             }
 
-            AuthResult result = Auth.ChangeOwnPassword(_password.Value);
-            if (result == AuthResult.Success)
-            {
-                DialogResult = DialogResult.OK;
-                Close();
-                return;
-            }
+            Enabled = false;
+            try { await DesktopSession.Current.ChangePasswordAsync(_password.Value); DialogResult = DialogResult.OK; Close(); }
+            catch (Exception ex) { _error.Text = ex.Message; }
+            finally { if (!IsDisposed) Enabled = true; }
 
-            _error.Text = Auth.Describe(result);
         }
     }
 }

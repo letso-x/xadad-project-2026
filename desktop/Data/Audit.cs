@@ -15,18 +15,8 @@ namespace MzuApplication.Data
         public static void Log(AuditAction action, string entityType, string entityId,
                                string entityLabel, string detail)
         {
-            Repository.Db.Audit.Add(new AuditEntry
-            {
-                Id = Repository.NewId("aud"),
-                At = DateTime.Now,
-                User = Repository.CurrentUserName ?? "system",
-                Role = Repository.CurrentRole,
-                Action = action,
-                EntityType = entityType,
-                EntityId = entityId,
-                EntityLabel = entityLabel,
-                Detail = detail
-            });
+            // The service audits mutations transactionally. The client must not fabricate
+            // authoritative audit entries, including for exports with no audit endpoint.
         }
 
         /// <summary>Most recent entries first.</summary>
