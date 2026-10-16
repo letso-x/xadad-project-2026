@@ -42,7 +42,8 @@ namespace MzuApplication.Views
                 actions = new Control[] { add };
             }
 
-            AddPageHeader("Projects", "Projects", "All client site projects.", actions);
+            AddPageHeader("Projects", "Projects",
+                "Every client site project in one place.", actions);
 
             _filter = new TextInput
             {
@@ -54,7 +55,22 @@ namespace MzuApplication.Views
             };
             _filter.ValueChanged += (s, e) => _table.ApplyFilter(_filter.Value);
             Controls.Add(_filter);
-            Y = _filter.Bottom + 14;
+            Y = _filter.Bottom + Dpi.S(10);
+
+            // Friendly tinted callout so users know the rows are clickable.
+            int projectCount = Repository.Db.Projects.Count;
+
+            InfoBanner banner = new InfoBanner
+            {
+                Location = new Point(Left1, Y),
+                Width = InnerWidth,
+                Lead = "Tip:",
+                Message = projectCount == 0
+                    ? "No projects yet — create one to start capturing quality control forms."
+                    : "Select a project to view its quality control forms, registers and progress."
+            };
+            Controls.Add(banner);
+            Y = banner.Bottom + Dpi.S(14);
 
             _table = new DataTable
             {

@@ -71,6 +71,8 @@ namespace MzuApplication.Data
             }
         }
 
+
+
         #region CRUD
 
         public static List<UserAccount> GetAll()

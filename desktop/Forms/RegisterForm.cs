@@ -17,7 +17,6 @@ namespace MzuApplication.Forms
     {
         private Card _card;
         private TextInput _fullName;
-        private TextInput _username;
         private TextInput _email;
         private TextInput _password;
         private TextInput _confirm;
@@ -129,8 +128,7 @@ namespace MzuApplication.Forms
             int y = header.Bottom + Dpi.S(20);
 
             _fullName = AddField("Full Name", "e.g. Thabo Mahlangu", left, fieldWidth, ref y, false);
-            _username = AddField("Username", "Used to sign in", left, fieldWidth, ref y, false);
-            _email = AddField("Email (optional)", "name@company.co.za", left, fieldWidth, ref y, false);
+            _email = AddField("Email", "name@company.co.za — used to sign in", left, fieldWidth, ref y, false);
             _password = AddField("Password", null, left, fieldWidth, ref y, true);
 
             Label rule = Ui.Wrapped(Auth.PasswordRule, Theme.Tiny, Theme.Slate400, fieldWidth);
@@ -230,9 +228,26 @@ namespace MzuApplication.Forms
             _card.Top = Math.Max(Dpi.S(16), (ClientSize.Height - _card.Height) / 2);
         }
 
+        /// <summary>Light email sanity check — a non-empty local part, @, and a dotted domain.</summary>
+        private static bool LooksLikeEmail(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            int at = value.IndexOf('@');
+            if (at <= 0 || at == value.Length - 1) return false;
+            string domain = value.Substring(at + 1);
+            return domain.Contains(".") && !domain.StartsWith(".") && !domain.EndsWith(".");
+        }
+
         private void AttemptRegister()
         {
             _error.Text = string.Empty;
+
+            string email = (_email.Value ?? string.Empty).Trim();
+            if (!LooksLikeEmail(email))
+            {
+                _error.Text = "A valid email address is required — you sign in with it.";
+                return;
+            }
 
             if (_password.Value != _confirm.Value)
             {
@@ -241,8 +256,9 @@ namespace MzuApplication.Forms
             }
 
             UserAccount created;
+            // Login name and email are the same: the account is identified by email.
             AuthResult result = Auth.Register(
-                _username.Value, _fullName.Value, _email.Value, _password.Value, out created);
+                email, _fullName.Value, email, _password.Value, out created);
 
             if (result == AuthResult.Success)
             {

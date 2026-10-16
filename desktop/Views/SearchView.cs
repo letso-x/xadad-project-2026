@@ -16,7 +16,7 @@ namespace MzuApplication.Views
     /// </summary>
     public class SearchView : ViewBase
     {
-        private readonly string _initialQuery;
+        private string _initialQuery;
         private TextInput _input;
 
         public SearchView(MainForm shell, string initialQuery) : base(shell)
@@ -53,23 +53,47 @@ namespace MzuApplication.Views
                 Font = Theme.Body,
                 Value = _initialQuery
             };
-            _input.Submitted += (s, e) => Rebuild();
+            // Searching re-runs against whatever is currently typed, not just the value
+            // the view was opened with, so typing and pressing Enter (or the button) works.
+            _input.Submitted += (s, e) => RunSearch();
             box.Controls.Add(_input);
+
+            FlatButton go = new FlatButton
+            {
+                Text = "Search",
+                Glyph = Glyph.Search,
+                Variant = ButtonVariant.Primary,
+                Width = Dpi.S(110),
+                Height = Dpi.S(40),
+                Location = new Point(_input.Right - Dpi.S(110) - Dpi.S(0), _input.Bottom + Dpi.S(8))
+            };
+            // Place the button neatly under the right edge of the input.
+            go.Location = new Point(InnerWidth - Dpi.S(110) + Dpi.S(0), _input.Bottom + Dpi.S(6));
+            go.Click += (s, e) => RunSearch();
 
             Label help = Ui.Help("Try a client name, project name, document number (e.g. MZT-QC-301), "
                                  + "or a QC record number (e.g. QC-0001).");
-            help.Location = new Point(20, _input.Bottom + 8);
-            help.Width = InnerWidth - 40;
+            help.Location = new Point(20, _input.Bottom + 10);
+            help.Width = InnerWidth - Dpi.S(140);
             help.Height = Dpi.S(16);
             box.Controls.Add(help);
+            box.Controls.Add(go);
 
             Controls.Add(box);
             Y = box.Bottom + 20;
 
-            if (_initialQuery.Trim().Length > 0)
+            string active = (_input.Value ?? string.Empty).Trim();
+            if (active.Length > 0)
             {
-                AddResults(_initialQuery.Trim().ToLowerInvariant());
+                AddResults(active.ToLowerInvariant());
             }
+        }
+
+        /// <summary>Captures the current query and rebuilds so results reflect it.</summary>
+        private void RunSearch()
+        {
+            _initialQuery = _input.Value ?? string.Empty;
+            Rebuild();
         }
 
         private void AddResults(string needle)

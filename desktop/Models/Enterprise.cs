@@ -40,6 +40,18 @@ namespace MzuApplication.Models
 
         /// <summary>What changed, in plain language.</summary>
         public string Detail { get; set; }
+
+        /// <summary>"Where" context — project / site / location the action relates to.</summary>
+        public string Context { get; set; }
+
+        /// <summary>The workstation (machine name) the action was performed from.</summary>
+        public string Host { get; set; }
+
+        /// <summary>SHA-256 of this entry's fields plus the previous entry's hash.</summary>
+        public string Hash { get; set; }
+
+        /// <summary>The hash of the entry immediately before this one (chain link).</summary>
+        public string PrevHash { get; set; }
     }
 
     /// <summary>Severity of a non-conformance report.</summary>

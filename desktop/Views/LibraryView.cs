@@ -33,6 +33,18 @@ namespace MzuApplication.Views
             AddPageHeader("Form Library", "Form Library",
                 "Select a project, choose a checklist or register, and start a new QC record.");
 
+            InfoBanner banner = new InfoBanner
+            {
+                Location = new Point(Left1, Y),
+                Width = InnerWidth,
+                Lead = "Tip:",
+                Message = Repository.Db.Projects.Count == 0
+                    ? "Create a project first, then pick a checklist here to start a new form."
+                    : "Pick a project above, then choose a checklist or register to open a blank QC form."
+            };
+            Controls.Add(banner);
+            Y = banner.Bottom + Dpi.S(14);
+
             AddProjectPicker();
             AddChecklists();
             AddRegisters();
@@ -66,23 +78,28 @@ namespace MzuApplication.Views
 
             if (projects.Count == 0)
             {
+                _projectPicker.Items.Clear();
                 _projectPicker.Items.Add("No projects — create one first");
                 _projectPicker.Enabled = false;
                 _projectPicker.SelectedIndex = 0;
             }
             else
             {
+                // A leading placeholder forces a deliberate choice instead of silently
+                // defaulting to the first project (which looked like static data).
+                _projectPicker.Items.Insert(0, PickerPlaceholder);
+
                 Project preselect = _preselectProjectId != null
                     ? projects.FirstOrDefault(p => p.Id == _preselectProjectId)
                     : null;
                 _projectPicker.SelectedIndex = preselect != null
-                    ? projects.IndexOf(preselect)
-                    : 0;
+                    ? projects.IndexOf(preselect) + 1   // +1 for the placeholder row
+                    : 0;                                 // placeholder selected by default
             }
 
             card.Controls.Add(_projectPicker);
 
-            Label help = Ui.Help("This project will be used for whichever form you create below.");
+            Label help = Ui.Help("Choose the project this form belongs to, then create a form below.");
             help.Location = new Point(Dpi.S(20), _projectPicker.Bottom + Dpi.S(8));
             help.Width = InnerWidth - 44;
             help.Height = Dpi.S(16);
@@ -92,13 +109,21 @@ namespace MzuApplication.Views
             Y = card.Bottom + Dpi.S(24);
         }
 
-        /// <summary>Resolves the project currently chosen in the picker.</summary>
+        private const string PickerPlaceholder = "— Select a project —";
+
+        /// <summary>
+        /// Resolves the project currently chosen in the picker, or null if the user has
+        /// not picked one (the placeholder row is selected).
+        /// </summary>
         private Project SelectedProject()
         {
             var projects = Repository.Db.Projects;
-            if (projects.Count == 0 || _projectPicker.SelectedIndex < 0) return null;
-            if (_projectPicker.SelectedIndex >= projects.Count) return null;
-            return projects[_projectPicker.SelectedIndex];
+            if (projects.Count == 0) return null;
+
+            // Index 0 is the placeholder; real projects start at index 1.
+            int idx = _projectPicker.SelectedIndex - 1;
+            if (idx < 0 || idx >= projects.Count) return null;
+            return projects[idx];
         }
 
         private void AddChecklists()

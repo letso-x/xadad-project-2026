@@ -105,6 +105,9 @@
     <Compile Include="Data\Auth.cs" />
     <Compile Include="Data\DbConfig.cs" />
     <Compile Include="Data\PostgresUserStore.cs" />
+    <Compile Include="Data\PostgresAuditStore.cs" />
+    <Compile Include="Data\PostgresClientStore.cs" />
+    <Compile Include="Data\ClientService.cs" />
     <Compile Include="Data\EmailConfig.cs" />
     <Compile Include="Data\EmailSender.cs" />
     <Compile Include="Data\MfaService.cs" />
@@ -144,6 +147,9 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Controls\Toast.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\InfoBanner.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Controls\Ui.cs" />

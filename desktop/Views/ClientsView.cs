@@ -43,6 +43,18 @@ namespace MzuApplication.Views
             AddPageHeader("Clients", "Clients",
                 "Organisations Mzukulu delivers projects for.", actions);
 
+            InfoBanner banner = new InfoBanner
+            {
+                Location = new Point(Left1, Y),
+                Width = InnerWidth,
+                Lead = "Tip:",
+                Message = Repository.Db.Clients.Count == 0
+                    ? "No clients yet — add one to start setting up projects."
+                    : "Select a client to view their contact details and linked projects."
+            };
+            Controls.Add(banner);
+            Y = banner.Bottom + Dpi.S(14);
+
             _filter = new TextInput
             {
                 Glyph = Glyph.Search,
@@ -65,7 +77,7 @@ namespace MzuApplication.Views
             _table.RowActivated += (s, tag) => ShowClient(tag as Client);
 
             var rows = new List<TableRow>();
-            foreach (Client client in Repository.Db.Clients)
+            foreach (Client client in ClientService.All())
             {
                 int count = Repository.ProjectsForClient(client.Id).Count;
 
@@ -136,22 +148,27 @@ namespace MzuApplication.Views
 
                     if (existing == null)
                     {
-                        Repository.Db.Clients.Add(new Client
+                        Client created = new Client
                         {
                             Id = Repository.NewId("cli"),
                             Name = name.Value.Trim(),
                             Contact = contact.Value.Trim(),
                             Active = active.Checked
-                        });
+                        };
+                        ClientService.Add(created);   // writes to the shared Client table
+                        Audit.Log(AuditAction.Created, "Client", created.Id, created.Name,
+                            "Client added");
                     }
                     else
                     {
                         existing.Name = name.Value.Trim();
                         existing.Contact = contact.Value.Trim();
                         existing.Active = active.Checked;
+                        ClientService.Update(existing);
+                        Audit.Log(AuditAction.Updated, "Client", existing.Id, existing.Name,
+                            "Client details updated");
                     }
 
-                    Repository.Save();
                     dialog.DialogResult = DialogResult.OK;
                 });
 

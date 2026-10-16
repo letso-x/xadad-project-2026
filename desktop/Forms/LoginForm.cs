@@ -132,7 +132,7 @@ namespace MzuApplication.Forms
             _card.Controls.Add(prompt);
             y = prompt.Bottom + Dpi.S(14);
 
-            Label userLabel = Ui.FieldLabel("Username");
+            Label userLabel = Ui.FieldLabel("Email");
             userLabel.Location = new Point(left, y);
             _card.Controls.Add(userLabel);
             y = userLabel.Bottom + Dpi.S(5);
@@ -142,7 +142,7 @@ namespace MzuApplication.Forms
                 Location = new Point(left, y),
                 Width = fieldWidth,
                 Height = Dpi.S(36),
-                Placeholder = "e.g. admin"
+                Placeholder = "name@company.co.za"
             };
             _username.Submitted += (s, e) => _password.Focus();
             _card.Controls.Add(_username);
@@ -248,7 +248,7 @@ namespace MzuApplication.Forms
 
             // ---- Demo credentials hint --------------------------------------
             Label hint = Ui.Wrapped(
-                "Demo accounts — admin / admin123  ·  siteuser / user123",
+                "Sign in with your email address. New here? Create an account above.",
                 Theme.Tiny, Theme.Slate400, fieldWidth);
             hint.Location = new Point(left, y);
             _card.Controls.Add(hint);

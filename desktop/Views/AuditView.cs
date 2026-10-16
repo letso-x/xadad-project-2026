@@ -42,22 +42,163 @@ namespace MzuApplication.Views
                 return;
             }
 
-            FlatButton export = new FlatButton
+            FlatButton verify = new FlatButton
             {
-                Text = "Export CSV",
+                Text = "Verify Integrity",
+                Glyph = Glyph.Shield,
+                Width = Dpi.S(150),
+                Height = Dpi.S(34)
+            };
+            verify.Click += (s, e) => VerifyIntegrity();
+
+            FlatButton exportFull = new FlatButton
+            {
+                Text = "Export Full Trail",
+                Glyph = Glyph.Download,
+                Variant = ButtonVariant.Primary,
+                Width = Dpi.S(158),
+                Height = Dpi.S(34)
+            };
+            exportFull.Click += (s, e) => ExportTrail(fullTrail: true);
+
+            FlatButton exportFiltered = new FlatButton
+            {
+                Text = "Export View",
                 Glyph = Glyph.Download,
                 Width = Dpi.S(128),
                 Height = Dpi.S(34)
             };
-            export.Click += (s, e) => ExportTrail();
+            exportFiltered.Click += (s, e) => ExportTrail(fullTrail: false);
 
             AddPageHeader("Governance", "Audit Trail",
-                "An append-only record of every change, for review and handover.",
-                export);
+                "An append-only, tamper-evident record of every change, for review and handover.",
+                verify, exportFiltered, exportFull);
 
             AddNotice();
+            AddStats();
             AddFilters();
             AddTable();
+
+            StartAutoRefresh();
+        }
+
+        private Timer _refreshTimer;
+        private string _lastSignature;
+
+        /// <summary>
+        /// Keeps the on-screen trail live by polling the shared store every few seconds and
+        /// restacking only when something actually changed (new count or newest entry).
+        /// </summary>
+        private void StartAutoRefresh()
+        {
+            if (_refreshTimer != null) return;
+
+            _lastSignature = null;
+            _refreshTimer = new Timer { Interval = 5000 };
+            _refreshTimer.Tick += (s, e) => PollForChanges();
+            _refreshTimer.Start();
+
+            // Prime the baseline once in the background so the first tick has something
+            // to compare against without blocking the UI on load.
+            System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+            {
+                string sig = SafeSignature();
+                if (!IsDisposed) BeginInvoke((MethodInvoker)(() => _lastSignature = sig));
+            });
+        }
+
+        private bool _polling;
+
+        /// <summary>
+        /// Checks the shared trail's change signature on a background thread so a slow or
+        /// dropped connection never freezes the screen, then restacks on the UI thread
+        /// only when something actually changed.
+        /// </summary>
+        private void PollForChanges()
+        {
+            if (_polling || IsDisposed) return;
+            _polling = true;
+
+            System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+            {
+                string sig = SafeSignature();
+                try
+                {
+                    if (IsDisposed) return;
+                    BeginInvoke((MethodInvoker)delegate
+                    {
+                        if (IsDisposed) return;
+                        if (_lastSignature != null && sig != _lastSignature)
+                        {
+                            _lastSignature = sig;
+                            ReloadAndRestack();
+                        }
+                        else
+                        {
+                            _lastSignature = sig;
+                        }
+                    });
+                }
+                catch (Exception) { }
+                finally { _polling = false; }
+            });
+        }
+
+        private static string SafeSignature()
+        {
+            try { return Audit.Signature(); }
+            catch (Exception) { return null; }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _refreshTimer != null)
+            {
+                _refreshTimer.Stop();
+                _refreshTimer.Dispose();
+                _refreshTimer = null;
+            }
+            base.Dispose(disposing);
+        }
+
+        /// <summary>Quick summary stats across the whole trail.</summary>
+        private void AddStats()
+        {
+            var all = Audit.Query(null, "All", null, null);
+            int total = all.Count;
+            int users = all.Select(a => a.User).Distinct().Count();
+            int today = all.Count(a =>
+                (a.At.Kind == DateTimeKind.Utc ? a.At.ToLocalTime() : a.At).Date == DateTime.Today);
+
+            Label stats = new Label
+            {
+                AutoSize = true,
+                Font = Theme.Small,
+                ForeColor = Theme.Slate600,
+                BackColor = Color.Transparent,
+                Location = new Point(Left1, Y),
+                Text = string.Format(
+                    "{0} total events  ·  {1} users  ·  {2} today", total, users, today)
+            };
+            Controls.Add(stats);
+            Y = stats.Bottom + Dpi.S(10);
+        }
+
+        private void VerifyIntegrity()
+        {
+            int count; AuditEntry broken;
+            bool ok = Audit.VerifyIntegrity(out count, out broken);
+
+            if (ok)
+            {
+                Notify("Integrity verified — " + count + " entries, chain intact.");
+            }
+            else
+            {
+                Notify("Integrity CHECK FAILED — chain broken at "
+                    + (broken != null ? broken.EntityLabel ?? broken.Id : "an entry")
+                    + ". The trail may have been tampered with.", true);
+            }
         }
 
         /// <summary>Explains the immutability guarantee so it is not mistaken for a feed.</summary>
@@ -134,7 +275,7 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Small,
                 ForeColor = Theme.Slate500,
-                Text = Repository.Db.Audit.Count + " entries recorded"
+                Text = Audit.Query(null, "All", null, null).Count + " entries recorded"
             };
             Controls.Add(count);
             count.Location = new Point(Left1 + InnerWidth - count.Width, Y + Dpi.S(10));
@@ -150,8 +291,9 @@ namespace MzuApplication.Views
                 Width = InnerWidth,
                 EmptyMessage = "No audit entries match the current filter."
             };
-            _table.DefineColumns("When", 1.5f, "User", 1.3f, "Action", 1.3f,
-                                 "Type", 0.9f, "Entity", 1.8f, "Detail", 2.8f);
+            _table.DefineColumns("When", 1.4f, "User", 1.3f, "Action", 1.2f,
+                                 "Document / Entity", 1.8f, "Context", 1.4f,
+                                 "Detail", 2.4f, "From", 1.0f);
 
             Controls.Add(_table);
             LoadRows();
@@ -172,10 +314,12 @@ namespace MzuApplication.Views
             {
                 TableRow row = new TableRow { Tag = entry };
 
-                row.Cells.Add(new TableCell(entry.At.ToString("dd MMM yyyy HH:mm"))
+                DateTime localAt = entry.At.Kind == DateTimeKind.Utc
+                    ? entry.At.ToLocalTime() : entry.At;
+                row.Cells.Add(new TableCell(localAt.ToString("dd MMM yyyy HH:mm"))
                 {
                     Mono = true,
-                    SubText = Format.Relative(entry.At)
+                    SubText = Format.Relative(localAt)
                 });
                 row.Cells.Add(new TableCell(entry.User)
                 {
@@ -187,9 +331,21 @@ namespace MzuApplication.Views
                     PillBack = ActionBack(entry.Action),
                     PillFore = ActionFore(entry.Action)
                 });
-                row.Cells.Add(new TableCell(entry.EntityType ?? "—") { Muted = true });
-                row.Cells.Add(new TableCell(entry.EntityLabel ?? "—"));
+                row.Cells.Add(new TableCell(entry.EntityLabel ?? "—")
+                {
+                    Bold = true,
+                    SubText = entry.EntityType ?? string.Empty
+                });
+                row.Cells.Add(new TableCell(string.IsNullOrEmpty(entry.Context) ? "—" : entry.Context)
+                {
+                    Muted = true
+                });
                 row.Cells.Add(new TableCell(entry.Detail ?? string.Empty) { Muted = true });
+                row.Cells.Add(new TableCell(string.IsNullOrEmpty(entry.Host) ? "—" : entry.Host)
+                {
+                    Muted = true,
+                    Mono = true
+                });
 
                 rows.Add(row);
             }
@@ -248,24 +404,39 @@ namespace MzuApplication.Views
             });
         }
 
-        private void ExportTrail()
+        /// <summary>
+        /// Exports the trail to CSV. When <paramref name="fullTrail"/> is true the entire
+        /// footprint is written regardless of the on-screen filters; otherwise just the
+        /// current filtered view is exported.
+        /// </summary>
+        private void ExportTrail(bool fullTrail)
         {
-            string type = _typeFilter != null && _typeFilter.SelectedItem != null
-                ? _typeFilter.SelectedItem.ToString()
-                : "All";
-            var entries = Audit.Query(_search != null ? _search.Value : null, type, null, null);
+            List<AuditEntry> entries;
+            if (fullTrail)
+            {
+                entries = Audit.All();
+            }
+            else
+            {
+                string type = _typeFilter != null && _typeFilter.SelectedItem != null
+                    ? _typeFilter.SelectedItem.ToString()
+                    : "All";
+                entries = Audit.Query(_search != null ? _search.Value : null, type, null, null);
+            }
 
             using (SaveFileDialog save = new SaveFileDialog())
             {
                 save.Filter = "CSV file (*.csv)|*.csv";
-                save.FileName = "audit-trail-" + DateTime.Now.ToString("yyyyMMdd") + ".csv";
+                save.FileName = (fullTrail ? "audit-trail-full-" : "audit-trail-view-")
+                    + DateTime.Now.ToString("yyyyMMdd-HHmm") + ".csv";
 
                 if (save.ShowDialog(Shell) != DialogResult.OK) return;
 
                 try
                 {
                     Exporter.ExportAudit(entries, save.FileName);
-                    Notify("Exported " + entries.Count + " audit entries.");
+                    Notify("Exported " + entries.Count
+                        + (fullTrail ? " entries (full trail)." : " entries (current view)."));
                 }
                 catch (Exception ex)
                 {

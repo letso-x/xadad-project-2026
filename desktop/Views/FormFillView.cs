@@ -992,6 +992,17 @@ namespace MzuApplication.Views
 
         #region Persist
 
+        /// <summary>"Where" context for audit entries: project and site/location.</summary>
+        private string FormContext()
+        {
+            string ctx = _project != null ? _project.Name : "Unknown project";
+            if (_project != null && !string.IsNullOrWhiteSpace(_project.Site))
+            {
+                ctx += " — " + _project.Site;
+            }
+            return ctx;
+        }
+
         private void SaveDraft()
         {
             _form.UpdatedAt = DateTime.Now;
@@ -999,7 +1010,8 @@ namespace MzuApplication.Views
             int total = _template.AllItems().Count;
             Audit.Log(AuditAction.Updated, "Form", _form.Id,
                 _template.DocNumber + " · " + _form.QcRecordNo,
-                _form.AnsweredCount + " of " + total + " items answered");
+                "Saved draft — " + _form.AnsweredCount + " of " + total + " items answered",
+                FormContext());
 
             Repository.Save();
             Notify("Form saved.");
@@ -1150,7 +1162,8 @@ namespace MzuApplication.Views
                 _template.DocNumber + " · " + _form.QcRecordNo,
                 "Submitted — " + Format.StatusText(_form.Status)
                     + (string.IsNullOrWhiteSpace(_form.NcrNo)
-                        ? string.Empty : " · " + _form.NcrNo));
+                        ? string.Empty : " · " + _form.NcrNo),
+                FormContext());
 
             Repository.Save();
             Notify("Form submitted — " + Format.StatusText(_form.Status) + ".");
