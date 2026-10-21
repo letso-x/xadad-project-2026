@@ -14,7 +14,8 @@ namespace MzuApplication.Data
         AccountDisabled = 3,
         WeakPassword = 4,
         MissingFields = 5,
-        AccountLocked = 6
+        AccountLocked = 6,
+        PendingApproval = 7
     }
 
     /// <summary>
@@ -109,6 +110,25 @@ namespace MzuApplication.Data
             get { return Current != null; }
         }
 
+        /// <summary>
+        /// The single super user, identified by email. Only this account may grant or
+        /// revoke administrator rights — ordinary admins have every other admin power but
+        /// cannot change who is an administrator.
+        /// </summary>
+        public const string SuperUserEmail = "mavimbelasakhile@gmail.com";
+
+        /// <summary>True when the signed-in account is the super user.</summary>
+        public static bool IsSuperUser
+        {
+            get
+            {
+                return Current != null
+                    && !string.IsNullOrEmpty(Current.Email)
+                    && string.Equals(Current.Email.Trim(), SuperUserEmail,
+                        StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         #region Hashing
 
         private static string Hash(string password, byte[] salt, int iterations)
@@ -185,13 +205,17 @@ namespace MzuApplication.Data
                 HashIterations = Iterations,
                 Role = firstAccount ? UserRole.Admin : UserRole.SiteUser,
                 Active = true,
+                // The very first account (the founding admin) is approved automatically;
+                // every later self-enrolment waits for an administrator to approve it.
+                Approved = firstAccount,
                 CreatedAt = DateTime.Now
             };
 
             StoreNew(account);
 
             Audit.Log(AuditAction.Created, "User", account.Id, account.Username,
-                "Account enrolled as " + Format.RoleName(account.Role));
+                "Account enrolled as " + Format.RoleName(account.Role)
+                + (account.Approved ? "" : " — pending admin approval"));
 
             created = account;
             return AuthResult.Success;
@@ -306,6 +330,12 @@ namespace MzuApplication.Data
             // Correct password — clear any failed-attempt history for this account.
             ClearFailures(key);
 
+            // Credentials are valid, but a self-enrolled account must be approved first.
+            if (!account.Approved)
+            {
+                return AuthResult.PendingApproval;
+            }
+
             account.LastLoginAt = DateTime.Now;
             Current = account;
             StoreUpdate(account);
@@ -346,6 +376,18 @@ namespace MzuApplication.Data
                 .ToList();
         }
 
+        /// <summary>Approves a pending self-enrolled account so the user can sign in.</summary>
+        public static void Approve(UserAccount account)
+        {
+            if (account == null || account.Approved) return;
+
+            account.Approved = true;
+            StoreUpdate(account);
+
+            Audit.Log(AuditAction.Updated, "User", account.Id, account.Username,
+                "Registration approved by " + (Current != null ? Current.FullName : "administrator"));
+        }
+
         /// <summary>Enables or disables an account (deregister = disable).</summary>
         public static void SetActive(UserAccount account, bool active)
         {
@@ -356,6 +398,53 @@ namespace MzuApplication.Data
 
             Audit.Log(AuditAction.Updated, "User", account.Id, account.Username,
                 active ? "Account re-activated" : "Account deregistered (disabled)");
+        }
+
+        /// <summary>
+        /// Grants or revokes administrator rights. Revoking is blocked if it would leave
+        /// the system with no active administrator, so admin access can never be lost.
+        /// Returns true on success; on failure <paramref name="error"/> explains why.
+        /// </summary>
+        public static bool SetRole(UserAccount account, UserRole role, out string error)
+        {
+            error = null;
+            if (account == null) { error = "No account selected."; return false; }
+
+            // Only the super user may change who is an administrator.
+            if (!IsSuperUser)
+            {
+                error = "Only the super user can grant or revoke administrator rights.";
+                return false;
+            }
+
+            if (account.Role == role)
+            {
+                return true; // nothing to change
+            }
+
+            // Guard: don't demote the last active administrator.
+            if (account.Role == UserRole.Admin && role != UserRole.Admin
+                && CountActiveAdmins(exclude: account) == 0)
+            {
+                error = "You cannot revoke admin from the last administrator.";
+                return false;
+            }
+
+            account.Role = role;
+            StoreUpdate(account);
+
+            // Keep the live session's role in sync if the admin changed their own role.
+            if (Current != null && Current.Id == account.Id)
+            {
+                Current.Role = role;
+                Repository.SignIn(role, Current.FullName);
+            }
+
+            Audit.Log(AuditAction.Updated, "User", account.Id, account.Username,
+                role == UserRole.Admin
+                    ? "Granted administrator rights"
+                    : "Administrator rights revoked (set to Site User)");
+            return true;
         }
 
         /// <summary>
@@ -564,6 +653,9 @@ namespace MzuApplication.Data
                 case AuthResult.AccountLocked:
                     return "Too many failed attempts. This account is temporarily locked. "
                         + "Please try again later.";
+                case AuthResult.PendingApproval:
+                    return "Your account is awaiting administrator approval. "
+                        + "You'll be able to sign in once it has been approved.";
                 default: return string.Empty;
             }
         }

@@ -294,11 +294,13 @@ where ""UserID"" = @id";
         //   pbkdf2$<iterations>$<saltBase64>$<hashBase64>$<mustChange 0|1>
         // The trailing flag is optional, so older 4-segment values still parse.
 
+        //   pbkdf2$<iterations>$<saltBase64>$<hashBase64>$<mustChange 0|1>$<approved 0|1>
         private static string PackHash(UserAccount a)
         {
-            return string.Format("pbkdf2${0}${1}${2}${3}",
+            return string.Format("pbkdf2${0}${1}${2}${3}${4}",
                 a.HashIterations, a.PasswordSalt, a.PasswordHash,
-                a.MustChangePassword ? "1" : "0");
+                a.MustChangePassword ? "1" : "0",
+                a.Approved ? "1" : "0");
         }
 
         private static void UnpackHash(string packed, UserAccount a)
@@ -308,6 +310,8 @@ where ""UserID"" = @id";
             a.PasswordSalt = string.Empty;
             a.PasswordHash = packed ?? string.Empty;
             a.MustChangePassword = false;
+            // Default approved: legacy rows and externally-created users aren't blocked.
+            a.Approved = true;
 
             if (string.IsNullOrEmpty(packed)) return;
             if (!packed.StartsWith("pbkdf2$", StringComparison.Ordinal)) return;
@@ -322,6 +326,8 @@ where ""UserID"" = @id";
 
             // Optional 5th segment: the must-change-password flag.
             if (parts.Length >= 5) a.MustChangePassword = parts[4] == "1";
+            // Optional 6th segment: the approved flag (absent => approved, for legacy rows).
+            if (parts.Length >= 6) a.Approved = parts[5] == "1";
         }
 
         #endregion

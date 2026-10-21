@@ -45,10 +45,26 @@ namespace MzuApplication
                 if (error != null)
                 {
                     DbConfig.DisablePostgres();
+
+                    // Give a specific, actionable hint for the most common setup mistake:
+                    // the database.config still has the placeholder / wrong password.
+                    bool authProblem = error.IndexOf("28P01", StringComparison.OrdinalIgnoreCase) >= 0
+                        || error.IndexOf("password authentication", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                    string guidance = authProblem
+                        ? "The database password is missing or incorrect.\r\n\r\n"
+                          + "Open the file 'database.config' in your installation folder:\r\n"
+                          + "    " + System.IO.Path.Combine(
+                                AppDomain.CurrentDomain.BaseDirectory, "database.config") + "\r\n\r\n"
+                          + "Replace the Password value with the shared database password "
+                          + "(ask your administrator for it), save the file, then reopen the app."
+                        : "The database could not be reached. Check your internet "
+                          + "connection and try again.";
+
                     MessageBox.Show(
-                        "Could not connect to the Supabase database:\r\n\r\n" + error
-                        + "\r\n\r\nThe app will use the local offline account store instead.",
-                        "Database connection failed",
+                        guidance + "\r\n\r\nUntil then, the app will run in local offline mode "
+                        + "(you won't see shared data).\r\n\r\nTechnical detail: " + error,
+                        "Database setup needed",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }

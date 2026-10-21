@@ -27,20 +27,16 @@ namespace MzuApplication.Views
 
         protected override void BuildContent()
         {
-            Control[] actions = new Control[0];
-
-            if (Repository.IsAdmin)
+            // Any signed-in user can add a project; editing an existing one stays admin-only.
+            FlatButton add = new FlatButton
             {
-                FlatButton add = new FlatButton
-                {
-                    Text = "New Project",
-                    Glyph = Glyph.Plus,
-                    Variant = ButtonVariant.Primary,
-                    Width = Dpi.S(136)
-                };
-                add.Click += (s, e) => EditProject(null);
-                actions = new Control[] { add };
-            }
+                Text = "New Project",
+                Glyph = Glyph.Plus,
+                Variant = ButtonVariant.Primary,
+                Width = Dpi.S(136)
+            };
+            add.Click += (s, e) => EditProject(null);
+            Control[] actions = new Control[] { add };
 
             AddPageHeader("Projects", "Projects",
                 "Every client site project in one place.", actions);
@@ -86,10 +82,13 @@ namespace MzuApplication.Views
                 if (project != null) Shell.Navigate(new ProjectDetailView(Shell, project.Id));
             };
 
+            var clientsById = ClientService.All().ToDictionary(c => c.Id, c => c);
+
             var rows = new List<TableRow>();
-            foreach (Project project in Repository.Db.Projects)
+            foreach (Project project in ProjectService.All())
             {
-                Client client = Repository.GetClient(project.ClientId);
+                Client client;
+                clientsById.TryGetValue(project.ClientId ?? string.Empty, out client);
                 int recordCount = Repository.FormsForProject(project.Id).Count
                                   + Repository.RegistersForProject(project.Id).Count;
 
@@ -120,7 +119,7 @@ namespace MzuApplication.Views
         /// <summary>Shared create/edit dialog, also used from the project detail page.</summary>
         internal static void EditProjectDialog(MainForm shell, Project existing, Action onSaved)
         {
-            var clients = Repository.Db.Clients;
+            var clients = ClientService.All();
             if (clients.Count == 0)
             {
                 shell.Notify("Create a client before adding a project.", true);
@@ -129,7 +128,8 @@ namespace MzuApplication.Views
 
             using (Dialog dialog = new Dialog(existing == null ? "New Project" : "Edit Project", 540))
             {
-                Client currentClient = existing != null ? Repository.GetClient(existing.ClientId) : null;
+                Client currentClient = existing != null
+                    ? clients.FirstOrDefault(c => c.Id == existing.ClientId) : null;
                 ComboBox client = dialog.AddDropdown("Client",
                     clients.Select(c => c.Name),
                     currentClient != null ? currentClient.Name : null);
@@ -173,9 +173,14 @@ namespace MzuApplication.Views
                     target.StartDate = start.Checked ? start.Value.Date : (DateTime?)null;
                     target.EndDate = end.Checked ? end.Value.Date : (DateTime?)null;
 
-                    if (existing == null) Repository.Db.Projects.Add(target);
+                    // Write to the shared Project table so every user sees it.
+                    if (existing == null) ProjectService.Add(target);
+                    else ProjectService.Update(target);
 
-                    Repository.Save();
+                    Audit.Log(existing == null ? AuditAction.Created : AuditAction.Updated,
+                        "Project", target.Id, target.Name,
+                        existing == null ? "Project created" : "Project updated");
+
                     dialog.DialogResult = DialogResult.OK;
                 });
 

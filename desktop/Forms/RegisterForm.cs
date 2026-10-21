@@ -264,15 +264,28 @@ namespace MzuApplication.Forms
             {
                 CreatedUsername = created.Username;
 
-                string roleNote = created.Role == UserRole.Admin
-                    ? "You are the first user, so you have been enrolled as an administrator."
-                    : "Your account has been created.";
-
-                using (Dialog done = new Dialog("Account created", Dpi.S(380)))
+                string note;
+                if (created.Role == UserRole.Admin)
                 {
-                    done.AddNote(roleNote
-                        + "\r\n\r\nYou can now sign in with your email and password.");
-                    done.AddPrimaryAction("Continue to sign in",
+                    note = "You are the first user, so you have been enrolled as an "
+                        + "administrator.\r\n\r\nYou can now sign in with your email and password.";
+                }
+                else if (!created.Approved)
+                {
+                    note = "Your account has been created and is awaiting administrator "
+                        + "approval. You'll be able to sign in once an administrator has "
+                        + "approved your registration.";
+                }
+                else
+                {
+                    note = "Your account has been created.\r\n\r\nYou can now sign in with "
+                        + "your email and password.";
+                }
+
+                using (Dialog done = new Dialog("Account created", Dpi.S(400)))
+                {
+                    done.AddNote(note);
+                    done.AddPrimaryAction("Back to sign in",
                         () => done.DialogResult = DialogResult.OK);
                     done.ShowDialog(this);
                 }

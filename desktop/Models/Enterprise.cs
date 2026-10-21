@@ -193,6 +193,12 @@ namespace MzuApplication.Models
         /// </summary>
         public bool MustChangePassword { get; set; }
 
+        /// <summary>
+        /// When false, the self-enrolled account is awaiting administrator approval and
+        /// cannot sign in yet. The first account and admin-created accounts are approved.
+        /// </summary>
+        public bool Approved { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
     }

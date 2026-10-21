@@ -25,20 +25,16 @@ namespace MzuApplication.Views
 
         protected override void BuildContent()
         {
-            Control[] actions = new Control[0];
-
-            if (Repository.IsAdmin)
+            // Any signed-in user can add a client; editing an existing one stays admin-only.
+            FlatButton add = new FlatButton
             {
-                FlatButton add = new FlatButton
-                {
-                    Text = "New Client",
-                    Glyph = Glyph.Plus,
-                    Variant = ButtonVariant.Primary,
-                    Width = Dpi.S(128)
-                };
-                add.Click += (s, e) => EditClient(null);
-                actions = new Control[] { add };
-            }
+                Text = "New Client",
+                Glyph = Glyph.Plus,
+                Variant = ButtonVariant.Primary,
+                Width = Dpi.S(128)
+            };
+            add.Click += (s, e) => EditClient(null);
+            Control[] actions = new Control[] { add };
 
             AddPageHeader("Clients", "Clients",
                 "Organisations Mzukulu delivers projects for.", actions);

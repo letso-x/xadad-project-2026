@@ -104,10 +104,13 @@
     <Compile Include="Data\Audit.cs" />
     <Compile Include="Data\Auth.cs" />
     <Compile Include="Data\DbConfig.cs" />
+    <Compile Include="Data\DbStatus.cs" />
     <Compile Include="Data\PostgresUserStore.cs" />
     <Compile Include="Data\PostgresAuditStore.cs" />
     <Compile Include="Data\PostgresClientStore.cs" />
     <Compile Include="Data\ClientService.cs" />
+    <Compile Include="Data\PostgresProjectStore.cs" />
+    <Compile Include="Data\ProjectService.cs" />
     <Compile Include="Data\PostgresNcrStore.cs" />
     <Compile Include="Data\ReportStyle.cs" />
     <Compile Include="Data\AuditReport.cs" />
@@ -181,6 +184,7 @@
     <Compile Include="Forms\LoadingOverlay.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Forms\MessageDialog.cs" />
     <Compile Include="Views\UsersView.cs">
       <SubType>Component</SubType>
     </Compile>

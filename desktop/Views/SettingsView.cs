@@ -34,10 +34,121 @@ namespace MzuApplication.Views
 
             OrgSettings settings = Repository.Db.Settings;
 
+            AddConnectionCard();
             AddOrganisationCard(settings);
             AddPolicyCard(settings);
             AddSecurityCard(settings);
             AddDataCard();
+        }
+
+        private Label _statusDot;
+        private Label _statusText;
+        private Label _statusDetail;
+
+        /// <summary>Live database connection status: green dot when online, red when offline.</summary>
+        private void AddConnectionCard()
+        {
+            Card card = new Card
+            {
+                Location = new Point(Left1, Y),
+                Width = InnerWidth,
+                Fill = Color.White,
+                BorderTint = Theme.Slate150,
+                Radius = Theme.Radius
+            };
+
+            Card bar = Ui.SectionBar("Database Connection", InnerWidth);
+            card.Controls.Add(bar);
+
+            int top = bar.Bottom + Dpi.S(18);
+
+            // Status dot (a small filled circle label).
+            _statusDot = new Label
+            {
+                AutoSize = false,
+                Location = new Point(Dpi.S(20), top + Dpi.S(2)),
+                Size = new Size(Dpi.S(14), Dpi.S(14)),
+                BackColor = Theme.Amber600
+            };
+            _statusDot.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var b = new SolidBrush(_statusDot.Tag is Color ? (Color)_statusDot.Tag : Theme.Amber600))
+                    e.Graphics.FillEllipse(b, 0, 0, _statusDot.Width - 1, _statusDot.Height - 1);
+            };
+            _statusDot.BackColor = Color.Transparent;
+            _statusDot.Tag = Theme.Amber600;
+            card.Controls.Add(_statusDot);
+
+            _statusText = new Label
+            {
+                AutoSize = true,
+                Font = Theme.BodyBold,
+                ForeColor = Theme.Slate800,
+                BackColor = Color.Transparent,
+                Location = new Point(_statusDot.Right + Dpi.S(10), top),
+                Text = "Checking…"
+            };
+            card.Controls.Add(_statusText);
+
+            _statusDetail = Ui.Wrapped("Testing the connection to the shared database…",
+                Theme.Small, Theme.Slate500, InnerWidth - Dpi.S(40));
+            _statusDetail.Location = new Point(Dpi.S(20), top + Dpi.S(24));
+            card.Controls.Add(_statusDetail);
+
+            FlatButton test = new FlatButton
+            {
+                Text = "Test Connection",
+                Variant = ButtonVariant.Default,
+                Width = Dpi.S(150),
+                Height = Dpi.S(34),
+                Location = new Point(Dpi.S(20), _statusDetail.Bottom + Dpi.S(12))
+            };
+            test.Click += (s, e) => RefreshStatus();
+            card.Controls.Add(test);
+
+            card.Height = test.Bottom + Dpi.S(16);
+            Controls.Add(card);
+            Y = card.Bottom + Dpi.S(18);
+
+            RefreshStatus();
+        }
+
+        /// <summary>Pings the DB on a background thread and updates the badge.</summary>
+        private void RefreshStatus()
+        {
+            if (_statusText == null) return;
+
+            SetStatus(Theme.Amber600, "Checking…", "Testing the connection to the shared database…");
+
+            System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+            {
+                DbPing ping = DbStatus.Check();
+                if (IsDisposed || !IsHandleCreated) return;
+                BeginInvoke((MethodInvoker)delegate
+                {
+                    if (IsDisposed) return;
+                    if (ping.Online)
+                    {
+                        SetStatus(Theme.Green600, "Online",
+                            ping.Message + "  (" + ping.Milliseconds + " ms)");
+                    }
+                    else
+                    {
+                        SetStatus(Theme.Red600, "Offline", ping.Message);
+                    }
+                });
+            });
+        }
+
+        private void SetStatus(Color dot, string text, string detail)
+        {
+            if (_statusDot == null) return;
+            _statusDot.Tag = dot;
+            _statusDot.Invalidate();
+            _statusText.Text = text;
+            _statusText.ForeColor = dot;
+            _statusDetail.Text = detail;
         }
 
         private void AddSecurityCard(OrgSettings settings)
@@ -372,13 +483,13 @@ namespace MzuApplication.Views
         /// </summary>
         private void ConfirmReseed()
         {
-            DialogResult answer = MessageBox.Show(Shell,
-                "This will permanently delete all forms, registers, NCRs and audit "
-                + "entries, then restore the original demo data.\r\n\r\nContinue?",
-                "Reset demo data",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-
-            if (answer != DialogResult.Yes) return;
+            if (!MessageDialog.Confirm(Shell, "Reset demo data",
+                    "This will permanently delete all forms, registers, NCRs and audit "
+                    + "entries, then restore the original demo data.\r\n\r\nContinue?",
+                    "Reset", danger: true))
+            {
+                return;
+            }
 
             Repository.ResetToSeed();
             Notify("Demo data restored.");

@@ -129,13 +129,16 @@ namespace MzuApplication.Views
                     PillFore = isAdmin ? Theme.Brick700 : Theme.Slate700
                 });
 
-                string statusText = !user.Active ? "Deregistered"
+                string statusText = !user.Approved ? "Pending approval"
+                                   : !user.Active ? "Deregistered"
                                    : user.MustChangePassword ? "Reset pending"
                                    : "Active";
-                Color back = !user.Active ? Theme.Red100
+                Color back = !user.Approved ? Theme.Amber100
+                           : !user.Active ? Theme.Red100
                            : user.MustChangePassword ? Theme.Amber100
                            : Theme.Green100;
-                Color fore = !user.Active ? Theme.Red700
+                Color fore = !user.Approved ? Theme.Amber700
+                           : !user.Active ? Theme.Red700
                            : user.MustChangePassword ? Theme.Amber700
                            : Theme.Green700;
                 row.Cells.Add(new TableCell(statusText) { PillBack = back, PillFore = fore });
@@ -168,7 +171,8 @@ namespace MzuApplication.Views
                 dialog.AddReadOnlyField("Email", string.IsNullOrEmpty(user.Email) ? "—" : user.Email);
                 dialog.AddReadOnlyField("Role", Format.RoleName(user.Role));
                 dialog.AddReadOnlyField("Status",
-                    !user.Active ? "Deregistered"
+                    !user.Approved ? "Pending approval"
+                    : !user.Active ? "Deregistered"
                     : user.MustChangePassword ? "Active — password reset pending"
                     : "Active");
                 dialog.AddReadOnlyField("Enrolled", Format.Date(user.CreatedAt));
@@ -180,6 +184,30 @@ namespace MzuApplication.Views
                 {
                     dialog.AddNote("This is your own account, so administrative actions "
                                    + "that would lock you out are not available here.");
+                }
+
+                // Approve a pending self-enrolled account so the user can sign in.
+                if (!isSelf && !user.Approved)
+                {
+                    dialog.AddPrimaryAction("Approve",
+                        () => dialog.DialogResult = DialogResult.Ignore);
+                }
+
+                // Role management: only the super user may grant/revoke admin rights, and
+                // never on their own account.
+                bool roleChangeRequested = false;
+                if (!isSelf && Auth.IsSuperUser)
+                {
+                    if (user.Role == UserRole.Admin)
+                    {
+                        dialog.AddDangerAction("Revoke Admin",
+                            () => { roleChangeRequested = true; dialog.DialogResult = DialogResult.OK; });
+                    }
+                    else
+                    {
+                        dialog.AddPrimaryAction("Grant Admin",
+                            () => { roleChangeRequested = true; dialog.DialogResult = DialogResult.OK; });
+                    }
                 }
 
                 // Reset password — not for yourself (use normal change flow instead).
@@ -211,11 +239,57 @@ namespace MzuApplication.Views
 
                 switch (outcome)
                 {
+                    case DialogResult.Ignore: ApproveUser(user); break;
+                    case DialogResult.OK:
+                        if (roleChangeRequested) ToggleAdmin(user);
+                        break;
                     case DialogResult.Retry: ResetPassword(user); break;
                     case DialogResult.No: Deregister(user); break;
                     case DialogResult.Yes: Reactivate(user); break;
                     case DialogResult.Abort: DeleteUser(user); break;
                 }
+            }
+        }
+
+        /// <summary>Approves a pending registration so the user can sign in.</summary>
+        private void ApproveUser(UserAccount user)
+        {
+            Auth.Approve(user);
+            Notify(user.FullName + " has been approved and can now sign in.");
+            Rebuild();
+        }
+
+        /// <summary>Grants or revokes admin rights, with confirmation and guards.</summary>
+        private void ToggleAdmin(UserAccount user)
+        {
+            bool grant = user.Role != UserRole.Admin;
+            string verb = grant ? "Grant administrator rights to" : "Revoke administrator rights from";
+
+            if (!MessageDialog.Confirm(Shell,
+                    grant ? "Grant admin" : "Revoke admin",
+                    verb + " " + user.FullName + "?"
+                    + (grant
+                        ? "\r\n\r\nThey will gain full access to Reports, Users, Settings, "
+                          + "the Audit Trail and the Checklist Builder."
+                        : "\r\n\r\nThey will be returned to standard Site User access."),
+                    grant ? "Grant Admin" : "Revoke Admin",
+                    danger: !grant))
+            {
+                return;
+            }
+
+            string error;
+            UserRole target = grant ? UserRole.Admin : UserRole.SiteUser;
+            if (Auth.SetRole(user, target, out error))
+            {
+                Notify(grant
+                    ? user.FullName + " is now an administrator."
+                    : "Admin rights revoked for " + user.FullName + ".");
+                Rebuild();
+            }
+            else
+            {
+                Notify(error, true);
             }
         }
 
@@ -226,11 +300,10 @@ namespace MzuApplication.Views
 
             // Show the temporary password so the admin can pass it to the user. In a
             // real deployment this would be emailed instead of shown.
-            MessageBox.Show(Shell,
+            MessageDialog.Info(Shell, "Password reset",
                 "Temporary password for " + user.FullName + ":\r\n\r\n    " + temp
                 + "\r\n\r\nShare this with the user securely. They will be required to set "
-                + "a new password the first time they sign in.",
-                "Password reset", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                + "a new password the first time they sign in.");
 
             Notify("Password reset for " + user.Username + ".");
             Rebuild();
@@ -238,11 +311,10 @@ namespace MzuApplication.Views
 
         private void Deregister(UserAccount user)
         {
-            if (MessageBox.Show(Shell,
+            if (!MessageDialog.Confirm(Shell, "Deregister user",
                     "Deregister " + user.FullName + "? They will no longer be able to sign in, "
                     + "but their records and history are kept.",
-                    "Deregister user", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
-                != DialogResult.Yes)
+                    "Deregister", danger: true))
             {
                 return;
             }
@@ -261,11 +333,9 @@ namespace MzuApplication.Views
 
         private void DeleteUser(UserAccount user)
         {
-            if (MessageBox.Show(Shell,
+            if (!MessageDialog.Confirm(Shell, "Delete user",
                     "Permanently delete " + user.FullName + "? This cannot be undone.",
-                    "Delete user", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
-                    MessageBoxDefaultButton.Button2)
-                != DialogResult.Yes)
+                    "Delete", danger: true))
             {
                 return;
             }

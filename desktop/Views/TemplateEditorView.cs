@@ -448,9 +448,8 @@ namespace MzuApplication.Views
             };
             removeSection.Click += (s, e) =>
             {
-                if (MessageBox.Show(Shell,
-                        "Remove this section and its items?", "Confirm",
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                if (!MessageDialog.Confirm(Shell, "Remove section",
+                        "Remove this section and its items?", "Remove", danger: true))
                 {
                     return;
                 }
