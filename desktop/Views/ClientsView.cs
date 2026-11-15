@@ -142,28 +142,31 @@ namespace MzuApplication.Views
                         return;
                     }
 
-                    if (existing == null)
+                    LoadingOverlay.Run(Shell, "Saving client…", () =>
                     {
-                        Client created = new Client
+                        if (existing == null)
                         {
-                            Id = Repository.NewId("cli"),
-                            Name = name.Value.Trim(),
-                            Contact = contact.Value.Trim(),
-                            Active = active.Checked
-                        };
-                        ClientService.Add(created);   // writes to the shared Client table
-                        Audit.Log(AuditAction.Created, "Client", created.Id, created.Name,
-                            "Client added");
-                    }
-                    else
-                    {
-                        existing.Name = name.Value.Trim();
-                        existing.Contact = contact.Value.Trim();
-                        existing.Active = active.Checked;
-                        ClientService.Update(existing);
-                        Audit.Log(AuditAction.Updated, "Client", existing.Id, existing.Name,
-                            "Client details updated");
-                    }
+                            Client created = new Client
+                            {
+                                Id = Repository.NewId("cli"),
+                                Name = name.Value.Trim(),
+                                Contact = contact.Value.Trim(),
+                                Active = active.Checked
+                            };
+                            ClientService.Add(created);   // writes to the shared Client table
+                            Audit.Log(AuditAction.Created, "Client", created.Id, created.Name,
+                                "Client added");
+                        }
+                        else
+                        {
+                            existing.Name = name.Value.Trim();
+                            existing.Contact = contact.Value.Trim();
+                            existing.Active = active.Checked;
+                            ClientService.Update(existing);
+                            Audit.Log(AuditAction.Updated, "Client", existing.Id, existing.Name,
+                                "Client details updated");
+                        }
+                    });
 
                     dialog.DialogResult = DialogResult.OK;
                 });

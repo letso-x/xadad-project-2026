@@ -251,6 +251,9 @@ namespace MzuApplication.Forms
         #region Navigation
 
         /// <summary>Replaces the current view and highlights the matching nav link.</summary>
+        private MzukuluSpinner _navSpinner;
+        private Panel _navSpinnerHost;
+
         public void Navigate(ViewBase view)
         {
             if (view == null) return;
@@ -259,16 +262,85 @@ namespace MzuApplication.Forms
             {
                 _contentHost.Controls.Remove(_currentView);
                 _currentView.Dispose();
+                _currentView = null;
             }
 
-            _currentView = view;
-            _currentView.Dock = DockStyle.Top;
-            _contentHost.Controls.Add(_currentView);
-
-            _contentHost.AutoScrollPosition = new Point(Dpi.S(0), Dpi.S(0));
-
             HighlightRoute(view.RouteKey);
-            _currentView.Build();
+
+            // Before the window handle exists (e.g. the first Navigate in the constructor),
+            // BeginInvoke is not available — build synchronously. There is no previous
+            // screen to cover with a spinner at that point anyway.
+            if (!IsHandleCreated)
+            {
+                _currentView = view;
+                _currentView.Dock = DockStyle.Top;
+                _contentHost.Controls.Add(_currentView);
+                _contentHost.AutoScrollPosition = new Point(Dpi.S(0), Dpi.S(0));
+                _currentView.Build();
+                return;
+            }
+
+            // Show the branded spinner over the content while the next view builds (which
+            // may fetch from the database). The build is deferred so the spinner paints
+            // first, so the user sees it rather than a frozen blank panel.
+            ShowNavSpinner();
+
+            BeginInvoke((MethodInvoker)delegate
+            {
+                try
+                {
+                    _currentView = view;
+                    _currentView.Dock = DockStyle.Top;
+                    _contentHost.Controls.Add(_currentView);
+                    _contentHost.AutoScrollPosition = new Point(Dpi.S(0), Dpi.S(0));
+                    _currentView.Build();
+                    _currentView.BringToFront();
+                }
+                finally
+                {
+                    HideNavSpinner();
+                }
+            });
+        }
+
+        private void ShowNavSpinner()
+        {
+            if (_navSpinnerHost == null)
+            {
+                _navSpinnerHost = new Panel
+                {
+                    BackColor = Theme.Slate25,
+                    Dock = DockStyle.Fill
+                };
+                _navSpinner = new MzukuluSpinner
+                {
+                    Caption = "Loading…",
+                    Size = new Size(Dpi.S(170), Dpi.S(200))
+                };
+                _navSpinnerHost.Controls.Add(_navSpinner);
+                _navSpinnerHost.Resize += (s, e) => CentreNavSpinner();
+            }
+
+            _contentHost.Controls.Add(_navSpinnerHost);
+            _navSpinnerHost.BringToFront();
+            CentreNavSpinner();
+            _navSpinnerHost.Refresh();
+        }
+
+        private void CentreNavSpinner()
+        {
+            if (_navSpinner == null || _navSpinnerHost == null) return;
+            _navSpinner.Location = new Point(
+                Math.Max(0, (_navSpinnerHost.Width - _navSpinner.Width) / 2),
+                Math.Max(0, (_navSpinnerHost.Height - _navSpinner.Height) / 2));
+        }
+
+        private void HideNavSpinner()
+        {
+            if (_navSpinnerHost != null)
+            {
+                _contentHost.Controls.Remove(_navSpinnerHost);
+            }
         }
 
         /// <summary>Rebuilds the current view in place, e.g. after saving a record.</summary>

@@ -44,7 +44,7 @@ namespace MzuApplication.Views
 
         protected override void BuildContent()
         {
-            _form = Repository.GetForm(_formId);
+            _form = FormService.Get(_formId);
             if (_form == null)
             {
                 Label missing = Ui.Body("Form not found.");
@@ -106,7 +106,7 @@ namespace MzuApplication.Views
             if (_form == null || _form.Status != RecordStatus.InProgress) return;
 
             _form.UpdatedAt = DateTime.Now;
-            Repository.Save();
+            FormService.Save(_form);
 
             if (_autosaveStatus != null && !_autosaveStatus.IsDisposed)
             {
@@ -126,7 +126,7 @@ namespace MzuApplication.Views
                 if (_form != null && _form.Status == RecordStatus.InProgress)
                 {
                     _form.UpdatedAt = DateTime.Now;
-                    Repository.Save();
+                    FormService.Save(_form);
                 }
             }
             base.Dispose(disposing);
@@ -162,8 +162,8 @@ namespace MzuApplication.Views
                 AutoSize = false,
                 Font = new Font("Segoe UI", 11.5F, FontStyle.Bold),
                 ForeColor = Theme.Navy950,
-                Location = new Point(17, eyebrow.Bottom + 4),
-                Width = InnerWidth - 220,
+                Location = new Point(Dpi.S(17), eyebrow.Bottom + Dpi.S(4)),
+                Width = InnerWidth - Dpi.S(220),
                 Height = Dpi.S(26),
                 Text = _template.DocName
             };
@@ -174,14 +174,14 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Small,
                 ForeColor = Theme.Slate600,
-                Location = new Point(18, title.Bottom + 2),
+                Location = new Point(Dpi.S(18), title.Bottom + Dpi.S(2)),
                 Text = _project.Name
             };
             bar.Controls.Add(project);
 
-            _statusPill = new Pill { Height = 24 };
+            _statusPill = new Pill { Height = Dpi.S(24) };
             _statusPill.ApplyStatus(_form.Status);
-            _statusPill.Location = new Point(InnerWidth - _statusPill.Width - 18, 16);
+            _statusPill.Location = new Point(InnerWidth - _statusPill.Width - Dpi.S(18), Dpi.S(16));
             bar.Controls.Add(_statusPill);
 
             // Autosave indicator (only meaningful while the form is in progress).
@@ -202,12 +202,12 @@ namespace MzuApplication.Views
             bar.Controls.Add(_autosaveStatus);
 
             // Progress row.
-            int progressTop = project.Bottom + 14;
+            int progressTop = project.Bottom + Dpi.S(14);
 
             _progress = new ProgressTrack
             {
-                Location = new Point(18, progressTop + 5),
-                Width = InnerWidth - 210,
+                Location = new Point(Dpi.S(18), progressTop + Dpi.S(5)),
+                Width = InnerWidth - Dpi.S(210),
                 Height = Dpi.S(7)
             };
             bar.Controls.Add(_progress);
@@ -217,14 +217,14 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Tiny,
                 ForeColor = Theme.Slate600,
-                Location = new Point(_progress.Right + 12, progressTop)
+                Location = new Point(_progress.Right + Dpi.S(12), progressTop)
             };
             bar.Controls.Add(_progressLabel);
 
             UpdateProgress();
 
             // Action row.
-            int actionTop = progressTop + 26;
+            int actionTop = progressTop + Dpi.S(26);
 
             FlatButton saveDraft = new FlatButton
             {
@@ -232,7 +232,7 @@ namespace MzuApplication.Views
                 Glyph = Glyph.CheckCircle,
                 Width = Dpi.S(124),
                 Height = Dpi.S(34),
-                Location = new Point(18, actionTop)
+                Location = new Point(Dpi.S(18), actionTop)
             };
             saveDraft.Click += (s, e) => SaveDraft();
             bar.Controls.Add(saveDraft);
@@ -244,7 +244,7 @@ namespace MzuApplication.Views
                 Variant = ButtonVariant.Primary,
                 Width = Dpi.S(164),
                 Height = Dpi.S(34),
-                Location = new Point(saveDraft.Right + 8, actionTop)
+                Location = new Point(saveDraft.Right + Dpi.S(8), actionTop)
             };
             submit.Click += (s, e) => Submit();
             bar.Controls.Add(submit);
@@ -292,7 +292,7 @@ namespace MzuApplication.Views
 
             bar.Height = actionTop + Dpi.S(34) + Dpi.S(16);
             Controls.Add(bar);
-            Y = bar.Bottom + 18;
+            Y = bar.Bottom + Dpi.S(18);
         }
 
         private void UpdateProgress()
@@ -328,8 +328,8 @@ namespace MzuApplication.Views
             };
 
             const int perRow = 3;
-            const int gap = 16;
-            int colWidth = (InnerWidth - 36 - gap * (perRow - 1)) / perRow;
+            int gap = Dpi.S(16);
+            int colWidth = (InnerWidth - Dpi.S(36) - gap * (perRow - 1)) / perRow;
 
             Card card = new Card
             {
@@ -343,8 +343,8 @@ namespace MzuApplication.Views
             Card bar = Ui.SectionBar("Project Information", InnerWidth);
             card.Controls.Add(bar);
 
-            int bodyTop = bar.Height + 16;
-            int rowHeight = 52;
+            int bodyTop = bar.Height + Dpi.S(16);
+            int rowHeight = Dpi.S(58);
 
             for (int i = 0; i < cells.Count; i++)
             {
@@ -352,7 +352,7 @@ namespace MzuApplication.Views
                 int col = i % perRow;
                 var cell = cells[i];
 
-                int x = 18 + col * (colWidth + gap);
+                int x = Dpi.S(18) + col * (colWidth + gap);
                 int y = bodyTop + row * rowHeight;
 
                 Label label = Ui.FieldLabel(cell.Item1);
@@ -369,7 +369,7 @@ namespace MzuApplication.Views
                         ForeColor = Theme.Navy900,
                         BackColor = Theme.Slate100,
                         Padding = new Padding(Dpi.S(8), Dpi.S(4), Dpi.S(8), Dpi.S(4)),
-                        Location = new Point(x, label.Bottom + 4),
+                        Location = new Point(x, label.Bottom + Dpi.S(4)),
                         Text = cell.Item2
                     };
                     card.Controls.Add(chip);
@@ -381,9 +381,9 @@ namespace MzuApplication.Views
                         AutoSize = false,
                         Font = Theme.Body,
                         ForeColor = Theme.Slate900,
-                        Location = new Point(x, label.Bottom + 4),
+                        Location = new Point(x, label.Bottom + Dpi.S(4)),
                         Width = colWidth,
-                        Height = Dpi.S(18),
+                        Height = Dpi.S(20),
                         Text = cell.Item2
                     };
                     card.Controls.Add(value);
@@ -402,8 +402,8 @@ namespace MzuApplication.Views
                     int col = i % perRow;
                     int row = i / perRow;
 
-                    int x = 18 + col * (colWidth + gap);
-                    int y = nextY + row * 62;
+                    int x = Dpi.S(18) + col * (colWidth + gap);
+                    int y = nextY + row * Dpi.S(62);
 
                     Label label = Ui.FieldLabel(field);
                     label.Location = new Point(x, y);
@@ -414,7 +414,7 @@ namespace MzuApplication.Views
 
                     TextInput input = new TextInput
                     {
-                        Location = new Point(x, label.Bottom + 5),
+                        Location = new Point(x, label.Bottom + Dpi.S(5)),
                         Width = colWidth,
                         Height = Dpi.S(32),
                         Value = current ?? string.Empty
@@ -426,17 +426,17 @@ namespace MzuApplication.Views
                 }
 
                 int fieldRows = (int)Math.Ceiling(_template.ProjectFields.Count / (double)perRow);
-                nextY += fieldRows * 62;
+                nextY += fieldRows * Dpi.S(62);
             }
 
-            card.Height = nextY + 10;
+            card.Height = nextY + Dpi.S(10);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         private void AddScopeBox()
         {
-            int textWidth = InnerWidth - 44;
+            int textWidth = InnerWidth - Dpi.S(44);
 
             Label heading = Ui.Eyebrow("Scope & Acceptance Criteria");
             Label scope = Ui.Wrapped(_template.Scope ?? string.Empty, Theme.Small, Theme.Slate800, textWidth);
@@ -450,7 +450,7 @@ namespace MzuApplication.Views
                 Fill = Theme.Brick050,
                 BorderTint = Theme.Brick100,
                 Radius = Theme.RadiusSm,
-                LeftAccentWidth = 4,
+                LeftAccentWidth = Dpi.S(4),
                 LeftAccentColor = Theme.Brick600
             };
 
@@ -458,15 +458,15 @@ namespace MzuApplication.Views
             heading.Location = new Point(Dpi.S(20), Dpi.S(15));
             box.Controls.Add(heading);
 
-            scope.Location = new Point(20, heading.Bottom + 7);
+            scope.Location = new Point(Dpi.S(20), heading.Bottom + Dpi.S(7));
             box.Controls.Add(scope);
 
-            acceptance.Location = new Point(20, scope.Bottom + 6);
+            acceptance.Location = new Point(Dpi.S(20), scope.Bottom + Dpi.S(6));
             box.Controls.Add(acceptance);
 
-            box.Height = acceptance.Bottom + 16;
+            box.Height = acceptance.Bottom + Dpi.S(16);
             Controls.Add(box);
-            Y = box.Bottom + 16;
+            Y = box.Bottom + Dpi.S(16);
         }
 
         #endregion
@@ -494,14 +494,14 @@ namespace MzuApplication.Views
             {
                 if (!string.IsNullOrWhiteSpace(section.Title))
                 {
-                    Panel sectionBar = Ui.SubSectionBar(section.Title, InnerWidth - 2);
-                    sectionBar.Location = new Point(1, y);
+                    Panel sectionBar = Ui.SubSectionBar(section.Title, InnerWidth - Dpi.S(2));
+                    sectionBar.Location = new Point(Dpi.S(1), y);
                     card.Controls.Add(sectionBar);
-                    y = sectionBar.Bottom + 12;
+                    y = sectionBar.Bottom + Dpi.S(12);
                 }
                 else
                 {
-                    y += 12;
+                    y += Dpi.S(12);
                 }
 
                 foreach (TemplateItem item in section.Items)
@@ -511,9 +511,9 @@ namespace MzuApplication.Views
                 }
             }
 
-            card.Height = y + 8;
+            card.Height = y + Dpi.S(8);
             Controls.Add(card);
-            Y = card.Bottom + 12;
+            Y = card.Bottom + Dpi.S(12);
         }
 
         /// <summary>
@@ -546,15 +546,15 @@ namespace MzuApplication.Views
                 _form.Items.Add(result);
             }
 
-            int cardWidth = InnerWidth - 36;
-            int textWidth = cardWidth - 36;
+            int cardWidth = InnerWidth - Dpi.S(36);
+            int textWidth = cardWidth - Dpi.S(36);
 
             Color fill, border;
             ResolveItemTone(result.Response, out fill, out border);
 
             Card itemCard = new Card
             {
-                Location = new Point(18, y),
+                Location = new Point(Dpi.S(18), y),
                 Width = cardWidth,
                 Fill = fill,
                 BorderTint = border,
@@ -574,19 +574,19 @@ namespace MzuApplication.Views
             itemCard.Controls.Add(numberLabel);
 
             Label text = Ui.Wrapped(item.Text, Theme.Small, Theme.Slate900,
-                textWidth - numberLabel.Width - 6);
-            text.Location = new Point(numberLabel.Right + 4, 16);
+                textWidth - numberLabel.Width - Dpi.S(6));
+            text.Location = new Point(numberLabel.Right + Dpi.S(4), Dpi.S(16));
             itemCard.Controls.Add(text);
 
-            int controlsTop = Math.Max(text.Bottom, numberLabel.Bottom) + 14;
+            int controlsTop = Math.Max(text.Bottom, numberLabel.Bottom) + Dpi.S(14);
 
             // Result / reference / initials / date columns.
             int columns = item.HasRef ? 4 : 3;
-            int gap = 12;
+            int gap = Dpi.S(12);
             int colWidth = (textWidth - gap * (columns - 1)) / columns;
-            int selectorWidth = Math.Max(168, colWidth);
+            int selectorWidth = Math.Max(Dpi.S(168), colWidth);
 
-            int x = 17;
+            int x = Dpi.S(17);
 
             Label resultLabel = Ui.FieldLabel("Result");
             resultLabel.Location = new Point(x, controlsTop);
@@ -594,7 +594,7 @@ namespace MzuApplication.Views
 
             ResponseSelector selector = new ResponseSelector
             {
-                Location = new Point(x, resultLabel.Bottom + 5),
+                Location = new Point(x, resultLabel.Bottom + Dpi.S(5)),
                 Width = selectorWidth,
                 Height = Dpi.S(34),
                 Value = result.Response
@@ -602,7 +602,7 @@ namespace MzuApplication.Views
             itemCard.Controls.Add(selector);
 
             x += selectorWidth + gap;
-            int remaining = textWidth - (x - 17);
+            int remaining = textWidth - (x - Dpi.S(17));
             int fieldColumns = item.HasRef ? 3 : 2;
             int fieldWidth = (remaining - gap * (fieldColumns - 1)) / fieldColumns;
 
@@ -615,7 +615,7 @@ namespace MzuApplication.Views
 
                 refInput = new TextInput
                 {
-                    Location = new Point(x, refLabel.Bottom + 5),
+                    Location = new Point(x, refLabel.Bottom + Dpi.S(5)),
                     Width = fieldWidth,
                     Height = Dpi.S(34),
                     Value = result.Ref ?? string.Empty
@@ -638,7 +638,7 @@ namespace MzuApplication.Views
 
             TextInput initials = new TextInput
             {
-                Location = new Point(x, initialsLabel.Bottom + 5),
+                Location = new Point(x, initialsLabel.Bottom + Dpi.S(5)),
                 Width = fieldWidth,
                 Height = Dpi.S(34),
                 Value = stamp,
@@ -658,7 +658,7 @@ namespace MzuApplication.Views
                 CustomFormat = "yyyy-MM-dd",
                 ShowCheckBox = true,
                 Font = Theme.Body,
-                Location = new Point(x, dateLabel.Bottom + 8),
+                Location = new Point(x, dateLabel.Bottom + Dpi.S(8)),
                 Width = fieldWidth
             };
             if (result.Date.HasValue)
@@ -685,8 +685,8 @@ namespace MzuApplication.Views
                     Font = Theme.TinyBold,
                     ForeColor = Theme.Red700,
                     BackColor = Color.Transparent,
-                    Location = new Point(17, bottom + 8),
-                    Width = selectorWidth + 40,
+                    Location = new Point(Dpi.S(17), bottom + Dpi.S(8)),
+                    Width = selectorWidth + Dpi.S(40),
                     Height = Dpi.S(18),
                     Text = "Raise an NCR below"
                 };
@@ -694,7 +694,7 @@ namespace MzuApplication.Views
                 bottom = ncrHint.Bottom;
             }
 
-            itemCard.Height = bottom + 16;
+            itemCard.Height = bottom + Dpi.S(16);
 
             // Changing the response repaints tone and may add/remove the NCR panel,
             // so the whole view is rebuilt to keep layout honest.
@@ -711,7 +711,7 @@ namespace MzuApplication.Views
             };
 
             parent.Controls.Add(itemCard);
-            return itemCard.Bottom + 12;
+            return itemCard.Bottom + Dpi.S(12);
         }
 
         private static void ResolveItemTone(ItemResponse response, out Color fill, out Color border)
@@ -765,14 +765,14 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.SmallBold,
                 ForeColor = Theme.Red700,
-                Location = new Point(38, bar.Bottom + 16),
+                Location = new Point(Dpi.S(38), bar.Bottom + Dpi.S(16)),
                 Text = "This form contains rejected items — an NCR number is required."
             };
             card.Controls.Add(warning);
 
             Card iconHost = new Card
             {
-                Location = new Point(18, bar.Bottom + 15),
+                Location = new Point(Dpi.S(18), bar.Bottom + Dpi.S(15)),
                 Size = new Size(Dpi.S(16), Dpi.S(16)),
                 BorderWidth = 0,
                 Fill = Color.Transparent
@@ -784,13 +784,13 @@ namespace MzuApplication.Views
             card.Controls.Add(iconHost);
 
             Label label = Ui.FieldLabel("NCR Number");
-            label.Location = new Point(18, warning.Bottom + 14);
+            label.Location = new Point(Dpi.S(18), warning.Bottom + Dpi.S(14));
             card.Controls.Add(label);
 
             _ncrInput = new TextInput
             {
-                Location = new Point(18, label.Bottom + 5),
-                Width = Math.Min(280, InnerWidth - 36),
+                Location = new Point(Dpi.S(18), label.Bottom + Dpi.S(5)),
+                Width = Math.Min(Dpi.S(280), InnerWidth - Dpi.S(36)),
                 Height = Dpi.S(34),
                 Value = _form.NcrNo ?? string.Empty,
                 Placeholder = "e.g. NCR-0007"
@@ -798,9 +798,9 @@ namespace MzuApplication.Views
             _ncrInput.ValueChanged += (s, e) => _form.NcrNo = _ncrInput.Value;
             card.Controls.Add(_ncrInput);
 
-            card.Height = _ncrInput.Bottom + 18;
+            card.Height = _ncrInput.Bottom + Dpi.S(18);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         private void AddRemarksCard()
@@ -819,8 +819,8 @@ namespace MzuApplication.Views
 
             TextInput remarks = new TextInput
             {
-                Location = new Point(18, bar.Bottom + 16),
-                Width = InnerWidth - 36,
+                Location = new Point(Dpi.S(18), bar.Bottom + Dpi.S(16)),
+                Width = InnerWidth - Dpi.S(36),
                 Height = Dpi.S(92),
                 Multiline = true,
                 Value = _form.Remarks ?? string.Empty
@@ -828,9 +828,9 @@ namespace MzuApplication.Views
             remarks.ValueChanged += (s, e) => _form.Remarks = remarks.Value;
             card.Controls.Add(remarks);
 
-            card.Height = remarks.Bottom + 18;
+            card.Height = remarks.Bottom + Dpi.S(18);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         private void AddSignoffCard()
@@ -847,20 +847,20 @@ namespace MzuApplication.Views
             Card bar = Ui.SectionBar("Sign-Off", InnerWidth);
             card.Controls.Add(bar);
 
-            const int gap = 16;
-            int blockWidth = (InnerWidth - 36 - gap * 2) / 3;
-            int top = bar.Bottom + 16;
+            int gap = Dpi.S(16);
+            int blockWidth = (InnerWidth - Dpi.S(36) - gap * 2) / 3;
+            int top = bar.Bottom + Dpi.S(16);
 
             int h1 = AddSignoffBlock(card, "Inspected / Tested By", _form.Inspected,
-                new Point(18, top), blockWidth);
+                new Point(Dpi.S(18), top), blockWidth);
             int h2 = AddSignoffBlock(card, "Reviewed By", _form.Reviewed,
-                new Point(18 + blockWidth + gap, top), blockWidth);
+                new Point(Dpi.S(18) + blockWidth + gap, top), blockWidth);
             int h3 = AddSignoffBlock(card, "Approved By", _form.Approved,
-                new Point(18 + (blockWidth + gap) * 2, top), blockWidth);
+                new Point(Dpi.S(18) + (blockWidth + gap) * 2, top), blockWidth);
 
-            card.Height = top + Math.Max(h1, Math.Max(h2, h3)) + 18;
+            card.Height = top + Math.Max(h1, Math.Max(h2, h3)) + Dpi.S(18);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         /// <summary>Renders one sign-off block and returns its height.</summary>
@@ -887,15 +887,15 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Label,
                 ForeColor = signed ? Theme.Green700 : Theme.Amber700,
-                Location = new Point(16, label.Bottom + 6),
+                Location = new Point(Dpi.S(16), label.Bottom + Dpi.S(6)),
                 Text = signed ? "SIGNED" : "PENDING"
             };
             block.Controls.Add(status);
 
             TextInput name = new TextInput
             {
-                Location = new Point(16, status.Bottom + 8),
-                Width = width - 32,
+                Location = new Point(Dpi.S(16), status.Bottom + Dpi.S(8)),
+                Width = width - Dpi.S(32),
                 Height = Dpi.S(32),
                 Value = entry.Name ?? string.Empty,
                 Placeholder = "Name"
@@ -905,8 +905,8 @@ namespace MzuApplication.Views
 
             TextInput signature = new TextInput
             {
-                Location = new Point(16, name.Bottom + 8),
-                Width = width - 32,
+                Location = new Point(Dpi.S(16), name.Bottom + Dpi.S(8)),
+                Width = width - Dpi.S(32),
                 Height = Dpi.S(32),
                 Value = entry.Signature ?? string.Empty,
                 Placeholder = "Signature (type initials)"
@@ -920,8 +920,8 @@ namespace MzuApplication.Views
                 CustomFormat = "yyyy-MM-dd",
                 ShowCheckBox = true,
                 Font = Theme.Body,
-                Location = new Point(16, signature.Bottom + 8),
-                Width = width - 32
+                Location = new Point(Dpi.S(16), signature.Bottom + Dpi.S(8)),
+                Width = width - Dpi.S(32)
             };
             if (entry.Date.HasValue)
             {
@@ -935,7 +935,7 @@ namespace MzuApplication.Views
             date.ValueChanged += (s, e) => entry.Date = date.Checked ? date.Value.Date : (DateTime?)null;
             block.Controls.Add(date);
 
-            block.Height = date.Bottom + 16;
+            block.Height = date.Bottom + Dpi.S(16);
             parent.Controls.Add(block);
 
             return block.Height;
@@ -1013,7 +1013,7 @@ namespace MzuApplication.Views
                 "Saved draft — " + _form.AnsweredCount + " of " + total + " items answered",
                 FormContext());
 
-            Repository.Save();
+            FormService.Save(_form);
             Notify("Form saved.");
             Rebuild();
         }
@@ -1092,7 +1092,7 @@ namespace MzuApplication.Views
                     _form.NcrNo = ncr.NcrNo;
                     _form.UpdatedAt = DateTime.Now;
 
-                    Repository.Save();
+                    FormService.Save(_form);
                     dialog.DialogResult = DialogResult.OK;
                 });
 
@@ -1165,7 +1165,7 @@ namespace MzuApplication.Views
                         ? string.Empty : " · " + _form.NcrNo),
                 FormContext());
 
-            Repository.Save();
+            FormService.Save(_form);
             Notify("Form submitted — " + Format.StatusText(_form.Status) + ".");
             Rebuild();
         }

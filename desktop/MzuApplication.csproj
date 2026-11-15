@@ -105,12 +105,17 @@
     <Compile Include="Data\Auth.cs" />
     <Compile Include="Data\DbConfig.cs" />
     <Compile Include="Data\DbStatus.cs" />
+    <Compile Include="Data\DbMetrics.cs" />
+    <Compile Include="Data\GeoLocation.cs" />
+    <Compile Include="Data\SystemHealth.cs" />
     <Compile Include="Data\PostgresUserStore.cs" />
     <Compile Include="Data\PostgresAuditStore.cs" />
     <Compile Include="Data\PostgresClientStore.cs" />
     <Compile Include="Data\ClientService.cs" />
     <Compile Include="Data\PostgresProjectStore.cs" />
     <Compile Include="Data\ProjectService.cs" />
+    <Compile Include="Data\PostgresFormStore.cs" />
+    <Compile Include="Data\FormService.cs" />
     <Compile Include="Data\PostgresNcrStore.cs" />
     <Compile Include="Data\ReportStyle.cs" />
     <Compile Include="Data\AuditReport.cs" />

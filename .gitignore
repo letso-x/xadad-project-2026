@@ -7,3 +7,17 @@
 # Build outputs
 [Bb]in/
 [Oo]bj/
+
+# ---------------------------------------------------------------------------
+# Secrets and private packaging output - NEVER commit these.
+# Real DB/email passwords live here. The safe, placeholder-config copy that
+# is published to GitHub lives under /releases instead.
+# ---------------------------------------------------------------------------
+desktop/database.config
+desktop/email.config
+desktop/device-trust.dat
+device-trust.dat
+desktop/dist/
+
+# Allow the public release package (placeholder secrets only).
+!releases/

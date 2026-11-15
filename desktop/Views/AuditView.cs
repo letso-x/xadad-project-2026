@@ -291,9 +291,9 @@ namespace MzuApplication.Views
                 Width = InnerWidth,
                 EmptyMessage = "No audit entries match the current filter."
             };
-            _table.DefineColumns("When", 1.4f, "User", 1.3f, "Action", 1.2f,
-                                 "Document / Entity", 1.8f, "Context", 1.4f,
-                                 "Detail", 2.4f, "From", 1.0f);
+            _table.DefineColumns("When", 1.3f, "User", 1.2f, "Action", 1.1f,
+                                 "Document / Entity", 1.7f, "Context", 1.2f,
+                                 "Detail", 2.0f, "From", 1.7f);
 
             Controls.Add(_table);
             LoadRows();

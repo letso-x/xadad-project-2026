@@ -104,8 +104,8 @@ namespace MzuApplication.Views
                 AutoSize = false,
                 Font = new Font("Segoe UI", 11.5F, FontStyle.Bold),
                 ForeColor = Theme.Navy950,
-                Location = new Point(17, eyebrow.Bottom + 4),
-                Width = InnerWidth - 220,
+                Location = new Point(Dpi.S(17), eyebrow.Bottom + Dpi.S(4)),
+                Width = InnerWidth - Dpi.S(220),
                 Height = Dpi.S(26),
                 Text = CableRegister.DocName
             };
@@ -116,22 +116,22 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Small,
                 ForeColor = Theme.Slate600,
-                Location = new Point(18, title.Bottom + 2),
+                Location = new Point(Dpi.S(18), title.Bottom + Dpi.S(2)),
                 Text = _project.Name
             };
             bar.Controls.Add(project);
 
-            Pill status = new Pill { Height = 24 };
+            Pill status = new Pill { Height = Dpi.S(24) };
             status.ApplyStatus(_register.Status);
-            status.Location = new Point(InnerWidth - status.Width - 18, 16);
+            status.Location = new Point(InnerWidth - status.Width - Dpi.S(18), Dpi.S(16));
             bar.Controls.Add(status);
 
-            int progressTop = project.Bottom + 14;
+            int progressTop = project.Bottom + Dpi.S(14);
 
             ProgressTrack track = new ProgressTrack
             {
-                Location = new Point(18, progressTop + 5),
-                Width = InnerWidth - 250,
+                Location = new Point(Dpi.S(18), progressTop + Dpi.S(5)),
+                Width = InnerWidth - Dpi.S(250),
                 Height = Dpi.S(7),
                 Percent = percent
             };
@@ -143,12 +143,12 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Tiny,
                 ForeColor = Theme.Slate600,
-                Location = new Point(track.Right + 12, progressTop),
+                Location = new Point(track.Right + Dpi.S(12), progressTop),
                 Text = complete + " / " + total + " cables complete · " + percent + "%"
             };
             bar.Controls.Add(label);
 
-            int actionTop = progressTop + 26;
+            int actionTop = progressTop + Dpi.S(26);
 
             FlatButton save = new FlatButton
             {
@@ -156,7 +156,7 @@ namespace MzuApplication.Views
                 Glyph = Glyph.CheckCircle,
                 Width = Dpi.S(124),
                 Height = Dpi.S(34),
-                Location = new Point(18, actionTop)
+                Location = new Point(Dpi.S(18), actionTop)
             };
             save.Click += (s, e) => SaveDraft();
             bar.Controls.Add(save);
@@ -168,7 +168,7 @@ namespace MzuApplication.Views
                 Variant = ButtonVariant.Primary,
                 Width = Dpi.S(206),
                 Height = Dpi.S(34),
-                Location = new Point(save.Right + 8, actionTop)
+                Location = new Point(save.Right + Dpi.S(8), actionTop)
             };
             complete2.Click += (s, e) => MarkComplete();
             bar.Controls.Add(complete2);
@@ -195,9 +195,9 @@ namespace MzuApplication.Views
             back.Click += (s, e) => Shell.Navigate(new ProjectDetailView(Shell, _project.Id));
             bar.Controls.Add(back);
 
-            bar.Height = actionTop + 34 + 16;
+            bar.Height = actionTop + Dpi.S(34) + Dpi.S(16);
             Controls.Add(bar);
-            Y = bar.Bottom + 18;
+            Y = bar.Bottom + Dpi.S(18);
         }
 
         private void AddProjectInfoCard()
@@ -215,10 +215,10 @@ namespace MzuApplication.Views
             card.Controls.Add(bar);
 
             const int perRow = 3;
-            const int gap = 16;
-            int colWidth = (InnerWidth - 36 - gap * (perRow - 1)) / perRow;
+            int gap = Dpi.S(16);
+            int colWidth = (InnerWidth - Dpi.S(36) - gap * (perRow - 1)) / perRow;
 
-            int top = bar.Bottom + 16;
+            int top = bar.Bottom + Dpi.S(16);
 
             for (int i = 0; i < HeaderFields.Length; i++)
             {
@@ -226,8 +226,8 @@ namespace MzuApplication.Views
                 int col = i % perRow;
                 int row = i / perRow;
 
-                int x = 18 + col * (colWidth + gap);
-                int y = top + row * 62;
+                int x = Dpi.S(18) + col * (colWidth + gap);
+                int y = top + row * Dpi.S(62);
 
                 Label label = Ui.FieldLabel(field);
                 label.Location = new Point(x, y);
@@ -238,7 +238,7 @@ namespace MzuApplication.Views
 
                 TextInput input = new TextInput
                 {
-                    Location = new Point(x, label.Bottom + 5),
+                    Location = new Point(x, label.Bottom + Dpi.S(5)),
                     Width = colWidth,
                     Height = Dpi.S(32),
                     Value = current ?? string.Empty
@@ -250,11 +250,11 @@ namespace MzuApplication.Views
             }
 
             int rows = (int)Math.Ceiling(HeaderFields.Length / (double)perRow);
-            int nextY = top + rows * 62;
+            int nextY = top + rows * Dpi.S(62);
 
             // QC record number, read-only chip.
             Label recordLabel = Ui.FieldLabel("QC Record No.");
-            recordLabel.Location = new Point(18, nextY);
+            recordLabel.Location = new Point(Dpi.S(18), nextY);
             card.Controls.Add(recordLabel);
 
             Label chip = new Label
@@ -264,19 +264,19 @@ namespace MzuApplication.Views
                 ForeColor = Theme.Navy900,
                 BackColor = Theme.Slate100,
                 Padding = new Padding(Dpi.S(8), Dpi.S(4), Dpi.S(8), Dpi.S(4)),
-                Location = new Point(18, recordLabel.Bottom + 5),
+                Location = new Point(Dpi.S(18), recordLabel.Bottom + Dpi.S(5)),
                 Text = _register.QcRecordNo
             };
             card.Controls.Add(chip);
 
-            card.Height = chip.Bottom + 18;
+            card.Height = chip.Bottom + Dpi.S(18);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         private void AddGuidanceBox()
         {
-            int textWidth = InnerWidth - 44;
+            int textWidth = InnerWidth - Dpi.S(44);
 
             Label heading = Ui.Eyebrow("How to use this register");
             heading.ForeColor = Theme.Brick700;
@@ -297,22 +297,22 @@ namespace MzuApplication.Views
                 Fill = Theme.Brick050,
                 BorderTint = Theme.Brick100,
                 Radius = Theme.RadiusSm,
-                LeftAccentWidth = 4,
+                LeftAccentWidth = Dpi.S(4),
                 LeftAccentColor = Theme.Brick600
             };
 
             heading.Location = new Point(Dpi.S(20), Dpi.S(15));
             box.Controls.Add(heading);
 
-            line1.Location = new Point(20, heading.Bottom + 7);
+            line1.Location = new Point(Dpi.S(20), heading.Bottom + Dpi.S(7));
             box.Controls.Add(line1);
 
-            line2.Location = new Point(20, line1.Bottom + 6);
+            line2.Location = new Point(Dpi.S(20), line1.Bottom + Dpi.S(6));
             box.Controls.Add(line2);
 
-            box.Height = line2.Bottom + 16;
+            box.Height = line2.Bottom + Dpi.S(16);
             Controls.Add(box);
-            Y = box.Bottom + 16;
+            Y = box.Bottom + Dpi.S(16);
         }
 
         #endregion
@@ -348,13 +348,13 @@ namespace MzuApplication.Views
                 Text = complete + " / " + total + " complete"
             };
             bar.Controls.Add(counter);
-            counter.Location = new Point(InnerWidth - counter.Width - 18, 12);
+            counter.Location = new Point(InnerWidth - counter.Width - Dpi.S(18), Dpi.S(12));
             card.Controls.Add(bar);
 
             DataGridView grid = BuildGrid();
             grid.Location = new Point(1, bar.Height);
             grid.Width = InnerWidth - 2;
-            grid.Height = Math.Max(120, 34 + _register.Cables.Count * 30 + 4);
+            grid.Height = Math.Max(Dpi.S(120), Dpi.S(34) + _register.Cables.Count * Dpi.S(30) + Dpi.S(4));
             card.Controls.Add(grid);
 
             FlatButton addRow = new FlatButton
@@ -363,7 +363,7 @@ namespace MzuApplication.Views
                 Glyph = Glyph.Plus,
                 Width = Dpi.S(156),
                 Height = Dpi.S(32),
-                Location = new Point(18, grid.Bottom + 14)
+                Location = new Point(Dpi.S(18), grid.Bottom + Dpi.S(14))
             };
             addRow.Click += (s, e) =>
             {
@@ -380,9 +380,9 @@ namespace MzuApplication.Views
             };
             card.Controls.Add(addRow);
 
-            card.Height = addRow.Bottom + 16;
+            card.Height = addRow.Bottom + Dpi.S(16);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         private DataGridView BuildGrid()
@@ -546,8 +546,8 @@ namespace MzuApplication.Views
 
             TextInput notes = new TextInput
             {
-                Location = new Point(18, bar.Bottom + 16),
-                Width = InnerWidth - 36,
+                Location = new Point(Dpi.S(18), bar.Bottom + Dpi.S(16)),
+                Width = InnerWidth - Dpi.S(36),
                 Height = Dpi.S(84),
                 Multiline = true,
                 Value = _register.Notes ?? string.Empty
@@ -555,9 +555,9 @@ namespace MzuApplication.Views
             notes.ValueChanged += (s, e) => _register.Notes = notes.Value;
             card.Controls.Add(notes);
 
-            card.Height = notes.Bottom + 18;
+            card.Height = notes.Bottom + Dpi.S(18);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         private void AddSignoffCard()
@@ -574,18 +574,18 @@ namespace MzuApplication.Views
             Card bar = Ui.SectionBar("Sign-Off", InnerWidth);
             card.Controls.Add(bar);
 
-            const int gap = 16;
-            int blockWidth = (InnerWidth - 36 - gap) / 2;
-            int top = bar.Bottom + 16;
+            int gap = Dpi.S(16);
+            int blockWidth = (InnerWidth - Dpi.S(36) - gap) / 2;
+            int top = bar.Bottom + Dpi.S(16);
 
             int h1 = AddSignoffBlock(card, "Register Maintained By", _register.MaintainedBy,
-                "Mzukulu Technologies — QC", new Point(18, top), blockWidth);
+                "Mzukulu Technologies — QC", new Point(Dpi.S(18), top), blockWidth);
             int h2 = AddSignoffBlock(card, "Verified By", _register.VerifiedBy,
-                "Managing Contractor", new Point(18 + blockWidth + gap, top), blockWidth);
+                "Managing Contractor", new Point(Dpi.S(18) + blockWidth + gap, top), blockWidth);
 
-            card.Height = top + Math.Max(h1, h2) + 18;
+            card.Height = top + Math.Max(h1, h2) + Dpi.S(18);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         private int AddSignoffBlock(Card parent, string title, SignoffEntry entry,
@@ -611,15 +611,15 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.Label,
                 ForeColor = signed ? Theme.Green700 : Theme.Amber700,
-                Location = new Point(16, label.Bottom + 6),
+                Location = new Point(Dpi.S(16), label.Bottom + Dpi.S(6)),
                 Text = signed ? "SIGNED" : "PENDING"
             };
             block.Controls.Add(status);
 
             TextInput name = new TextInput
             {
-                Location = new Point(16, status.Bottom + 8),
-                Width = width - 32,
+                Location = new Point(Dpi.S(16), status.Bottom + Dpi.S(8)),
+                Width = width - Dpi.S(32),
                 Height = Dpi.S(32),
                 Value = entry.Name ?? string.Empty,
                 Placeholder = "Name (" + roleHint + ")"
@@ -629,8 +629,8 @@ namespace MzuApplication.Views
 
             TextInput signature = new TextInput
             {
-                Location = new Point(16, name.Bottom + 8),
-                Width = width - 32,
+                Location = new Point(Dpi.S(16), name.Bottom + Dpi.S(8)),
+                Width = width - Dpi.S(32),
                 Height = Dpi.S(32),
                 Value = entry.Signature ?? string.Empty,
                 Placeholder = "Signature (type initials)"
@@ -644,8 +644,8 @@ namespace MzuApplication.Views
                 CustomFormat = "yyyy-MM-dd",
                 ShowCheckBox = true,
                 Font = Theme.Body,
-                Location = new Point(16, signature.Bottom + 8),
-                Width = width - 32
+                Location = new Point(Dpi.S(16), signature.Bottom + Dpi.S(8)),
+                Width = width - Dpi.S(32)
             };
             if (entry.Date.HasValue)
             {
@@ -659,7 +659,7 @@ namespace MzuApplication.Views
             date.ValueChanged += (s, e) => entry.Date = date.Checked ? date.Value.Date : (DateTime?)null;
             block.Controls.Add(date);
 
-            block.Height = date.Bottom + 16;
+            block.Height = date.Bottom + Dpi.S(16);
             parent.Controls.Add(block);
 
             return block.Height;
@@ -673,7 +673,7 @@ namespace MzuApplication.Views
                 Theme.Tiny, Theme.Slate500, InnerWidth);
             audit.Location = new Point(Left1, Y);
             Controls.Add(audit);
-            Y = audit.Bottom + 16;
+            Y = audit.Bottom + Dpi.S(16);
         }
 
         private void AddBottomActions()

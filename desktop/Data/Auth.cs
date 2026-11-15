@@ -15,7 +15,8 @@ namespace MzuApplication.Data
         WeakPassword = 4,
         MissingFields = 5,
         AccountLocked = 6,
-        PendingApproval = 7
+        PendingApproval = 7,
+        DatabaseUnavailable = 8
     }
 
     /// <summary>
@@ -286,7 +287,20 @@ namespace MzuApplication.Data
                 return AuthResult.AccountLocked;
             }
 
-            UserAccount account = FindUser(key);
+            // Look up the account. A transient database/pooler error should not look like
+            // a wrong password — retry once, then report the DB as unavailable so the user
+            // gets a clear message instead of a silent refusal (and no failed-attempt count).
+            UserAccount account;
+            try
+            {
+                account = FindUser(key);
+            }
+            catch (Exception)
+            {
+                try { System.Threading.Thread.Sleep(600); account = FindUser(key); }
+                catch (Exception) { return AuthResult.DatabaseUnavailable; }
+            }
+
             if (account == null)
             {
                 // Hash anyway so a missing user and a wrong password take similar time.
@@ -329,6 +343,10 @@ namespace MzuApplication.Data
 
             // Correct password — clear any failed-attempt history for this account.
             ClearFailures(key);
+
+            // Ensure the city is resolved so the sign-in entry records it. SignIn already
+            // runs on a background thread (behind the loading spinner), so this is safe.
+            try { GeoLocation.Resolve(); } catch (Exception) { }
 
             // Credentials are valid, but a self-enrolled account must be approved first.
             if (!account.Approved)
@@ -656,6 +674,9 @@ namespace MzuApplication.Data
                 case AuthResult.PendingApproval:
                     return "Your account is awaiting administrator approval. "
                         + "You'll be able to sign in once it has been approved.";
+                case AuthResult.DatabaseUnavailable:
+                    return "Can't reach the database right now. Check your internet, and "
+                        + "make sure the Supabase project isn't paused, then try again.";
                 default: return string.Empty;
             }
         }

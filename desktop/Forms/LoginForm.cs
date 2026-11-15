@@ -334,7 +334,13 @@ namespace MzuApplication.Forms
         {
             _error.Text = string.Empty;
 
-            AuthResult result = Auth.SignIn(_username.Value, _password.Value);
+            // Authenticating hits the database (and may queue an MFA email), so show the
+            // branded spinner while it runs instead of a frozen window.
+            AuthResult result = AuthResult.InvalidCredentials;
+            string u = _username.Value;
+            string p = _password.Value;
+            LoadingOverlay.Run(this, "Signing in…", () => { result = Auth.SignIn(u, p); });
+
             if (result == AuthResult.Success)
             {
                 DialogResult = DialogResult.OK;

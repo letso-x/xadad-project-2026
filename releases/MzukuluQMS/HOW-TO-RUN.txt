@@ -1,0 +1,66 @@
+==========================================================
+  MZUKULU QMS - HOW TO RUN  (for Halalisile)
+==========================================================
+
+WHAT YOU NEED
+-------------
+- A Windows 10 or 11 computer
+- An internet connection (for the database and the verification email)
+
+--------------------------------------------------------
+STEP 1 - Get the folder onto your PC
+--------------------------------------------------------
+1. Save the file  MzukuluQMS.zip  somewhere easy, like your Desktop.
+2. If Windows "blocked" the download:
+   - Right-click MzukuluQMS.zip  ->  Properties
+   - At the bottom, tick  [x] Unblock  ->  click OK
+   (Skip this if you don't see an "Unblock" box.)
+3. Right-click the zip  ->  "Extract All..."  ->  Extract.
+   You now have a folder called  MzukuluQMS.
+
+--------------------------------------------------------
+STEP 2 - Install it
+--------------------------------------------------------
+1. Open the  MzukuluQMS  folder.
+2. Double-click  Install.bat
+   - If Windows SmartScreen warns you: click "More info" -> "Run anyway".
+   - It installs the app and adds a "Mzukulu QMS" icon to your Desktop.
+   - No administrator rights are needed.
+3. When it asks "Launch Mzukulu QMS now?", press  Y  and Enter.
+
+(You can also just double-click  MzuApplication.exe  to run it without
+ installing.)
+
+--------------------------------------------------------
+STEP 3 - Sign in
+--------------------------------------------------------
+1. On the login screen, enter:
+      Email:     halamzobe@gmail.com
+      Password:  User@2026
+2. Click  Sign In.
+
+--------------------------------------------------------
+STEP 4 - Two-step verification (the emailed code)
+--------------------------------------------------------
+1. A screen will say a 6-digit code was emailed to you.
+2. Open your email inbox for  halamzobe@gmail.com
+   (check the Spam / Junk folder too) and find the message
+   "Your Mzukulu QMS verification code".
+3. Type the 6-digit code into the app.
+4. OPTIONAL: tick "Don't ask again for 14 days on this device"
+   so you won't need a code every time on this PC.
+5. Click  Verify & Continue  -> you're in.
+
+--------------------------------------------------------
+IF SOMETHING GOES WRONG
+--------------------------------------------------------
+- "App won't open at all": make sure you did STEP 1.2 (Unblock) and
+  that you're on Windows 10/11.
+- "Database connection failed": check your internet connection and
+  try again (the login retries on its own too).
+- "No code arrived": wait a minute, check Spam, then click
+  "Resend code" on the verification screen.
+- Still stuck? Send Sakhile a screenshot of the error.
+
+Demo note: this build connects to the shared team database, so the
+users and records are the same ones Sakhile sees.

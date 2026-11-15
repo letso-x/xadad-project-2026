@@ -140,6 +140,9 @@ namespace MzuApplication.Models
         /// <summary>Days a device stays trusted after passing MFA before a code is needed again.</summary>
         public int DeviceTrustDays { get; set; }
 
+        /// <summary>Whether users may attach files (photos, certificates) to QC records.</summary>
+        public bool AllowAttachments { get; set; }
+
         public OrgSettings()
         {
             CompanyName = "Mzukulu Technologies (Pty) Ltd";
@@ -150,6 +153,7 @@ namespace MzuApplication.Models
             RequireMfa = true;
             IdleTimeoutMinutes = 2;
             DeviceTrustDays = 14;
+            AllowAttachments = true;
         }
     }
 }

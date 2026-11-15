@@ -174,12 +174,15 @@ namespace MzuApplication.Views
                     target.EndDate = end.Checked ? end.Value.Date : (DateTime?)null;
 
                     // Write to the shared Project table so every user sees it.
-                    if (existing == null) ProjectService.Add(target);
-                    else ProjectService.Update(target);
+                    LoadingOverlay.Run(shell, "Saving project…", () =>
+                    {
+                        if (existing == null) ProjectService.Add(target);
+                        else ProjectService.Update(target);
 
-                    Audit.Log(existing == null ? AuditAction.Created : AuditAction.Updated,
-                        "Project", target.Id, target.Name,
-                        existing == null ? "Project created" : "Project updated");
+                        Audit.Log(existing == null ? AuditAction.Created : AuditAction.Updated,
+                            "Project", target.Id, target.Name,
+                            existing == null ? "Project created" : "Project updated");
+                    });
 
                     dialog.DialogResult = DialogResult.OK;
                 });

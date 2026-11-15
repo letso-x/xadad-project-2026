@@ -34,15 +34,18 @@ namespace MzuApplication.Data
             var sw = Stopwatch.StartNew();
             try
             {
-                using (var conn = new NpgsqlConnection(DbConfig.ConnectionString))
+                DbMetrics.Measure(() =>
                 {
-                    conn.Open();
-                    using (var cmd = new NpgsqlCommand("select 1", conn))
+                    using (var conn = new NpgsqlConnection(DbConfig.ConnectionString))
                     {
-                        cmd.CommandTimeout = 8;
-                        cmd.ExecuteScalar();
+                        conn.Open();
+                        using (var cmd = new NpgsqlCommand("select 1", conn))
+                        {
+                            cmd.CommandTimeout = 8;
+                            cmd.ExecuteScalar();
+                        }
                     }
-                }
+                });
                 sw.Stop();
                 return new DbPing
                 {

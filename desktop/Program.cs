@@ -37,6 +37,10 @@ namespace MzuApplication
 
             Repository.Load();
 
+            // Resolve the approximate city from the public IP in the background, so the
+            // audit trail can show "workstation · city" without delaying startup.
+            GeoLocation.ResolveAsync();
+
             // If configured for Postgres, verify the connection up front. On failure,
             // tell the user and fall back to the local store so a demo still runs.
             if (DbConfig.UsePostgres)

@@ -1,0 +1,27 @@
+# Mzukulu QMS — SMTP settings for sending MFA (two-step verification) codes.
+#
+# Copy this file to "email.config" (same folder as the .exe) and fill in the
+# password. The real email.config is gitignored and must never be committed.
+#
+# One key=value per line. '#' starts a comment.
+
+# --- Microsoft 365 / Outlook (e.g. rcconnect.edu.za) ---
+# NOTE: Microsoft 365 often blocks basic-auth SMTP (SMTP AUTH disabled, or modern
+# auth required). If sending fails with an auth error, SMTP AUTH is not available
+# on this mailbox and you'll need a provider that allows app passwords (see Gmail).
+Smtp.Host=smtp.office365.com
+Smtp.Port=587
+Smtp.EnableSsl=true
+Smtp.User=10506152@rcconnect.edu.za
+Smtp.Password=YOUR_PASSWORD_HERE
+Smtp.From=10506152@rcconnect.edu.za
+Smtp.FromName=Mzukulu QMS
+
+# --- Gmail alternative (reliable; needs a 16-char App Password, not your login) ---
+# Smtp.Host=smtp.gmail.com
+# Smtp.Port=587
+# Smtp.EnableSsl=true
+# Smtp.User=youraccount@gmail.com
+# Smtp.Password=YOUR_16_CHAR_APP_PASSWORD
+# Smtp.From=youraccount@gmail.com
+# Smtp.FromName=Mzukulu QMS

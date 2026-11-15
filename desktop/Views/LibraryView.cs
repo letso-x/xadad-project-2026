@@ -298,16 +298,63 @@ namespace MzuApplication.Views
                 return;
             }
 
+            CreateAndOpenForm(Shell, template, project);
+        }
+
+        /// <summary>
+        /// Creates a QC form for a specific project+template and navigates straight into
+        /// filling it. Shared so the Project page can start a form in-place.
+        /// </summary>
+        public static void CreateAndOpenForm(MainForm shell, ChecklistTemplate template, Project project)
+        {
             QcForm form = CreateForm(template, project);
-            Repository.Db.Forms.Add(form);
+            FormService.Save(form);   // writes to the shared app_forms table
 
             Audit.Log(AuditAction.Created, "Form", form.Id,
                 template.DocNumber + " · " + form.QcRecordNo,
-                "Checklist started on " + project.Name);
+                "Checklist started on " + project.Name, project.Name);
 
-            Repository.Save();
+            shell.Navigate(new FormFillView(shell, form.Id));
+        }
 
-            Shell.Navigate(new FormFillView(Shell, form.Id));
+        /// <summary>
+        /// Shows a branded picker of active checklist templates and starts the chosen one
+        /// as a new form for <paramref name="project"/>. Used by the Project page's
+        /// "New Form" button so a form can be raised without leaving the project.
+        /// </summary>
+        public static void NewFormForProject(MainForm shell, Project project)
+        {
+            var templates = Repository.Db.Templates.Where(t => t.Active).ToList();
+            if (templates.Count == 0)
+            {
+                shell.Notify("No active checklist templates to start a form from.", true);
+                return;
+            }
+
+            using (Dialog dialog = new Dialog("New Form — " + project.Name, Dpi.S(460)))
+            {
+                dialog.AddNote("Choose the checklist to start for this project.");
+
+                ComboBox picker = dialog.AddDropdown("Checklist",
+                    templates.Select(t => t.DocNumber + " — " + t.DocName), null);
+
+                dialog.AddPrimaryAction("Create Form", () =>
+                {
+                    int idx = picker.SelectedIndex;
+                    if (idx < 0 || idx >= templates.Count)
+                    {
+                        shell.Notify("Select a checklist.", true);
+                        return;
+                    }
+                    dialog.Tag = templates[idx];
+                    dialog.DialogResult = DialogResult.OK;
+                });
+
+                if (dialog.ShowDialog(shell) == DialogResult.OK && dialog.Tag is ChecklistTemplate)
+                {
+                    CreateAndOpenForm(shell, (ChecklistTemplate)dialog.Tag, project);
+                }
+            }
         }
 
         /// <summary>Builds an empty form instance with one result row per template item.</summary>

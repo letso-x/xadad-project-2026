@@ -35,6 +35,8 @@ namespace MzuApplication.Views
             OrgSettings settings = Repository.Db.Settings;
 
             AddConnectionCard();
+            AddPerformanceCard();
+            AddSystemHealthCard();
             AddOrganisationCard(settings);
             AddPolicyCard(settings);
             AddSecurityCard(settings);
@@ -149,6 +151,216 @@ namespace MzuApplication.Views
             _statusText.Text = text;
             _statusText.ForeColor = dot;
             _statusDetail.Text = detail;
+        }
+
+        private Label _mAvg, _mLast, _mUptime, _mSuccess, _mError, _mOps;
+        private Timer _perfTimer;
+
+        /// <summary>Live database performance metrics: query speed, uptime and error rate.</summary>
+        private void AddPerformanceCard()
+        {
+            Card card = new Card
+            {
+                Location = new Point(Left1, Y),
+                Width = InnerWidth,
+                Fill = Color.White,
+                BorderTint = Theme.Slate150,
+                Radius = Theme.Radius
+            };
+
+            Card bar = Ui.SectionBar("Performance Monitoring", InnerWidth);
+            card.Controls.Add(bar);
+
+            Label sub = Ui.Wrapped(
+                "Live metrics for this session, measured from the app's own database calls.",
+                Theme.Small, Theme.Slate500, InnerWidth - Dpi.S(40));
+            sub.Location = new Point(Dpi.S(20), bar.Bottom + Dpi.S(12));
+            card.Controls.Add(sub);
+
+            // Six metric tiles in two rows of three.
+            int gap = Dpi.S(14);
+            int cols = 3;
+            int tileW = (InnerWidth - Dpi.S(40) - gap * (cols - 1)) / cols;
+            int tileH = Dpi.S(64);
+            int top = sub.Bottom + Dpi.S(12);
+
+            _mAvg = AddMetricTile(card, "Avg query speed", "—", 0, 0, tileW, tileH, top, gap);
+            _mLast = AddMetricTile(card, "Last query", "—", 1, 0, tileW, tileH, top, gap);
+            _mUptime = AddMetricTile(card, "Session uptime", "—", 2, 0, tileW, tileH, top, gap);
+            _mSuccess = AddMetricTile(card, "Uptime / success", "—", 0, 1, tileW, tileH, top, gap);
+            _mError = AddMetricTile(card, "Error rate", "—", 1, 1, tileW, tileH, top, gap);
+            _mOps = AddMetricTile(card, "Total queries", "—", 2, 1, tileW, tileH, top, gap);
+
+            int tilesBottom = top + tileH * 2 + gap;
+
+            FlatButton reset = new FlatButton
+            {
+                Text = "Reset Metrics",
+                Variant = ButtonVariant.Default,
+                Width = Dpi.S(140),
+                Height = Dpi.S(34),
+                Location = new Point(Dpi.S(20), tilesBottom + Dpi.S(8))
+            };
+            reset.Click += (s, e) => { DbMetrics.Reset(); UpdateMetrics(); };
+            card.Controls.Add(reset);
+
+            card.Height = reset.Bottom + Dpi.S(16);
+            Controls.Add(card);
+            Y = card.Bottom + Dpi.S(18);
+
+            UpdateMetrics();
+
+            // Refresh the figures every 2 seconds while the screen is open.
+            _perfTimer = new Timer { Interval = 2000 };
+            _perfTimer.Tick += (s, e) => UpdateMetrics();
+            _perfTimer.Start();
+        }
+
+        private Label AddMetricTile(Card parent, string label, string value,
+                                    int col, int row, int w, int h, int top, int gap)
+        {
+            int x = Dpi.S(20) + col * (w + gap);
+            int y = top + row * (h + gap);
+
+            Card tile = new Card
+            {
+                Location = new Point(x, y),
+                Size = new Size(w, h),
+                Fill = Theme.Slate50,
+                BorderTint = Theme.Slate150,
+                Radius = Theme.RadiusSm
+            };
+
+            Label cap = new Label
+            {
+                AutoSize = false,
+                Font = Theme.Tiny,
+                ForeColor = Theme.Slate500,
+                BackColor = Color.Transparent,
+                Location = new Point(Dpi.S(12), Dpi.S(9)),
+                Size = new Size(w - Dpi.S(24), Dpi.S(14)),
+                Text = label.ToUpperInvariant()
+            };
+            tile.Controls.Add(cap);
+
+            Label val = new Label
+            {
+                AutoSize = false,
+                Font = new Font("Segoe UI", 13F, FontStyle.Bold),
+                ForeColor = Theme.Navy900,
+                BackColor = Color.Transparent,
+                Location = new Point(Dpi.S(12), cap.Bottom + Dpi.S(2)),
+                Size = new Size(w - Dpi.S(24), Dpi.S(26)),
+                Text = value
+            };
+            tile.Controls.Add(val);
+
+            parent.Controls.Add(tile);
+            return val;
+        }
+
+        private void UpdateMetrics()
+        {
+            if (_mAvg == null || IsDisposed) return;
+
+            DbMetricsSnapshot s = DbMetrics.Snapshot();
+
+            _mAvg.Text = s.AvgMs <= 0 ? "—" : Math.Round(s.AvgMs) + " ms";
+            _mLast.Text = s.TotalOps == 0 ? "—" : s.LastMs + " ms";
+            _mUptime.Text = FormatUptime(s.Uptime);
+            _mSuccess.Text = Math.Round(s.SuccessRatePercent) + "%";
+            _mError.Text = Math.Round(s.ErrorRatePercent, 1) + "%";
+            _mError.ForeColor = s.Failures > 0 ? Theme.Red600 : Theme.Navy900;
+            _mOps.Text = s.TotalOps.ToString();
+        }
+
+        private static string FormatUptime(TimeSpan t)
+        {
+            if (t.TotalHours >= 1) return (int)t.TotalHours + "h " + t.Minutes + "m";
+            if (t.TotalMinutes >= 1) return t.Minutes + "m " + t.Seconds + "s";
+            return t.Seconds + "s";
+        }
+
+        /// <summary>Read-only diagnostics: app version, runtime, environment, data source.</summary>
+        private void AddSystemHealthCard()
+        {
+            Card card = new Card
+            {
+                Location = new Point(Left1, Y),
+                Width = InnerWidth,
+                Fill = Color.White,
+                BorderTint = Theme.Slate150,
+                Radius = Theme.Radius
+            };
+
+            Card bar = Ui.SectionBar("System Health", InnerWidth);
+            card.Controls.Add(bar);
+
+            var items = SystemHealth.Collect();
+
+            // Two columns of label/value rows.
+            int cols = 2;
+            int gap = Dpi.S(24);
+            int colW = (InnerWidth - Dpi.S(40) - gap) / cols;
+            int rowH = Dpi.S(40);
+            int top = bar.Bottom + Dpi.S(14);
+            int perCol = (int)Math.Ceiling(items.Count / (double)cols);
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                int col = i / perCol;
+                int rowInCol = i % perCol;
+                int x = Dpi.S(20) + col * (colW + gap);
+                int y = top + rowInCol * rowH;
+
+                Label label = new Label
+                {
+                    AutoSize = false,
+                    Font = Theme.Tiny,
+                    ForeColor = Theme.Slate400,
+                    BackColor = Color.Transparent,
+                    Location = new Point(x, y),
+                    Size = new Size(colW, Dpi.S(14)),
+                    Text = items[i].Key.ToUpperInvariant()
+                };
+                card.Controls.Add(label);
+
+                bool good = IsHealthy(items[i].Key, items[i].Value);
+                Label value = new Label
+                {
+                    AutoSize = false,
+                    Font = Theme.BodyBold,
+                    ForeColor = good ? Theme.Slate900 : Theme.Amber700,
+                    BackColor = Color.Transparent,
+                    Location = new Point(x, y + Dpi.S(15)),
+                    Size = new Size(colW, Dpi.S(20)),
+                    Text = items[i].Value
+                };
+                card.Controls.Add(value);
+            }
+
+            card.Height = top + perCol * rowH + Dpi.S(10);
+            Controls.Add(card);
+            Y = card.Bottom + Dpi.S(18);
+        }
+
+        /// <summary>Flags values that warrant attention (shown amber instead of dark).</summary>
+        private static bool IsHealthy(string key, string value)
+        {
+            if (key == "Database config" && value != "Present") return false;
+            if (key == "Data source" && value.StartsWith("Local")) return false;
+            return true;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _perfTimer != null)
+            {
+                _perfTimer.Stop();
+                _perfTimer.Dispose();
+                _perfTimer = null;
+            }
+            base.Dispose(disposing);
         }
 
         private void AddSecurityCard(OrgSettings settings)
@@ -363,6 +575,12 @@ namespace MzuApplication.Views
                 + "before a form can be finalised.",
                 settings.RequireDualSignoff);
 
+            CheckBox allowAttach = AddPolicySwitch(card, ref y,
+                "Allow file attachments on records",
+                "When on, users can attach supporting files (photos, certificates) to QC "
+                + "records. Turn off to disallow attachments across the system.",
+                settings.AllowAttachments);
+
             Label dueLabel = Ui.FieldLabel("NCR close-out window (days)");
             dueLabel.Location = new Point(Dpi.S(20), y);
             card.Controls.Add(dueLabel);
@@ -397,11 +615,13 @@ namespace MzuApplication.Views
 
                 settings.EnforceNcrOnReject = enforceNcr.Checked;
                 settings.RequireDualSignoff = dualSignoff.Checked;
+                settings.AllowAttachments = allowAttach.Checked;
                 settings.NcrDueDays = days;
 
                 Audit.Log(AuditAction.Updated, "Settings", null, "Quality Policy",
                     "Dual sign-off " + (dualSignoff.Checked ? "on" : "off")
                     + " · NCR enforcement " + (enforceNcr.Checked ? "on" : "off")
+                    + " · attachments " + (allowAttach.Checked ? "allowed" : "disallowed")
                     + " · window " + days + " days");
                 Repository.Save();
 

@@ -149,32 +149,32 @@ namespace MzuApplication.Views
             Card bar = Ui.SectionBar("Document Information", InnerWidth);
             card.Controls.Add(bar);
 
-            const int gap = 16;
-            int colWidth = (InnerWidth - 36 - gap) / 2;
-            int top = bar.Bottom + 16;
+            int gap = Dpi.S(16);
+            int colWidth = (InnerWidth - Dpi.S(36) - gap) / 2;
+            int top = bar.Bottom + Dpi.S(16);
 
             TextInput docNumber = AddField(card, "Document Number", _draft.DocNumber,
-                new Point(18, top), colWidth, "MZT-QC-307");
+                new Point(Dpi.S(18), top), colWidth, "MZT-QC-307");
             docNumber.ValueChanged += (s, e) => _draft.DocNumber = docNumber.Value;
 
             TextInput docName = AddField(card, "Document Name", _draft.DocName,
-                new Point(18 + colWidth + gap, top), colWidth, "e.g. Earthing & Bonding Installation");
+                new Point(Dpi.S(18) + colWidth + gap, top), colWidth, "e.g. Earthing & Bonding Installation");
             docName.ValueChanged += (s, e) => _draft.DocName = docName.Value;
 
-            top = docNumber.Bottom + 14;
+            top = docNumber.Bottom + Dpi.S(14);
 
             TextInput description = AddField(card, "Description / Subtitle", _draft.Description,
-                new Point(18, top), InnerWidth - 36);
+                new Point(Dpi.S(18), top), InnerWidth - Dpi.S(36));
             description.ValueChanged += (s, e) => _draft.Description = description.Value;
 
-            top = description.Bottom + 14;
+            top = description.Bottom + Dpi.S(14);
 
             TextInput revision = AddField(card, "Revision", _draft.Revision,
-                new Point(18, top), colWidth);
+                new Point(Dpi.S(18), top), colWidth);
             revision.ValueChanged += (s, e) => _draft.Revision = revision.Value;
 
             Label issueLabel = Ui.FieldLabel("Issue Date");
-            issueLabel.Location = new Point(18 + colWidth + gap, top);
+            issueLabel.Location = new Point(Dpi.S(18) + colWidth + gap, top);
             card.Controls.Add(issueLabel);
 
             DateTimePicker issueDate = new DateTimePicker
@@ -182,24 +182,24 @@ namespace MzuApplication.Views
                 Format = DateTimePickerFormat.Custom,
                 CustomFormat = "yyyy-MM-dd",
                 Font = Theme.Body,
-                Location = new Point(18 + colWidth + gap, issueLabel.Bottom + 8),
+                Location = new Point(Dpi.S(18) + colWidth + gap, issueLabel.Bottom + Dpi.S(8)),
                 Width = colWidth,
                 Value = _draft.IssueDate
             };
             issueDate.ValueChanged += (s, e) => _draft.IssueDate = issueDate.Value.Date;
             card.Controls.Add(issueDate);
 
-            top = Math.Max(revision.Bottom, issueDate.Bottom) + 14;
+            top = Math.Max(revision.Bottom, issueDate.Bottom) + Dpi.S(14);
 
             CheckBox active = Ui.Check("Active (visible in Form Library)");
             active.Checked = _draft.Active;
-            active.Location = new Point(18, top);
+            active.Location = new Point(Dpi.S(18), top);
             active.CheckedChanged += (s, e) => _draft.Active = active.Checked;
             card.Controls.Add(active);
 
-            card.Height = active.Bottom + 18;
+            card.Height = active.Bottom + Dpi.S(18);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         private static TextInput AddField(Card parent, string label, string value,
@@ -211,7 +211,7 @@ namespace MzuApplication.Views
 
             TextInput input = new TextInput
             {
-                Location = new Point(location.X, caption.Bottom + 5),
+                Location = new Point(location.X, caption.Bottom + Dpi.S(5)),
                 Width = width,
                 Height = Dpi.S(34),
                 Value = value ?? string.Empty
@@ -243,11 +243,11 @@ namespace MzuApplication.Views
             Label help = Ui.Wrapped(
                 "Extra site-specific fields shown on the form header, in addition to the standard "
                 + "Project / Client / QC Record No. Example: \"Enclosure / Cabinet N°\".",
-                Theme.Tiny, Theme.Slate500, InnerWidth - 36);
-            help.Location = new Point(18, bar.Bottom + 14);
+                Theme.Tiny, Theme.Slate500, InnerWidth - Dpi.S(36));
+            help.Location = new Point(Dpi.S(18), bar.Bottom + Dpi.S(14));
             card.Controls.Add(help);
 
-            int top = help.Bottom + 12;
+            int top = help.Bottom + Dpi.S(12);
 
             for (int i = 0; i < _draft.ProjectFields.Count; i++)
             {
@@ -255,8 +255,8 @@ namespace MzuApplication.Views
 
                 TextInput input = new TextInput
                 {
-                    Location = new Point(18, top),
-                    Width = InnerWidth - 36 - 40,
+                    Location = new Point(Dpi.S(18), top),
+                    Width = InnerWidth - Dpi.S(36) - Dpi.S(40),
                     Height = Dpi.S(34),
                     Value = _draft.ProjectFields[i],
                     Placeholder = "e.g. Enclosure / Cabinet N°"
@@ -267,7 +267,7 @@ namespace MzuApplication.Views
                 IconButton remove = new IconButton
                 {
                     Glyph = Glyph.Cross,
-                    Location = new Point(input.Right + 8, top + 4),
+                    Location = new Point(input.Right + Dpi.S(8), top + Dpi.S(4)),
                     Size = new Size(Dpi.S(28), Dpi.S(28)),
                     BorderTint = Theme.Slate200
                 };
@@ -278,7 +278,7 @@ namespace MzuApplication.Views
                 };
                 card.Controls.Add(remove);
 
-                top = input.Bottom + 8;
+                top = input.Bottom + Dpi.S(8);
             }
 
             FlatButton add = new FlatButton
@@ -287,7 +287,7 @@ namespace MzuApplication.Views
                 Glyph = Glyph.Plus,
                 Width = Dpi.S(120),
                 Height = Dpi.S(32),
-                Location = new Point(18, top + 4)
+                Location = new Point(Dpi.S(18), top + Dpi.S(4))
             };
             add.Click += (s, e) =>
             {
@@ -296,9 +296,9 @@ namespace MzuApplication.Views
             };
             card.Controls.Add(add);
 
-            card.Height = add.Bottom + 16;
+            card.Height = add.Bottom + Dpi.S(16);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         #endregion
@@ -319,17 +319,17 @@ namespace MzuApplication.Views
             Card bar = Ui.SectionBar("Scope & Acceptance Criteria", InnerWidth);
             card.Controls.Add(bar);
 
-            const int gap = 16;
-            int colWidth = (InnerWidth - 36 - gap) / 2;
-            int top = bar.Bottom + 16;
+            int gap = Dpi.S(16);
+            int colWidth = (InnerWidth - Dpi.S(36) - gap) / 2;
+            int top = bar.Bottom + Dpi.S(16);
 
             Label scopeLabel = Ui.FieldLabel("Scope");
-            scopeLabel.Location = new Point(18, top);
+            scopeLabel.Location = new Point(Dpi.S(18), top);
             card.Controls.Add(scopeLabel);
 
             TextInput scope = new TextInput
             {
-                Location = new Point(18, scopeLabel.Bottom + 5),
+                Location = new Point(Dpi.S(18), scopeLabel.Bottom + Dpi.S(5)),
                 Width = colWidth,
                 Height = Dpi.S(84),
                 Multiline = true,
@@ -339,12 +339,12 @@ namespace MzuApplication.Views
             card.Controls.Add(scope);
 
             Label acceptLabel = Ui.FieldLabel("Acceptance Criteria");
-            acceptLabel.Location = new Point(18 + colWidth + gap, top);
+            acceptLabel.Location = new Point(Dpi.S(18) + colWidth + gap, top);
             card.Controls.Add(acceptLabel);
 
             TextInput acceptance = new TextInput
             {
-                Location = new Point(18 + colWidth + gap, acceptLabel.Bottom + 5),
+                Location = new Point(Dpi.S(18) + colWidth + gap, acceptLabel.Bottom + Dpi.S(5)),
                 Width = colWidth,
                 Height = Dpi.S(84),
                 Multiline = true,
@@ -353,9 +353,9 @@ namespace MzuApplication.Views
             acceptance.ValueChanged += (s, e) => _draft.Acceptance = acceptance.Value;
             card.Controls.Add(acceptance);
 
-            card.Height = scope.Bottom + 18;
+            card.Height = scope.Bottom + Dpi.S(18);
             Controls.Add(card);
-            Y = card.Bottom + 20;
+            Y = card.Bottom + Dpi.S(20);
         }
 
         #endregion
@@ -380,7 +380,7 @@ namespace MzuApplication.Views
                 Glyph = Glyph.Plus,
                 Width = Dpi.S(128),
                 Height = Dpi.S(32),
-                Location = new Point(Left1 + InnerWidth - 128, Y - 4)
+                Location = new Point(Left1 + InnerWidth - Dpi.S(128), Y - Dpi.S(4))
             };
             add.Click += (s, e) =>
             {
@@ -393,7 +393,7 @@ namespace MzuApplication.Views
             };
             Controls.Add(add);
 
-            Y = Math.Max(heading.Bottom, add.Bottom) + 12;
+            Y = Math.Max(heading.Bottom, add.Bottom) + Dpi.S(12);
         }
 
         private void AddSections()
@@ -444,7 +444,7 @@ namespace MzuApplication.Views
                 Variant = ButtonVariant.Danger,
                 Width = Dpi.S(148),
                 Height = Dpi.S(30),
-                Location = new Point(InnerWidth - 164, 11)
+                Location = new Point(InnerWidth - Dpi.S(164), Dpi.S(11))
             };
             removeSection.Click += (s, e) =>
             {
@@ -461,7 +461,7 @@ namespace MzuApplication.Views
 
             card.Controls.Add(bar);
 
-            int top = bar.Height + 14;
+            int top = bar.Height + Dpi.S(14);
 
             for (int i = 0; i < section.Items.Count; i++)
             {
@@ -474,7 +474,7 @@ namespace MzuApplication.Views
                 Glyph = Glyph.Plus,
                 Width = Dpi.S(172),
                 Height = Dpi.S(32),
-                Location = new Point(18, top + 4)
+                Location = new Point(Dpi.S(18), top + Dpi.S(4))
             };
             addItem.Click += (s, e) =>
             {
@@ -489,9 +489,9 @@ namespace MzuApplication.Views
             };
             card.Controls.Add(addItem);
 
-            card.Height = addItem.Bottom + 16;
+            card.Height = addItem.Bottom + Dpi.S(16);
             Controls.Add(card);
-            Y = card.Bottom + 16;
+            Y = card.Bottom + Dpi.S(16);
         }
 
         /// <summary>Renders one editable checklist item row and returns the next Y.</summary>
@@ -499,10 +499,10 @@ namespace MzuApplication.Views
         {
             TemplateItem item = section.Items[itemIndex];
 
-            int available = InnerWidth - 36;
-            int numberWidth = 34;
-            int removeWidth = 86;
-            int gap = 12;
+            int available = InnerWidth - Dpi.S(36);
+            int numberWidth = Dpi.S(34);
+            int removeWidth = Dpi.S(86);
+            int gap = Dpi.S(12);
 
             int fieldsWidth = available - numberWidth - removeWidth - gap * 2;
             int textWidth = (int)(fieldsWidth * 0.58);
@@ -513,12 +513,12 @@ namespace MzuApplication.Views
                 AutoSize = true,
                 Font = Theme.MonoSmall,
                 ForeColor = Theme.Slate400,
-                Location = new Point(18, top + 22),
+                Location = new Point(Dpi.S(18), top + Dpi.S(22)),
                 Text = (itemIndex + 1) + "."
             };
             parent.Controls.Add(number);
 
-            int x = 18 + numberWidth;
+            int x = Dpi.S(18) + numberWidth;
 
             Label textLabel = Ui.FieldLabel("Requirement / question");
             textLabel.Location = new Point(x, top);
@@ -526,7 +526,7 @@ namespace MzuApplication.Views
 
             TextInput text = new TextInput
             {
-                Location = new Point(x, textLabel.Bottom + 5),
+                Location = new Point(x, textLabel.Bottom + Dpi.S(5)),
                 Width = textWidth,
                 Height = Dpi.S(54),
                 Multiline = true,
@@ -543,7 +543,7 @@ namespace MzuApplication.Views
 
             TextInput refLabel = new TextInput
             {
-                Location = new Point(x, refLabelCaption.Bottom + 5),
+                Location = new Point(x, refLabelCaption.Bottom + Dpi.S(5)),
                 Width = refWidth,
                 Height = Dpi.S(34),
                 Value = item.RefLabel ?? string.Empty,
@@ -554,7 +554,7 @@ namespace MzuApplication.Views
 
             CheckBox required = Ui.Check("Required");
             required.Checked = item.RefRequired;
-            required.Location = new Point(x, refLabel.Bottom + 6);
+            required.Location = new Point(x, refLabel.Bottom + Dpi.S(6));
             required.CheckedChanged += (s, e) => item.RefRequired = required.Checked;
             parent.Controls.Add(required);
 
@@ -566,7 +566,7 @@ namespace MzuApplication.Views
                 Variant = ButtonVariant.Danger,
                 Width = removeWidth,
                 Height = Dpi.S(30),
-                Location = new Point(x, textLabel.Bottom + 7)
+                Location = new Point(x, textLabel.Bottom + Dpi.S(7))
             };
             remove.Click += (s, e) =>
             {
@@ -578,11 +578,11 @@ namespace MzuApplication.Views
             int bottom = Math.Max(text.Bottom, required.Bottom);
 
             Panel rule = Ui.Divider(available);
-            rule.Location = new Point(18, bottom + 10);
+            rule.Location = new Point(Dpi.S(18), bottom + Dpi.S(10));
             rule.BackColor = Theme.Slate100;
             parent.Controls.Add(rule);
 
-            return rule.Bottom + 14;
+            return rule.Bottom + Dpi.S(14);
         }
 
         #endregion

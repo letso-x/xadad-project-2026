@@ -30,7 +30,8 @@ namespace MzuApplication.Views
 
         protected override void BuildContent()
         {
-            Project project = Repository.GetProject(_projectId);
+            Project project = ProjectService.All().FirstOrDefault(p => p.Id == _projectId)
+                              ?? Repository.GetProject(_projectId);
             if (project == null)
             {
                 Label missing = Ui.Body("Project not found.");
@@ -40,7 +41,7 @@ namespace MzuApplication.Views
                 return;
             }
 
-            Client client = Repository.GetClient(project.ClientId);
+            Client client = ClientService.All().FirstOrDefault(c => c.Id == project.ClientId);
 
             AddCrumbs("Projects", () => Shell.Navigate(new ProjectsView(Shell)), project.Name);
 
@@ -60,7 +61,7 @@ namespace MzuApplication.Views
                 Variant = ButtonVariant.Primary,
                 Width = Dpi.S(124)
             };
-            newForm.Click += (s, e) => Shell.Navigate(new LibraryView(Shell, project.Id));
+            newForm.Click += (s, e) => LibraryView.NewFormForProject(Shell, project);
             actions.Add(newForm);
 
             AddPageHeader(client != null ? client.Name : string.Empty,
@@ -90,8 +91,8 @@ namespace MzuApplication.Views
             };
 
             const int perRow = 3;
-            const int gap = 14;
-            const int height = 78;
+            int gap = Dpi.S(14);
+            int height = Dpi.S(92);
             int width = (InnerWidth - gap * (perRow - 1)) / perRow;
 
             for (int i = 0; i < cells.Count; i++)
@@ -124,8 +125,8 @@ namespace MzuApplication.Views
                         Text = cell.Item2,
                         Fill = back,
                         TextColor = fore,
-                        Location = new Point(Dpi.S(18), Dpi.S(42)),
-                        Height = Dpi.S(22)
+                        Location = new Point(Dpi.S(18), Dpi.S(46)),
+                        Height = Dpi.S(24)
                     };
                     pill.AutoFit();
                     card.Controls.Add(pill);
@@ -137,9 +138,9 @@ namespace MzuApplication.Views
                         AutoSize = false,
                         Font = Theme.Body,
                         ForeColor = Theme.Slate900,
-                        Location = new Point(Dpi.S(18), Dpi.S(42)),
-                        Width = width - 34,
-                        Height = Dpi.S(20),
+                        Location = new Point(Dpi.S(18), Dpi.S(46)),
+                        Width = width - Dpi.S(36),
+                        Height = Dpi.S(22),
                         Text = cell.Item2
                     };
                     card.Controls.Add(value);
@@ -149,7 +150,7 @@ namespace MzuApplication.Views
             }
 
             int rows = (int)Math.Ceiling(cells.Count / (double)perRow);
-            Y += rows * height + (rows - 1) * gap + 18;
+            Y += rows * height + (rows - 1) * gap + Dpi.S(18);
         }
 
         private void AddDescription(Project project)
@@ -157,13 +158,13 @@ namespace MzuApplication.Views
             if (string.IsNullOrWhiteSpace(project.Description)) return;
 
             Label label = Ui.FieldLabel("Description");
-            Label text = Ui.Wrapped(project.Description, Theme.Body, Theme.Slate900, InnerWidth - 36);
+            Label text = Ui.Wrapped(project.Description, Theme.Body, Theme.Slate900, InnerWidth - Dpi.S(36));
 
             Card card = new Card
             {
                 Location = new Point(Left1, Y),
                 Width = InnerWidth,
-                Height = 20 + label.Height + 8 + text.Height + 18,
+                Height = Dpi.S(18) + label.Height + Dpi.S(8) + text.Height + Dpi.S(18),
                 Fill = Color.White,
                 BorderTint = Theme.Slate150,
                 Radius = Theme.Radius
@@ -172,17 +173,17 @@ namespace MzuApplication.Views
             label.Location = new Point(Dpi.S(18), Dpi.S(18));
             card.Controls.Add(label);
 
-            text.Location = new Point(18, label.Bottom + 8);
+            text.Location = new Point(Dpi.S(18), label.Bottom + Dpi.S(8));
             card.Controls.Add(text);
 
             Controls.Add(card);
-            Y = card.Bottom + 18;
+            Y = card.Bottom + Dpi.S(18);
         }
 
         private void AddRecordsTable(Project project)
         {
             // Forms and registers merged into one chronological list.
-            var entries = Repository.FormsForProject(project.Id)
+            var entries = FormService.ForProject(project.Id)
                 .Select(f =>
                 {
                     ChecklistTemplate t = Repository.GetTemplate(f.TemplateId);
@@ -254,7 +255,7 @@ namespace MzuApplication.Views
 
             card.Height = bar.Height + table.Height + 2;
             Controls.Add(card);
-            Y = card.Bottom + 8;
+            Y = card.Bottom + Dpi.S(8);
         }
     }
 }

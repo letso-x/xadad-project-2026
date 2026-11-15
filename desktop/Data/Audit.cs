@@ -23,13 +23,20 @@ namespace MzuApplication.Data
             get { return DbConfig.UsePostgres; }
         }
 
-        /// <summary>The workstation this process runs on, recorded on every entry.</summary>
+        /// <summary>
+        /// The workstation this process runs on, with the approximate city appended when
+        /// known (e.g. "DESKTOP-ABC · Durban"), recorded on every entry.
+        /// </summary>
         private static string Host
         {
             get
             {
-                try { return Environment.MachineName; }
-                catch (Exception) { return "unknown"; }
+                string machine;
+                try { machine = Environment.MachineName; }
+                catch (Exception) { machine = "unknown"; }
+
+                string city = GeoLocation.City;
+                return string.IsNullOrEmpty(city) ? machine : machine + " · " + city;
             }
         }
 

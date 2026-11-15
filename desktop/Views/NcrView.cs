@@ -271,10 +271,10 @@ namespace MzuApplication.Views
                     NcrSeverity sev = (NcrSeverity)Enum.Parse(
                         typeof(NcrSeverity), (string)severity.SelectedItem);
 
-                    NcrService.Raise(picked.Id, null, title.Value.Trim(),
-                        description.Value.Trim(), sev, owner.Value.Trim());
+                    LoadingOverlay.Run(Shell, "Raising NCR…", () =>
+                        NcrService.Raise(picked.Id, null, title.Value.Trim(),
+                            description.Value.Trim(), sev, owner.Value.Trim()));
 
-                    Repository.Save();
                     dialog.DialogResult = DialogResult.OK;
                 });
 

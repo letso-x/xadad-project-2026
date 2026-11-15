@@ -100,34 +100,35 @@ namespace MzuApplication.Data
 
         public static List<UserAccount> GetAll()
         {
-            var list = new List<UserAccount>();
-
-            using (var conn = Open())
-            using (var cmd = new NpgsqlCommand(SelectColumns + " from " + Table + " order by \"UserID\"", conn))
-            using (var reader = cmd.ExecuteReader())
+            return DbMetrics.Measure(() =>
             {
-                while (reader.Read())
+                var list = new List<UserAccount>();
+                using (var conn = Open())
+                using (var cmd = new NpgsqlCommand(SelectColumns + " from " + Table + " order by \"UserID\"", conn))
+                using (var reader = cmd.ExecuteReader())
                 {
-                    list.Add(Map(reader));
+                    while (reader.Read()) list.Add(Map(reader));
                 }
-            }
-
-            return list;
+                return list;
+            });
         }
 
         /// <summary>Looks a user up by login name, which maps to the Email column.</summary>
         public static UserAccount FindByUsername(string username)
         {
-            using (var conn = Open())
-            using (var cmd = new NpgsqlCommand(
-                SelectColumns + " from " + Table + " where lower(\"Email\") = lower(@u)", conn))
+            return DbMetrics.Measure(() =>
             {
-                cmd.Parameters.AddWithValue("u", username);
-                using (var reader = cmd.ExecuteReader())
+                using (var conn = Open())
+                using (var cmd = new NpgsqlCommand(
+                    SelectColumns + " from " + Table + " where lower(\"Email\") = lower(@u)", conn))
                 {
-                    return reader.Read() ? Map(reader) : null;
+                    cmd.Parameters.AddWithValue("u", username);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        return reader.Read() ? Map(reader) : null;
+                    }
                 }
-            }
+            });
         }
 
         public static void Insert(UserAccount account)
