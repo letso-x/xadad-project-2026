@@ -263,13 +263,28 @@ public sealed class FieldFormPage : FieldScreen
   // Failed submissions leave the rendered controls and entered values intact.
   if(await model.SubmitAsync())
   {
-   var list=Navigation.NavigationStack.OfType<FieldFormsPage>().LastOrDefault();
+   // Check after the awaited submission: navigation may have changed in the meantime.
+   var stack=Navigation.NavigationStack.ToArray();
+   if(stack.Length==0||!stack.Contains(this))
+   {
+    model.Message="QC record submitted. Return to the project to view it.";
+    return;
+   }
+   var list=stack.OfType<FieldFormsPage>().LastOrDefault();
    if(list is null)
    {
-    list=new FieldFormsPage(workspace,model.Form!["projectID"]!.GetValue<long>());
+    var projectId=model.Form?["projectID"]?.GetValue<long>();
+    if(projectId is null)
+    {
+     model.Message="QC record submitted. Return to the project to view it.";
+     return;
+    }
+    list=new FieldFormsPage(workspace,projectId.Value);
     Navigation.InsertPageBefore(list,this);
    }
-   while(Navigation.NavigationStack.Last()!=list)await Navigation.PopAsync();
+   // Avoid Last() when the stack is empty or has been replaced.
+   while(Navigation.NavigationStack.Count>1&&Navigation.NavigationStack.LastOrDefault()!=list)
+    await Navigation.PopAsync();
   }
  }
  private async Task CaptureAsync(long fieldId,bool camera,VerticalStackLayout controls)
