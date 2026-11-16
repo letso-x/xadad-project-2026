@@ -71,5 +71,13 @@ public abstract class FieldScreen : ContentPage
   Status.SetBinding(Label.TextProperty,nameof(FieldViewModel.Message));
   Scroller.Content=Rows;Content=Scroller;
  }
- protected void Heading(string category,string title){Rows.Add(FieldUi.Category(category));Rows.Add(FieldUi.Text(title,25,true));Rows.Add(Status);}
+ protected void Heading(string category,string title)
+ {
+  Rows.Add(FieldUi.Category(category));
+  Rows.Add(FieldUi.Text(title,25,true));
+  // A rerender must not reattach a previously parented Android view.
+  var message=FieldUi.Text("");
+  message.SetBinding(Label.TextProperty,nameof(FieldViewModel.Message));
+  Rows.Add(message);
+ }
 }
