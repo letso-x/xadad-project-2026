@@ -10,11 +10,12 @@ public sealed class FieldNcrPage:FieldScreen
  public FieldNcrPage(InspectionWorkspace workspace,long formId,JsonNode ncr):this(workspace,new NcrViewModel(workspace,formId,ncr["ncrID"]?.GetValue<long>()??0,ncr["publicNCRID"]?.GetValue<long>())){}
  private FieldNcrPage(InspectionWorkspace workspace,NcrViewModel model):base("Non-conformance",model)
  {this.workspace=workspace;this.model=model;model.PropertyChanged+=(_,e)=>{if(e.PropertyName==nameof(FieldViewModel.Busy))Rows.IsEnabled=!model.Busy;};ToolbarItems.Add(new ToolbarItem("Sync",null,async()=>{if(await model.SyncAsync())Render();}));}
- protected override async void OnAppearing(){base.OnAppearing();if(await model.LoadAsync())Render();else{Rows.Clear();Heading("Non-conformance","Case unavailable");}}
+ protected override async void OnAppearing(){base.OnAppearing();if(await model.LoadAsync())Render();else RebuildRows(()=>Heading("Non-conformance","Case unavailable"));}
  private void Detail(string label,string? value)=>Rows.Add(FieldUi.Card(FieldUi.Text(label.ToUpperInvariant(),11,true),FieldUi.Text(string.IsNullOrWhiteSpace(value)?"Not recorded":value)));
- private void Render()
+ private void Render()=>RebuildRows(RenderContents);
+ private void RenderContents()
  {
-  var n=model.Ncr!;Rows.Clear();Heading("Non-conformance",n["ncrNumber"]?.ToString()??"Historical NCR");
+  var n=model.Ncr!;Heading("Non-conformance",n["ncrNumber"]?.ToString()??"Historical NCR");
   Rows.Add(FieldUi.Badge(NcrInteraction.IsClosed(n)?"Closed":"Open"));Rows.Add(FieldUi.Text(NcrInteraction.Status(n),16,true));
   Detail("Project",n["projectName"]?.ToString()??model.Form?["documentSnapshot"]?["project"]?.ToString());
   Detail("Project number",n["projectNumber"]?.ToString()??model.Form?["documentSnapshot"]?["projectNumber"]?.ToString());
