@@ -1175,25 +1175,27 @@ public sealed class QCFormRepository : IQCFormRepository
             .QuerySingleOrDefaultAsync<QCResponseValidationRow>(
                 command);
     }
-    public async Task<QCProjectFieldValidationRow?> GetProjectFieldValidationAsync(
-    long qcFormId,
-    long qcFormProjectFieldId,
-    CancellationToken cancellationToken = default)
-    {
-        const string sql = """
+    // Concurrency belongs to QCForm and is checked by QCWorkflow, not this field row.
+    internal const string ProjectFieldValidationSql = """
         SELECT
-            "Revision",
             "QCFormID",
             "QCFormProjectFieldID",
-            "FieldType"::text AS "FieldType",
+            CAST("FieldType" AS text) AS "FieldType",
             "IsRequired",
-            "Options"::text AS "OptionsJson",
-            "ValidationRules"::text AS "ValidationRulesJson"
+            CAST("Options" AS text) AS "OptionsJson",
+            CAST("ValidationRules" AS text) AS "ValidationRulesJson"
         FROM public."QCFormProjectField"
         WHERE "QCFormID" = @QCFormID
           AND "QCFormProjectFieldID" =
               @QCFormProjectFieldID;
         """;
+
+    public async Task<QCProjectFieldValidationRow?> GetProjectFieldValidationAsync(
+    long qcFormId,
+    long qcFormProjectFieldId,
+    CancellationToken cancellationToken = default)
+    {
+        const string sql = ProjectFieldValidationSql;
 
         await using var lease = await _session.OpenAsync(cancellationToken);
         var connection = lease.Connection;
