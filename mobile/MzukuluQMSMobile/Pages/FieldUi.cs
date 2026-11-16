@@ -50,26 +50,51 @@ internal sealed class FieldChoice : VerticalStackLayout
 }
 public abstract class FieldScreen : ContentPage
 {
- protected readonly VerticalStackLayout Rows=new(){Padding=new Thickness(18),Spacing=12};
+ protected VerticalStackLayout Rows=new(){Padding=new Thickness(18),Spacing=12};
+ // Build refreshable screens off-tree so Android never receives add/remove
+ // commands for controls still attached to a prior native parent.
+ protected void RebuildRows(Action render)
+ {
+  var previous=Rows;
+  var replacement=new VerticalStackLayout{Padding=new Thickness(18),Spacing=12};
+  Rows=replacement;
+  try
+  {
+   render();
+   Scroller.Content=replacement;
+  }
+  catch
+  {
+   Rows=previous;
+   throw;
+  }
+ }
  protected readonly Label Status=FieldUi.Text("");
  protected readonly ScrollView Scroller=new();
  protected FieldScreen(string title,FieldViewModel model,bool showMenu=true)
  {
   Title=title;BackgroundColor=FieldUi.Background;BindingContext=model;
-  // Nested NavigationPage screens replace MAUI's automatic flyout icon with Back.
-  // Keep navigation on the left, with record actions in the right-hand toolbar.
-  var menu=new Button{Text="\u2630",AutomationId="NavigationMenu",FontSize=24,WidthRequest=48,HeightRequest=48,
-   Padding=0,BackgroundColor=Colors.Transparent,TextColor=Colors.White,BorderWidth=0};
-  menu.IsVisible=showMenu;
-  SemanticProperties.SetDescription(menu,"Open navigation menu");
-  menu.Clicked+=(_,_)=>{
-   if(Window?.Page is FlyoutPage flyout)flyout.IsPresented=!flyout.IsPresented;
-  };
-  NavigationPage.SetTitleView(this,new HorizontalStackLayout{Spacing=8,VerticalOptions=LayoutOptions.Center,
-   Children={menu,new Label{Text=title,FontSize=18,FontAttributes=FontAttributes.Bold,TextColor=Colors.White,
-    VerticalOptions=LayoutOptions.Center,LineBreakMode=LineBreakMode.TailTruncation}}});
+  // The platform navigation bar already supplies the flyout/back button.
+  // A custom hamburger in TitleView duplicates it, especially on Android.
+  NavigationPage.SetTitleView(this,new Label
+  {
+   Text=title,
+   FontSize=18,
+   FontAttributes=FontAttributes.Bold,
+   TextColor=Colors.White,
+   VerticalOptions=LayoutOptions.Center,
+   LineBreakMode=LineBreakMode.TailTruncation
+  });
   Status.SetBinding(Label.TextProperty,nameof(FieldViewModel.Message));
   Scroller.Content=Rows;Content=Scroller;
  }
- protected void Heading(string category,string title){Rows.Add(FieldUi.Category(category));Rows.Add(FieldUi.Text(title,25,true));Rows.Add(Status);}
+ protected void Heading(string category,string title)
+ {
+  Rows.Add(FieldUi.Category(category));
+  Rows.Add(FieldUi.Text(title,25,true));
+  // A rerender must not reattach a previously parented Android view.
+  var message=FieldUi.Text("");
+  message.SetBinding(Label.TextProperty,nameof(FieldViewModel.Message));
+  Rows.Add(message);
+ }
 }
