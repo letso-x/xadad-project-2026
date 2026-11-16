@@ -50,7 +50,25 @@ internal sealed class FieldChoice : VerticalStackLayout
 }
 public abstract class FieldScreen : ContentPage
 {
- protected readonly VerticalStackLayout Rows=new(){Padding=new Thickness(18),Spacing=12};
+ protected VerticalStackLayout Rows=new(){Padding=new Thickness(18),Spacing=12};
+ // Build refreshable screens off-tree so Android never receives add/remove
+ // commands for controls still attached to a prior native parent.
+ protected void RebuildRows(Action render)
+ {
+  var previous=Rows;
+  var replacement=new VerticalStackLayout{Padding=new Thickness(18),Spacing=12};
+  Rows=replacement;
+  try
+  {
+   render();
+   Scroller.Content=replacement;
+  }
+  catch
+  {
+   Rows=previous;
+   throw;
+  }
+ }
  protected readonly Label Status=FieldUi.Text("");
  protected readonly ScrollView Scroller=new();
  protected FieldScreen(string title,FieldViewModel model,bool showMenu=true)
