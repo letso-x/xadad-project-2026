@@ -115,7 +115,7 @@ public sealed class FieldTemplateBuilderPage : FieldScreen
  private void AddText(JsonNode node,string key,string label,VerticalStackLayout parent,bool multiline=false)
  {
   parent.Add(FieldUi.Text(label.ToUpperInvariant(),11,true));
-  if(multiline){var entry=new Editor{Text=node[key]?.ToString()??"",AutoSize=EditorAutoSizeOption.TextChanges,MinimumHeightRequest=90};entry.TextChanged+=async(_,_)=>{node[key]=entry.Text??"";await SaveDraftAsync();};parent.Add(entry);}
+  if(multiline){var entry=new Editor{TextColor=FieldUi.Navy,BackgroundColor=Colors.White,PlaceholderColor=FieldUi.Muted,Text=node[key]?.ToString()??"",AutoSize=EditorAutoSizeOption.TextChanges,MinimumHeightRequest=90};entry.TextChanged+=async(_,_)=>{node[key]=entry.Text??"";await SaveDraftAsync();};parent.Add(entry);}
   else{var entry=FieldUi.Entry(label);entry.Text=node[key]?.ToString()??"";entry.TextChanged+=async(_,_)=>{
    if(key=="key"&&ChecklistItems.Role(node)=="Result")
    {

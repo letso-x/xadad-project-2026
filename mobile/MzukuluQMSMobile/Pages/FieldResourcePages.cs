@@ -50,6 +50,7 @@ public sealed class FieldFormsPage : FieldScreen
   if(project is not null)Rows.Add(FieldUi.Card(FieldUi.Text(project["projectNumber"]?.ToString()??""),FieldUi.Text(project["contractOrderNumber"]?.ToString()??""),FieldUi.Text(project["siteLocation"]?.ToString()??"")));
   if(workspace.Permissions.Contains("ReadTemplates"))Rows.Add(FieldUi.Action("+ Start from Form Library",()=>Navigation.PushAsync(new FieldLibraryPage(workspace,projectId))));
   if(workspace.Permissions.Contains("ReadInspection"))Rows.Add(FieldUi.Action("Cable registers · MZT-QC-203",()=>Navigation.PushAsync(new FieldCableRegistersPage(workspace,projectId)),true));
+  if(workspace.Permissions.Contains("ReadItp"))Rows.Add(FieldUi.Action("Inspection & Test Plans · ITP progress",()=>Navigation.PushAsync(new FieldItpsPage(workspace,projectId)),true));
   if(await model.LoadAsync(()=>workspace.FormsAsync(projectId)))
   {
    AddForms(model.Data!.AsArray());if(model.Data.AsArray().Count==0)Rows.Add(FieldUi.Text("No QC records available."));

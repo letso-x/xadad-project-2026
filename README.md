@@ -1,8 +1,5 @@
 # xadad-project-2026
 
-**Implementation status (12 October 2026): under development, NOT READY.** The module descriptions below are design goals, not verification evidence. See [current status](docs/codex/IMPLEMENTATION_STATUS.md), [acceptance evidence](docs/codex/ACCEPTANCE_TESTS.md), and [actual setup/recovery instructions](docs/codex/SETUP_AND_RECOVERY.md). Encrypted SQLite, full offline/mobile workflows and several mandatory modules remain incomplete.
-An enterprise-grade, digital Quality Management System designed to transition industrial control systems and automation environments away from slow, paper-based records and spreadsheets. 
-
 This project is being engineered over a **5-Week Work Integrated Learning (WIL) placement** by a team of five Information Technology students.
 
 ## 📋 Project Overview
@@ -10,6 +7,31 @@ This project is being engineered over a **5-Week Work Integrated Learning (WIL) 
 Traditional paper-and-spreadsheet quality regimes suffer from delayed evidence capture, manual transcription errors, limited traceability, and grueling project close-out timelines. This solution resolves these pain points by introducing a unified digital pipeline:
 1. **Windows Desktop Application:** For office-based configuration, ITP authoring, calibration registries, and one-click handover dossier generation.
 2. **Mobile Field Application:** For workshop and on-site inspections, supporting offline evidence capture, encrypted storage, and resilient synchronization.
+
+**Download the Android/Windows .NET MAUI assessment build for mobile here:**
+https://pub-d0018942a3a446b4b6a16e9ff1182bee.r2.dev/MzukuluQMS-Windows-Demo.zip 
+
+
+**How to run the Android/Windows .NET MAUI version**
+1. Download MzukuluQMS-Windows-Demo.zip.
+2. Extract the ZIP file.
+3. Open the extracted folder.
+4. Run MzukuluQMSMobile.exe.
+5. Allow the application to start if Windows displays a security prompt.
+6. An active internet connection is required.
+   
+**Android Download**
+Download the signed Android APK here:
+https://pub-d0018942a3a446b4b6a16e9ff1182bee.r2.dev/com.companyname.mzukuluqmsmobile.apk 
+
+How to install the Android version
+1. Download the APK onto a compatible Android device.
+2. Open the downloaded APK.
+3. Allow installation from unknown sources if Android requests permission.
+4. Complete the installation.
+5. Open Mzukulu QMS.
+6. An active internet connection is required.
+
 
 ---
 
@@ -112,7 +134,6 @@ Code **cannot** be merged if it fails our Quality Gate:
 
 ### Quick Start
 
-Follow [setup and recovery](docs/codex/SETUP_AND_RECOVERY.md) for exact project paths, sequential restore/build/test commands, server User Secrets, unapplied migrations and denied-by-default permission bootstrap. Never place database/service-role credentials in source-controlled appsettings or mobile code.
 
 ---
 
