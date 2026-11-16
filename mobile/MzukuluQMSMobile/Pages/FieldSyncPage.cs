@@ -32,7 +32,9 @@ public sealed class FieldSyncPage : FieldScreen
      var reason=await DisplayPromptAsync("Withdraw unsuccessful action","This withdraws the retry, without undoing an accepted action. Your answers, attachments and history are retained. Explain why you are withdrawing it.",maxLength:2000);
      if(reason is not null)await model.RunAsync(()=>local.WithdrawRejectedWorkflowAsync(entry.Operation.OperationId,reason));await LoadAsync();
     },true));
-   foreach(var conflict in await local.ConflictsAsync())
+   // Completed operations may retain historical conflict snapshots for audit.
+   // Only unresolved or explicitly withdrawn conflicts belong on this action screen.
+   foreach(var conflict in (await local.ConflictsAsync()).Where(c=>c.Status is "Conflict" or "Cancelled"))
    {
     var operation=outbox.FirstOrDefault(o=>o.Operation.OperationId==conflict.OperationId);
     var record=operation is null?null:await local.GetAsync(operation.Operation.EntityId);
