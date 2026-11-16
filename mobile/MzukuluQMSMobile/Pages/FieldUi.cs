@@ -74,18 +74,17 @@ public abstract class FieldScreen : ContentPage
  protected FieldScreen(string title,FieldViewModel model,bool showMenu=true)
  {
   Title=title;BackgroundColor=FieldUi.Background;BindingContext=model;
-  // Nested NavigationPage screens replace MAUI's automatic flyout icon with Back.
-  // Keep navigation on the left, with record actions in the right-hand toolbar.
-  var menu=new Button{Text="\u2630",AutomationId="NavigationMenu",FontSize=24,WidthRequest=48,HeightRequest=48,
-   Padding=0,BackgroundColor=Colors.Transparent,TextColor=Colors.White,BorderWidth=0};
-  menu.IsVisible=showMenu;
-  SemanticProperties.SetDescription(menu,"Open navigation menu");
-  menu.Clicked+=(_,_)=>{
-   if(Window?.Page is FlyoutPage flyout)flyout.IsPresented=!flyout.IsPresented;
-  };
-  NavigationPage.SetTitleView(this,new HorizontalStackLayout{Spacing=8,VerticalOptions=LayoutOptions.Center,
-   Children={menu,new Label{Text=title,FontSize=18,FontAttributes=FontAttributes.Bold,TextColor=Colors.White,
-    VerticalOptions=LayoutOptions.Center,LineBreakMode=LineBreakMode.TailTruncation}}});
+  // The platform navigation bar already supplies the flyout/back button.
+  // A custom hamburger in TitleView duplicates it, especially on Android.
+  NavigationPage.SetTitleView(this,new Label
+  {
+   Text=title,
+   FontSize=18,
+   FontAttributes=FontAttributes.Bold,
+   TextColor=Colors.White,
+   VerticalOptions=LayoutOptions.Center,
+   LineBreakMode=LineBreakMode.TailTruncation
+  });
   Status.SetBinding(Label.TextProperty,nameof(FieldViewModel.Message));
   Scroller.Content=Rows;Content=Scroller;
  }
