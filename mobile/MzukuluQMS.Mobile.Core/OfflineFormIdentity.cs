@@ -31,6 +31,33 @@ public static class OfflineFormIdentity
     ["scope"]=draft["scope"]?.DeepClone(),["acceptanceCriteria"]=draft["acceptanceCriteria"]?.DeepClone(),["project"]=project["projectName"]?.DeepClone(),["projectNumber"]=project["projectNumber"]?.DeepClone(),
     ["client"]=project["clientName"]?.DeepClone(),["contractOrderNumber"]=project["contractOrderNumber"]?.DeepClone(),["siteLocation"]=project["siteLocation"]?.DeepClone()}};
  }
+ // Repair only the known local snapshot contract loss, using its immutable pinned revision.
+ // Answers, local identities, signatures, queue payloads and nonempty metadata are never replaced.
+ public static bool NeedsMetadataRepair(JsonNode local)=>local["localCreate"]?.GetValue<bool>()==true&&FormInput.Editable(local["status"]?.ToString()??"")&&local["serverIdMap"] is null&&
+  (local["sections"]?.AsArray().SelectMany(s=>s?["fields"]?.AsArray()??[]).Any(f=>f?["fieldType"]?.ToString()=="Dropdown"&&f["options"] is JsonArray a&&a.Count==0)==true);
+ public static JsonObject RestoreMetadata(JsonNode local,JsonNode definition)
+ {
+  if(!NeedsMetadataRepair(local))return local.DeepClone().AsObject();
+  foreach(var key in new[]{"checklistTemplateID","checklistTemplateVersionID"})
+   if(local[key]?.ToString()!=definition[key]?.ToString())throw new InvalidOperationException("The saved checklist revision does not match. Your answers are retained.");
+  var draft=TemplateRevisionDraft.FromDefinition(definition);var result=local.DeepClone().AsObject();
+  void Restore(JsonArray fields,JsonArray source)
+  {
+   if(fields.Count!=source.Count)throw new InvalidOperationException("The saved checklist fields do not match. Your answers are retained.");
+   foreach(var field in fields)
+   {
+    var match=source.SingleOrDefault(f=>f?["key"]?.ToString()==field?["fieldKey"]?.ToString());
+    if(match is null||match["type"]?.ToString()!=field?["fieldType"]?.ToString())throw new InvalidOperationException("The saved checklist field does not match. Your answers are retained.");
+    if(field!["options"] is JsonArray options&&options.Count==0)field["options"]=match["options"]!.DeepClone();
+    if(field["validationRules"] is JsonObject rules&&rules.Count==0)field["validationRules"]=match["validationRules"]!.DeepClone();
+   }
+  }
+  Restore(result["projectFields"]!.AsArray(),draft["projectFields"]!.AsArray());
+  var sections=result["sections"]!.AsArray();var originals=draft["sections"]!.AsArray();
+  if(sections.Count!=originals.Count)throw new InvalidOperationException("The saved checklist sections do not match. Your answers are retained.");
+  for(var i=0;i<sections.Count;i++)Restore(sections[i]!["fields"]!.AsArray(),originals[i]!["fields"]!.AsArray());
+  return result;
+ }
  public static JsonObject Acknowledge(JsonNode local,JsonNode server)
  {
   foreach(var key in new[]{"projectID","checklistTemplateID","checklistTemplateVersionID"})if(local[key]?.ToString()!=server[key]?.ToString())throw new InvalidOperationException("Created record does not match the saved project and template. Local work is retained for review.");

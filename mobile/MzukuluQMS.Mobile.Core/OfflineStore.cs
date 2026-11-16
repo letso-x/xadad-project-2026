@@ -61,6 +61,17 @@ public sealed partial class OfflineStore(string directory, Guid owner, ILocalKey
     {
         await Locked(async()=>{await ExecuteAsync("INSERT INTO Entity VALUES($id,$server,$payload,0) ON CONFLICT(LocalId) DO UPDATE SET ServerId=excluded.ServerId,Payload=excluded.Payload WHERE Entity.Dirty=0",null,ct,("$id",id.ToString()),("$server",serverId),("$payload",Encrypt(json)));},ct);
     }
+    public async Task RestoreFormMetadataAsync(Guid entityId,JsonNode definition,CancellationToken ct=default)
+    {
+        await Locked(async()=>{
+            using var tx=connection!.BeginTransaction();
+            await using var query=Command("SELECT Payload FROM Entity WHERE LocalId=$id",tx,("$id",entityId.ToString()));
+            var bytes=await query.ExecuteScalarAsync(ct) as byte[]??throw new InvalidOperationException("Saved record not found.");
+            var source=JsonNode.Parse(Decrypt(bytes))!;var repaired=OfflineFormIdentity.RestoreMetadata(source,definition);
+            if(!JsonNode.DeepEquals(source,repaired))await ExecuteAsync("UPDATE Entity SET Payload=$payload WHERE LocalId=$id",tx,ct,("$payload",Encrypt(repaired.ToJsonString())),("$id",entityId.ToString()));
+            tx.Commit();
+        },ct);
+    }
     public async Task<Guid> SaveAndEnqueueAsync(Guid entityId,string localJson,string kind,string payload,long? expectedRevision,Guid? dependsOn=null,CancellationToken ct=default)
     {
         var operationId=Guid.NewGuid();
@@ -152,6 +163,15 @@ public sealed partial class OfflineStore(string directory, Guid owner, ILocalKey
             tx.Commit();
         },ct);
     }
+    public async Task RetryRetainedAsync(Guid operationId,CancellationToken ct=default)
+    {
+        await Locked(async()=>{
+            // Explicit retry changes scheduling only. Preserve identity, bytes,
+            // attempted revision, dependencies, attempt count and failure history.
+            await using var cmd=Command("UPDATE Operation SET Status='Pending',NextAttempt=0 WHERE OperationId=$id AND Status IN('Pending','Failed')",null,("$id",operationId.ToString()));
+            if(await cmd.ExecuteNonQueryAsync(ct)!=1)throw new InvalidOperationException("Only a pending or failed saved change can be retried. Conflicts require review.");
+        },ct);
+    }
     public async Task WithdrawRejectedWorkflowAsync(Guid operationId,string reason,CancellationToken ct=default)
     {
         if(string.IsNullOrWhiteSpace(reason)||reason.Length>2000)throw new ArgumentException("A withdrawal reason is required (max 2000).");
@@ -215,23 +235,33 @@ public sealed partial class OfflineStore(string directory, Guid owner, ILocalKey
     private async Task<(string Json,long? Revision)> PreserveLocalIdentityAsync(Guid entityId,string json,long? revision,SqliteTransaction tx,CancellationToken ct)
     {
         JsonNode? incoming;try{incoming=JsonNode.Parse(json);}catch(JsonException){return(json,revision);}
-        if(incoming is not JsonObject form||!long.TryParse(form["qcFormID"]?.ToString(),out var id)||id>=0)return(json,revision);
+        if(incoming is not JsonObject form||!long.TryParse(form["qcFormID"]?.ToString(),out var id))return(json,revision);
         await using var cmd=Command("SELECT Payload FROM Entity WHERE LocalId=$id",tx,("$id",entityId.ToString()));
         var bytes=await cmd.ExecuteScalarAsync(ct) as byte[];if(bytes is null)return(json,revision);
-        var saved=JsonNode.Parse(Decrypt(bytes));if(saved?["serverIdMap"] is null)return(json,revision);
+        var saved=JsonNode.Parse(Decrypt(bytes));
+        if(id>0)
+        {
+            // A live page can still hold the pre-sync snapshot. Keep the acknowledged
+            // revision/status without replacing any newly entered field values.
+            if(long.TryParse(saved?["revision"]?.ToString(),out var current)&&current>(revision??-1))
+            {form["revision"]=current;form["status"]=saved!["status"]?.DeepClone();return(form.ToJsonString(),current);}
+            return(json,revision);
+        }
+        if(saved?["serverIdMap"] is null)return(json,revision);
         foreach(var key in new[]{"serverIdMap","serverFormID","formNumber","localCreate","revision","status"})form[key]=saved[key]?.DeepClone();
         return(form.ToJsonString(),long.TryParse(saved["revision"]?.ToString(),out var acknowledged)?acknowledged:revision);
     }
     private async Task Locked(Func<Task> action,CancellationToken ct)
     {
-        await InitialiseAsync(ct);await gate.WaitAsync(ct);try {await action();}finally {gate.Release();}
+        using var total=PerformanceTrace.Measure("store.total");
+        await InitialiseAsync(ct);await gate.WaitAsync(ct);try {using var work=PerformanceTrace.Measure("store.work");await action();}finally {gate.Release();}
     }
     private SqliteCommand Command(string sql,SqliteTransaction? tx,params (string,object?)[] parameters)
     {
         var cmd=connection!.CreateCommand();cmd.CommandText=sql;cmd.Transaction=tx;foreach(var (name,value) in parameters)cmd.Parameters.AddWithValue(name,value??DBNull.Value);return cmd;
     }
     private async Task ExecuteAsync(string sql,SqliteTransaction? tx,CancellationToken ct,params (string,object?)[] parameters)
-    {await using var cmd=Command(sql,tx,parameters);await cmd.ExecuteNonQueryAsync(ct);}
+    {using var timing=PerformanceTrace.Measure("store.sql-write");await using var cmd=Command(sql,tx,parameters);await cmd.ExecuteNonQueryAsync(ct);}
     private byte[] Encrypt(string json)=>EncryptBytes(Encoding.UTF8.GetBytes(json));
     private string Decrypt(byte[] bytes)=>Encoding.UTF8.GetString(DecryptBytes(bytes));
     private byte[] EncryptBytes(byte[] plaintext)

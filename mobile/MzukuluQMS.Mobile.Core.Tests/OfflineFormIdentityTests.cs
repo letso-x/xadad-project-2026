@@ -72,7 +72,7 @@ public sealed class OfflineFormIdentityTests
   await store.SaveEvidenceAsync(entity,image,"image/png","photo.png",uploadRequest:id=>new("POST","api/qc-forms/-9000/evidence",EvidenceId:id,EvidenceType:"Photo",QCFormFieldID:-2),localJson:local.ToJsonString(),expectedRevision:0);
   var operation=await store.ClaimAsync();var payload=operation!.Payload;var recorder=new Recorder();using var client=new HttpClient(recorder){BaseAddress=new Uri("https://api.invalid/")};var transport=new HttpSyncTransport(client,store,new Session(owner));
   await transport.SendAsync(operation,default);await transport.SendAsync(operation,default);
-  Assert.Equal(recorder.Requests[0],recorder.Requests[1]);Assert.Equal("/api/qc-forms/10/evidence",recorder.Requests[0].Route);Assert.DoesNotContain("-2",recorder.Requests[0].Body);Assert.Equal(payload,operation.Payload);
+  Assert.Equal(recorder.Requests[0],recorder.Requests[1]);Assert.Equal("/api/qc-forms/10/evidence",recorder.Requests[0].Route);Assert.Equal("1",System.Text.RegularExpressions.Regex.Match(recorder.Requests[0].Body,@"name=""?QCFormFieldID""?\r\n\r\n([^\r\n]+)").Groups[1].Value);Assert.Equal(payload,operation.Payload);
  }
  [Fact] public void Changed_photo_requirement_cannot_be_silently_accepted_during_creation_acknowledgement()
  {

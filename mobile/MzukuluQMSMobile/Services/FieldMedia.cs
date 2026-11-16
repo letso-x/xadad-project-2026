@@ -4,6 +4,7 @@ public sealed class FieldMedia : IFieldMedia
 {
  public async Task<FileResult?> PickAsync(bool camera)
  {
+  using var timing=MzukuluQMS.Mobile.Core.PerformanceTrace.Measure(camera?"media.capture-including-user":"media.pick-including-user");
   if(camera && !MediaPicker.Default.IsCaptureSupported)throw new InvalidOperationException("No camera is available. Choose a gallery image.");
   var options=new MediaPickerOptions{Title="Inspection photo",SelectionLimit=1,MaximumWidth=2000,MaximumHeight=2000,CompressionQuality=90,RotateImage=true};
   try{return camera?await MediaPicker.Default.CapturePhotoAsync(options):(await MediaPicker.Default.PickPhotosAsync(options)).FirstOrDefault();}

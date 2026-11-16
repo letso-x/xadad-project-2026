@@ -10,7 +10,7 @@ public sealed class QCFormService : IQCFormService
 {
     private readonly IQCFormRepository _repository;
     private readonly IQCWorkflow _workflow;
-    private readonly NcrService _ncr;
+    private readonly INcrFailureRecorder _ncr;
     private readonly IQCFormContentHashService _hash;
     private readonly IFieldValueValidator _fieldValueValidator;
 
@@ -19,7 +19,7 @@ public sealed class QCFormService : IQCFormService
     public QCFormService(
     IQCFormRepository repository,
     IFieldValueValidator fieldValueValidator,
-    ICurrentUserService currentUserService, IQCWorkflow workflow, IQCFormContentHashService hash, NcrService ncr)
+    ICurrentUserService currentUserService, IQCWorkflow workflow, IQCFormContentHashService hash, INcrFailureRecorder ncr)
     {
         _repository = repository;
         _workflow = workflow;

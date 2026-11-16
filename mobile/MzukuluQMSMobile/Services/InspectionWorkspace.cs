@@ -25,6 +25,7 @@ public sealed partial class InspectionWorkspace(FieldSession session,IFieldMedia
  public static Guid LocalId(string kind,long id)=>new(SHA256.HashData(Encoding.UTF8.GetBytes(kind+":"+id)).AsSpan(0,16));
  private async Task<JsonNode> RequestAsync(string method,string route,JsonNode? body=null)
  {
+  using var timing=PerformanceTrace.Measure(method=="GET"?"api.read":"api.write");
   using var request=new HttpRequestMessage(new HttpMethod(method),route);
   var token=await session.GetAccessTokenAsync(default);
   if(token is null)throw new InvalidOperationException("Session expired. Local work is retained; sign in online to sync.");
@@ -69,13 +70,23 @@ public sealed partial class InspectionWorkspace(FieldSession session,IFieldMedia
   JsonArray remote;try{remote=(await CachedGetAsync("forms",projectId,$"api/qc-forms?projectId={projectId}&pageSize=100")).AsArray();}
   catch(CachedDataUnavailableException) when(pending.Count>0){remote=new JsonArray();IsCached=true;}
   var result=new JsonArray();foreach(var item in pending)result.Add(item.Form.DeepClone());
-  foreach(var form in remote)if(!pending.Any(p=>p.Server?.ToString()==form?["qcFormID"]?.ToString()))result.Add(form?.DeepClone());return result;
+  foreach(var form in remote)if(!pending.Any(p=>p.Server?.ToString()==form?["qcFormID"]?.ToString()))result.Add(form?.DeepClone());
+  var outbox=await local.OutboxAsync();
+  foreach(var form in result)
+  {
+   if(form?["qcFormID"] is null)continue;
+   var saved=await local.GetAsync(LocalId("form",form["qcFormID"]!.GetValue<long>()));
+   if(saved is not null)form["syncState"]=RecordSyncState.Describe(saved,outbox);
+  }
+  return result;
  }
  public async Task<JsonNode> FormAsync(long formId)
  {
   if(formId>0)return await CachedGetAsync("form",formId,$"api/qc-forms/{formId}");
   var local=await StoreAsync();var record=await local.GetAsync(LocalId("form",formId))??throw new InvalidOperationException("This saved record is unavailable for this account.");
-  var form=JsonNode.Parse(record.Json)!;IsCached=true;if(record.ServerId is not long serverId||record.Dirty)return form;
+  var form=JsonNode.Parse(record.Json)!;
+  if(OfflineFormIdentity.NeedsMetadataRepair(form)){await local.RestoreFormMetadataAsync(record.LocalId,await TemplateAsync(form["checklistTemplateVersionID"]!.GetValue<long>()));record=(await local.GetAsync(record.LocalId))!;form=JsonNode.Parse(record.Json)!;}
+  IsCached=true;if(record.ServerId is not long serverId||record.Dirty)return form;
   try{form=OfflineFormIdentity.Localize(await RequestAsync("GET",$"api/qc-forms/{serverId}"),form);await local.CacheAsync(record.LocalId,serverId,form.ToJsonString());IsCached=false;}
   catch(Exception e) when(e is HttpRequestException or TaskCanceledException){ }
   return form;
@@ -121,9 +132,9 @@ public sealed partial class InspectionWorkspace(FieldSession session,IFieldMedia
   try{await QueueAsync(form,projectField?"UpdateQCFormProjectField":"UpdateQCResponse",new SyncRequest("PUT",$"api/qc-forms/{id}/{(projectField?"project-fields":"responses")}/{target}",new JsonObject{["value"]=value?.DeepClone()}.ToJsonString()));}
   catch{field["value"]=previous;throw;}
  }
- private async Task QueueAsync(JsonNode form,string kind,SyncRequest request)
+ private async Task<Guid> QueueAsync(JsonNode form,string kind,SyncRequest request)
  {
-  var id=form["qcFormID"]!.GetValue<long>();await (await StoreAsync()).SaveAndEnqueueAsync(LocalId("form",id),form.ToJsonString(),kind,JsonSerializer.Serialize(request),form["revision"]!.GetValue<long>());
+  var id=form["qcFormID"]!.GetValue<long>();return await (await StoreAsync()).SaveAndEnqueueAsync(LocalId("form",id),form.ToJsonString(),kind,JsonSerializer.Serialize(request),form["revision"]!.GetValue<long>());
  }
  // Incomplete input uses separate encrypted entries, never invalid server writes.
  private static Guid InputDraftId(long formId,string fieldKey)=>LocalId("input-draft:"+fieldKey,formId);
@@ -136,11 +147,15 @@ public sealed partial class InspectionWorkspace(FieldSession session,IFieldMedia
   =>await (await StoreAsync()).CacheAsync(InputDraftId(formId,fieldKey),null,draft?.ToJsonString()??"null");
  public async Task SaveRemarksAsync(JsonNode form,string remarks)
  {
-  await RequireEditableAsync(form);var prior=form["remarks"]?.DeepClone();form["remarks"]=remarks;
+  await RequireEditableAsync(form);if(form["remarks"]?.ToString()==remarks)return;var prior=form["remarks"]?.DeepClone();form["remarks"]=remarks;
   try{await QueueAsync(form,"UpdateRemarks",new SyncRequest("PUT",$"api/qc-forms/{form["qcFormID"]}/remarks",new JsonObject{["remarks"]=remarks}.ToJsonString()));}catch{form["remarks"]=prior;throw;}
  }
- public async Task QueueSubmitAsync(JsonNode form)
- {await RequireEditableAsync(form);await QueueAsync(form,"SubmitQCForm",new SyncRequest("POST",$"api/qc-forms/{form["qcFormID"]}/submit"));}
+ public async Task<Guid> QueueSubmitAsync(JsonNode form)
+ {await RequireEditableAsync(form);return await QueueAsync(form,"SubmitQCForm",new SyncRequest("POST",$"api/qc-forms/{form["qcFormID"]}/submit"));}
+ public async Task<string> RecordStateAsync(long formId)
+ {
+  var local=await StoreAsync();return RecordSyncState.Describe(await local.GetAsync(LocalId("form",formId)),await local.OutboxAsync());
+ }
  public async Task QueueReviewAsync(JsonNode form,bool approve,string? reason)
  {
   if(form["status"]!.GetValue<string>()!="Submitted")throw new InvalidOperationException("Review requires a Submitted record.");
@@ -161,8 +176,37 @@ public sealed partial class InspectionWorkspace(FieldSession session,IFieldMedia
  }
  public async Task<string> SyncAsync()
  {
+  using var timing=PerformanceTrace.Measure("sync.total");
   if(!await syncGate.WaitAsync(0))return "Syncing";
-  try{var local=await StoreAsync();return await new SyncEngine(local,session,new HttpSyncTransport(client,local,session)).RunAsync();}
+  try{
+   var local=await StoreAsync();
+   foreach(var record in await local.RecordsAsync())
+   {
+    var node=JsonNode.Parse(record.Json);
+    if(node is JsonObject&&OfflineFormIdentity.NeedsMetadataRepair(node))
+     await local.RestoreFormMetadataAsync(record.LocalId,await TemplateAsync(node["checklistTemplateVersionID"]!.GetValue<long>()));
+   }
+   // Reconcile an already-created record; never POST a replacement copy.
+   var conflicts=await local.ConflictsAsync();
+   foreach(var entry in (await local.OutboxAsync()).Where(e=>e.Operation.Kind=="CreateQCForm"&&e.Status=="Conflict"&&e.LastError=="Created record differs from saved checklist; review both versions"))
+   {
+    var conflict=conflicts.Single(c=>c.OperationId==entry.Operation.OperationId);
+    var snapshot=JsonNode.Parse(conflict.ServerJson);
+    if(!long.TryParse(snapshot?["qcFormID"]?.ToString(),out var serverId)||serverId<=0)continue;
+    var current=await RequestAsync("GET",$"api/qc-forms/{serverId}");
+    var saved=await local.GetAsync(entry.Operation.EntityId);
+    try{OfflineFormIdentity.Acknowledge(JsonNode.Parse(saved!.Json)!,current);}
+    catch(InvalidOperationException){continue;}
+    await local.CompleteAsync(entry.Operation,serverId,0,resultJson:entry.FailureJson,serverSnapshot:current.ToJsonString());
+   }
+   return await new SyncEngine(local,session,new HttpSyncTransport(client,local,session),message=>{
+#if ANDROID
+    Android.Util.Log.Info("QmsSync",message);
+#else
+    System.Diagnostics.Trace.WriteLine(message);
+#endif
+   }).RunAsync();
+  }
   finally{syncGate.Release();}
  }
  public async ValueTask DisposeAsync(){if(store is not null)await store.DisposeAsync();store=null;Permissions.Clear();}

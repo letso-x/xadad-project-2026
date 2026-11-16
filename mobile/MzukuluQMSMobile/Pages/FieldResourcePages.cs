@@ -56,7 +56,7 @@ public sealed class FieldFormsPage : FieldScreen
    var page=1;Button? more=null;more=FieldUi.Action("Load more records",async()=>{page++;if(await model.LoadAsync(()=>workspace.CachedGetAsync("forms-page-"+page,projectId,$"api/qc-forms?projectId={projectId}&page={page}&pageSize=100"))){AddForms(model.Data!.AsArray());if(model.Data.AsArray().Count<100)more!.IsVisible=false;}else page--;},true);more.IsVisible=model.Data.AsArray().Count==100;Rows.Add(more);
   }
  }
- private void AddForms(JsonArray forms){foreach(var form in forms){var id=form!["qcFormID"]!.GetValue<long>();Rows.Add(FieldUi.Card(FieldUi.Text(form["formNumber"]!.ToString(),18,true),FieldUi.Badge(form["status"]!.ToString()),FieldUi.Text("Updated "+BusinessText.Date(form["updatedAt"]?.ToString())),FieldUi.Action("Open / resume",()=>Navigation.PushAsync(new FieldFormPage(workspace,id)),true)));}}
+ private void AddForms(JsonArray forms){foreach(var form in forms){var id=form!["qcFormID"]!.GetValue<long>();Rows.Add(FieldUi.Card(FieldUi.Text(form["formNumber"]!.ToString(),18,true),FieldUi.Badge(form["status"]!.ToString()),FieldUi.Text(form["syncState"]?.ToString()??"Saved centrally",12),FieldUi.Text("Updated "+BusinessText.Date(form["updatedAt"]?.ToString())),FieldUi.Action("Open / resume",()=>Navigation.PushAsync(new FieldFormPage(workspace,id)),true)));}}
 }
 public sealed class FieldLibraryPage : FieldScreen
 {

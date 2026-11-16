@@ -2,7 +2,11 @@ using Dapper;
 using MzukuluQMS.Api.Data;
 using MzukuluQMS.Api.Services.Users;
 namespace MzukuluQMS.Api.Services.Workflow;
-public sealed class NcrService(QmsDbSession session,IQCWorkflow workflow,ICurrentUserService users)
+public interface INcrFailureRecorder
+{
+ Task RecordFailureAsync(long formId,long responseId,CancellationToken ct);
+}
+public sealed class NcrService(QmsDbSession session,IQCWorkflow workflow,ICurrentUserService users):INcrFailureRecorder
 {
  public async Task RecordFailureAsync(long formId,long responseId,CancellationToken ct)
  {

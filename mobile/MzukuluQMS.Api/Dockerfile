@@ -9,6 +9,10 @@ RUN dotnet publish mobile/MzukuluQMS.Api/MzukuluQMS.Api.csproj \
     -c Release --no-restore -p:UseAppHost=false -o /out
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production
 COPY --from=build /out/ ./

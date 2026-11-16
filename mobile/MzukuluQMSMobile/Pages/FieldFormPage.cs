@@ -27,9 +27,10 @@ public sealed class FieldFormPage : FieldScreen
   ToolbarItems.Add(new ToolbarItem("Sync",null,async()=>{await FlushAsync();await model.SyncAsync();await LoadAsync();}));
  }
  protected override async void OnAppearing(){base.OnAppearing();await LoadAsync();}
- private async Task LoadAsync(){await FlushAsync();if(inputs.Any(i=>i.SaveFailed)||remarksSaveFailed)return;if(await model.LoadAsync())await model.RunAsync(RenderAsync);else if(Rows.Count==0){Heading("QC record","Inspection unavailable");}}
+ private async Task LoadAsync(){using var timing=PerformanceTrace.Measure("form.open");await FlushAsync();if(inputs.Any(i=>i.SaveFailed)||remarksSaveFailed)return;if(await model.LoadAsync())await model.RunAsync(RenderAsync);else if(Rows.Count==0){Heading("QC record","Inspection unavailable");}}
  private async Task RenderAsync()
  {
+  using var timing=PerformanceTrace.Measure("form.render");
   inputs.Clear();drafts.Clear();saveRemarks=null;var form=model.Form!;
   if(model.Editable)
   {
@@ -71,7 +72,7 @@ public sealed class FieldFormPage : FieldScreen
     async Task SaveNotes(bool commit)
     {
      var text=notes.Text??"";
-     try{await edits.Enqueue(async()=>{await workspace.SaveInputDraftAsync(formId,"remarks",new JsonObject{["text"]=text});if(commit){if(form["remarks"]?.ToString()!=text)await workspace.SaveRemarksAsync(form,text);await workspace.SaveInputDraftAsync(formId,"remarks",null);}});remarksSaveFailed=false;}
+     try{await edits.Enqueue(async()=>{await workspace.SaveInputDraftAsync(formId,"remarks",new JsonObject{["text"]=text});if(commit){if(form["remarks"]?.ToString()!=text)await workspace.SaveRemarksAsync(form,text);await workspace.SaveInputDraftAsync(formId,"remarks",null);}});remarksSaveFailed=false;model.Message=commit?await workspace.RecordStateAsync(formId):"Saved locally";}
      catch{remarksSaveFailed=true;model.Message="Remarks could not be saved. Keep this record open and try again.";}
     }
     notes.TextChanged+=async(_,_)=>await SaveNotes(false);notes.Unfocused+=async(_,_)=>await SaveNotes(true);saveRemarks=()=>SaveNotes(true);
@@ -199,10 +200,10 @@ public sealed class FieldFormPage : FieldScreen
  private static string? ValueError(InputState input,out JsonNode? value)
  {
   value=null;if(input.GetValue is null)return null;
-  try{value=input.GetValue();FormInput.Validate(input.Field,value);return null;}
+  try{value=input.GetValue();var error=FormInput.ValidationError(input.Field,value);return error is not null&&FormInput.Missing(value)?input.Field["fieldType"]?.ToString()=="Dropdown"&&ChecklistItems.IsResultOptions(Options(input.Field))?"Select a result.":"Required field":error;}
   catch(FormatException){return "Check the number or date format.";}
   catch(OverflowException){return "This number is too large.";}
-  catch(ArgumentException e){return FormInput.Missing(value)?input.Field["fieldType"]?.ToString()=="Dropdown"&&ChecklistItems.IsResultOptions(Options(input.Field))?"Select a result.":"Required field":e.Message;}
+  catch(ArgumentException e){return e.Message;}
  }
  private static void ShowError(InputState input,string? error)
  {
@@ -213,6 +214,7 @@ public sealed class FieldFormPage : FieldScreen
  }
  private async Task PersistAsync(InputState input,bool commit)
  {
+  using var timing=PerformanceTrace.Measure(commit?"form.commit":"form.draft");
   var problem=ValueError(input,out var value);var captured=value?.DeepClone();
   var draft=new JsonObject{["value"]=captured?.DeepClone()};
   if(input.RawText is not null)draft["text"]=input.RawText();
@@ -223,12 +225,13 @@ public sealed class FieldFormPage : FieldScreen
    await edits.Enqueue(async()=>{
     await workspace.SaveInputDraftAsync(formId,input.Key,draft);
     if(commit&&problem is null){await workspace.SaveValueAsync(form,input.Field,captured,input.Project);await workspace.SaveInputDraftAsync(formId,input.Key,null);}
-   });input.SaveFailed=false;
+   });input.SaveFailed=false;model.Message=commit&&problem is null?await workspace.RecordStateAsync(formId):"Saved locally";
   }
   catch{input.SaveFailed=true;input.ShowErrors=true;ShowError(input,"Could not save this answer. Keep this record open and try again.");model.Message="Some changes could not be saved. Please try again before leaving this record.";}
  }
  private async Task FlushAsync()
  {
+  using var timing=PerformanceTrace.Measure("form.flush");
   await edits.DrainAsync();
   if(!model.Editable)return;
   if(await (await workspace.StoreAsync()).HasPendingTransitionAsync(InspectionWorkspace.LocalId("form",formId)))return;
@@ -252,12 +255,22 @@ public sealed class FieldFormPage : FieldScreen
  }
  private async Task SubmitAsync()
  {
+  using var timing=PerformanceTrace.Measure("form.submit");
   await FlushAsync();var photos=await PhotoFieldsAsync();InputState? first=null;var count=0;
   if(remarksSaveFailed){model.Message="Remarks could not be saved. Please try again before submitting.";return;}
   foreach(var input in inputs){input.ShowErrors=true;var error=InputError(input,photos);ShowError(input,error);if(error is not null){first??=input;count++;}}
   if(first is not null){model.Message=$"{count} field{(count==1?"":"s")} need attention. Complete the highlighted fields.";first.FocusTarget?.Focus();await Scroller.ScrollToAsync(first.Border,ScrollToPosition.Start,true);return;}
   // Failed submissions leave the rendered controls and entered values intact.
-  if(await model.SubmitAsync())await LoadAsync();
+  if(await model.SubmitAsync())
+  {
+   var list=Navigation.NavigationStack.OfType<FieldFormsPage>().LastOrDefault();
+   if(list is null)
+   {
+    list=new FieldFormsPage(workspace,model.Form!["projectID"]!.GetValue<long>());
+    Navigation.InsertPageBefore(list,this);
+   }
+   while(Navigation.NavigationStack.Last()!=list)await Navigation.PopAsync();
+  }
  }
  private async Task CaptureAsync(long fieldId,bool camera,VerticalStackLayout controls)
  {

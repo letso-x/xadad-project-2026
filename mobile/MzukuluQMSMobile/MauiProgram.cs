@@ -10,6 +10,17 @@ public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
+#if DEBUG || QMS_PERFORMANCE
+        MzukuluQMS.Mobile.Core.PerformanceTrace.Sink=sample=>{
+            var message=FormattableString.Invariant($"operation={sample.Operation} elapsed_ms={sample.ElapsedMilliseconds:F3} thread={(MainThread.IsMainThread?"main":"worker")}");
+#if ANDROID
+            Android.Util.Log.Info("QmsPerf",message);
+#else
+            System.Diagnostics.Trace.WriteLine(message);
+#endif
+        };
+#endif
+        using var timing=MzukuluQMS.Mobile.Core.PerformanceTrace.Measure("startup.maui");
         var builder = MauiApp.CreateBuilder();
 
         builder

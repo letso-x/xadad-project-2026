@@ -13,6 +13,7 @@ public sealed class NcrViewModel(InspectionWorkspace workspace,long formId,long 
  private string DraftKey=>"ncr-correction:"+ncrId;
  public bool Can(string permission)=>workspace.Permissions.Contains(permission);
  public async Task<bool> LoadAsync()=>await RunAsync(async()=>{
+  using var timing=PerformanceTrace.Measure("ncr.load");
   Form=await workspace.FormAsync(formId);Ncr=await workspace.NcrAsync(formId,ncrId,publicId);
   Evidence=(await workspace.HistoryAsync(formId,"evidence")).AsArray();
   Correction=await workspace.InputDraftAsync(formId,DraftKey)??FreshCorrection();
@@ -26,16 +27,24 @@ public sealed class NcrViewModel(InspectionWorkspace workspace,long formId,long 
  {await drafts.WaitAsync();try{await workspace.SaveInputDraftAsync(formId,DraftKey,Correction.DeepClone());}finally{drafts.Release();}}
  public async Task RetainDraftAsync()
  {try{await PersistDraftAsync();}catch(Exception e) when(e is not OutOfMemoryException){Message="This NCR draft could not be saved. Keep the page open and try again.";}}
- public Task<bool> CorrectAsync()=>RunAsync(async()=>{
-  await PersistDraftAsync();await workspace.QueueNcrCorrectionAsync(Form!,Ncr!,Correction);Message=await workspace.SyncAsync();
-  if(Message=="Synced"){await workspace.SaveInputDraftAsync(formId,DraftKey,null);await ReloadAsync();Correction=FreshCorrection();Message="Corrective action saved. Independent verification is required.";}
- });
- public Task<bool> VerifyAsync(bool passed,string comments)=>RunAsync(async()=>{
-  await workspace.QueueNcrVerificationAsync(Form!,Ncr!,passed,comments);Message=await workspace.SyncAsync();
-  if(Message=="Synced"){await ReloadAsync();Message=passed?"Verification passed — NCR closed.":"Verification failed — NCR remains open.";}
- });
+ public async Task<bool> CorrectAsync()
+ {
+  var confirmed=false;var finished=await RunAsync(async()=>{
+   await PersistDraftAsync();var intent=await workspace.QueueNcrCorrectionAsync(Form!,Ncr!,Correction);Message=await workspace.SyncAsync();
+   confirmed=RecordSyncState.OperationConfirmed(intent,"CorrectNcr",await (await workspace.StoreAsync()).OutboxAsync());
+   if(confirmed){await workspace.SaveInputDraftAsync(formId,DraftKey,null);await ReloadAsync(false);Correction=FreshCorrection();Message="Corrective action saved. Independent verification is required.";}
+  });return finished&&confirmed;
+ }
+ public async Task<bool> VerifyAsync(bool passed,string comments)
+ {
+  var confirmed=false;var finished=await RunAsync(async()=>{
+   var intent=await workspace.QueueNcrVerificationAsync(Form!,Ncr!,passed,comments);Message=await workspace.SyncAsync();
+   confirmed=RecordSyncState.OperationConfirmed(intent,"VerifyNcr",await (await workspace.StoreAsync()).OutboxAsync());
+   if(confirmed){await ReloadAsync(false);Message=passed?"Verification passed — NCR closed.":"Verification failed — NCR remains open.";}
+  });return finished&&confirmed;
+ }
  public Task<bool> SyncAsync()=>RunAsync(async()=>{Message=await workspace.SyncAsync();await ReloadAsync();});
- private async Task ReloadAsync(){Form=await workspace.FormAsync(formId);Ncr=await workspace.NcrAsync(formId,ncrId,publicId);Evidence=(await workspace.HistoryAsync(formId,"evidence")).AsArray();}
+ private async Task ReloadAsync(bool refreshEvidence=true){Form=await workspace.FormAsync(formId);Ncr=await workspace.NcrAsync(formId,ncrId,publicId);if(refreshEvidence)Evidence=(await workspace.HistoryAsync(formId,"evidence")).AsArray();}
  public async Task<bool> CaptureEvidenceAsync(bool camera)=>await RunAsync(async()=>{
   var file=await workspace.Media.PickAsync(camera);if(file is null){Message="Photo selection cancelled. Saved work retained.";return;}
   await using var stream=await file.OpenReadAsync();await workspace.SavePhotoAsync(Form!,null,stream,file.ContentType??"image/jpeg",file.FileName);

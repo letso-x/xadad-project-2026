@@ -19,18 +19,18 @@ public sealed partial class InspectionWorkspace
   if((await (await StoreAsync()).GetAsync(LocalId("form",form["qcFormID"]!.GetValue<long>())))?.Dirty==true)
    throw new InvalidOperationException("Sync pending QC changes before taking another NCR action. Your saved work is retained.");
  }
- public async Task QueueNcrCorrectionAsync(JsonNode form,JsonNode ncr,JsonNode draft)
+ public async Task<Guid> QueueNcrCorrectionAsync(JsonNode form,JsonNode ncr,JsonNode draft)
  {
   if(!Permissions.Contains("CorrectNcr"))throw new InvalidOperationException("You don't have permission to correct this NCR.");
   NcrInteraction.ValidateCorrection(ncr,draft);await RequireCleanNcrFormAsync(form);
-  await QueueAsync(form,"CorrectNcr",new SyncRequest("POST",$"api/qc-forms/{form["qcFormID"]}/ncrs/{ncr["ncrID"]}/correct",draft.ToJsonString()));
+  return await QueueAsync(form,"CorrectNcr",new SyncRequest("POST",$"api/qc-forms/{form["qcFormID"]}/ncrs/{ncr["ncrID"]}/correct",draft.ToJsonString()));
  }
- public async Task QueueNcrVerificationAsync(JsonNode form,JsonNode ncr,bool passed,string comments)
+ public async Task<Guid> QueueNcrVerificationAsync(JsonNode form,JsonNode ncr,bool passed,string comments)
  {
   if(!Permissions.Contains("VerifyNcr"))throw new InvalidOperationException("You don't have permission to verify this NCR.");
   NcrInteraction.ValidateVerification(ncr,session.Owner??throw new InvalidOperationException("Sign in again to continue."),comments);
   await RequireCleanNcrFormAsync(form);
-  await QueueAsync(form,"VerifyNcr",new SyncRequest("POST",$"api/qc-forms/{form["qcFormID"]}/ncrs/{ncr["ncrID"]}/verify",
+  return await QueueAsync(form,"VerifyNcr",new SyncRequest("POST",$"api/qc-forms/{form["qcFormID"]}/ncrs/{ncr["ncrID"]}/verify",
     new JsonObject{["passed"]=passed,["comments"]=comments,["expectedRevision"]=ncr["revision"]!.DeepClone()}.ToJsonString()));
  }
  public async Task<byte[]> UploadedEvidenceAsync(long formId,long evidenceId)

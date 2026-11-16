@@ -29,6 +29,7 @@ public sealed class FieldSession : ISyncSession, ILocalKeyStore
  }
  public async Task<bool> RestoreAsync()
  {
+  using var timing=PerformanceTrace.Measure("auth.restore");
   if(HasPendingSignIn)return true;
   var saved=await SecureStorage.Default.GetAsync("qms-session");if(saved is null)return false;
   try

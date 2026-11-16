@@ -17,10 +17,14 @@ public sealed class FieldSyncPage : FieldScreen
    var outbox=await local.OutboxAsync();
    foreach(var entry in outbox.Where(o=>o.Status!="Completed"))
    {
-    var card=FieldUi.Card(FieldUi.Text(BusinessText.Action(entry.Operation.Kind),16,true),FieldUi.Badge(entry.Status),FieldUi.Text(entry.LastError=="Authentication required"?"Sign in again to continue syncing.":entry.Status is "Failed" or "Conflict"?ApiFailureMessage.Describe(System.Net.HttpStatusCode.BadRequest,entry.FailureJson):"Your saved work is waiting to sync."));
+    var card=FieldUi.Card(FieldUi.Text(BusinessText.Action(entry.Operation.Kind),16,true),FieldUi.Badge(entry.Status),FieldUi.Text(entry.LastError=="Authentication required"?"Sign in again to continue syncing.":ApiFailureMessage.SafeDetail(entry.LastError)??(entry.Status is "Failed" or "Conflict"?ApiFailureMessage.Describe(System.Net.HttpStatusCode.BadRequest,entry.FailureJson):"Your saved work is waiting to sync.")));
     var record=await local.GetAsync(entry.Operation.EntityId);JsonNode? form=null;try{form=JsonNode.Parse(record?.Json??"null");}catch(System.Text.Json.JsonException){}
     if(form?["formNumber"] is not null)((VerticalStackLayout)card.Content!).Add(FieldUi.Text(form["formNumber"]!.ToString(),14,true));
     if(form?["qcFormID"] is JsonValue value&&value.TryGetValue<long>(out var id))((VerticalStackLayout)card.Content!).Add(FieldUi.Action("Open QC record",()=>Navigation.PushAsync(new FieldFormPage(workspace,id)),true));
+    if(entry.Status=="Failed"||entry.Status=="Pending"&&entry.Operation.Attempts>0)
+     ((VerticalStackLayout)card.Content!).Add(FieldUi.Action("Retry saved change",async()=>{
+      await model.RunAsync(async()=>{await local.RetryRetainedAsync(entry.Operation.OperationId);model.Message=await workspace.SyncAsync();});await LoadAsync();
+     },true));
     Rows.Add(card);
    }
    foreach(var entry in outbox.Where(o=>(o.Status is "Failed" or "Conflict") && (o.Operation.Kind is "SubmitQCForm" or "ReturnForCorrection" or "ApproveQCForm" or "CreateSignOff")))
@@ -34,7 +38,7 @@ public sealed class FieldSyncPage : FieldScreen
     var record=operation is null?null:await local.GetAsync(operation.Operation.EntityId);
     JsonNode? form=null;try{form=JsonNode.Parse(record?.Json??"null");}catch(System.Text.Json.JsonException){}
     var comparison=ConflictPresentation.Describe(conflict,form);
-    Rows.Add(FieldUi.Card(FieldUi.Warning(conflict.Status=="Cancelled"?"This unsuccessful action was withdrawn. Both versions remain in the record history.":"This record changed while you were offline. Review the latest record with an authorised reviewer before continuing."),FieldUi.Badge(conflict.Status),FieldUi.Text(comparison.Label,16,true),FieldUi.Text("Saved on this device: "+comparison.SavedValue),FieldUi.Text("Central record: "+comparison.CentralValue)));
+    Rows.Add(FieldUi.Card(FieldUi.Warning(conflict.Status=="Completed"?"This saved change was reconciled with the central record. The original comparison remains retained in history.":conflict.Status=="Cancelled"?"This unsuccessful action was withdrawn. Both versions remain in the record history.":"This record changed while you were offline. Review the latest record with an authorised reviewer before continuing."),FieldUi.Badge(conflict.Status),FieldUi.Text(comparison.Label,16,true),FieldUi.Text("Saved on this device: "+comparison.SavedValue),FieldUi.Text("Central record: "+comparison.CentralValue)));
    }
    Rows.Add(FieldUi.Text("Both versions are retained for review. Your answers and attachments are never automatically replaced to resolve a conflict."));
    Rows.Add(FieldUi.Text("Signing out keeps your saved work on this device for your account."));

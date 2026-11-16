@@ -1,0 +1,65 @@
+[
+  {
+    "cold": [
+      "Starting: Intent { cmp=com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity }",
+      "Status: ok",
+      "LaunchState: COLD",
+      "Activity: com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity",
+      "TotalTime: 2428",
+      "WaitTime: 2431",
+      "Complete"
+    ],
+    "trial": 1,
+    "warm": [
+      "Starting: Intent { cmp=com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity }",
+      "Warning: Activity not started, its current task has been brought to the front",
+      "Status: ok",
+      "LaunchState: UNKNOWN (0)",
+      "Activity: com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity",
+      "WaitTime: 230",
+      "Complete"
+    ]
+  },
+  {
+    "cold": [
+      "Starting: Intent { cmp=com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity }",
+      "Status: ok",
+      "LaunchState: COLD",
+      "Activity: com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity",
+      "TotalTime: 2249",
+      "WaitTime: 2254",
+      "Complete"
+    ],
+    "trial": 2,
+    "warm": [
+      "Starting: Intent { cmp=com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity }",
+      "Warning: Activity not started, its current task has been brought to the front",
+      "Status: ok",
+      "LaunchState: UNKNOWN (0)",
+      "Activity: com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity",
+      "WaitTime: 271",
+      "Complete"
+    ]
+  },
+  {
+    "cold": [
+      "Starting: Intent { cmp=com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity }",
+      "Status: ok",
+      "LaunchState: COLD",
+      "Activity: com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity",
+      "TotalTime: 2239",
+      "WaitTime: 2242",
+      "Complete"
+    ],
+    "trial": 3,
+    "warm": [
+      "Starting: Intent { cmp=com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity }",
+      "Warning: Activity not started, its current task has been brought to the front",
+      "Status: ok",
+      "LaunchState: UNKNOWN (0)",
+      "Activity: com.companyname.mzukuluqmsmobile/crc64d24bb2a2f57f6ea3.MainActivity",
+      "WaitTime: 253",
+      "Complete"
+    ]
+  }
+]

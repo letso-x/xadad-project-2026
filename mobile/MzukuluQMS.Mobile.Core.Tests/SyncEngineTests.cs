@@ -18,4 +18,15 @@ public sealed class SyncEngineTests
   var owner=Guid.NewGuid();await using var store=new OfflineStore(Path.Combine(Path.GetTempPath(),"qms-tests",Guid.NewGuid().ToString()),owner,new Keys());await store.SaveAndEnqueueAsync(Guid.NewGuid(),"local","UpdateQCResponse","payload",1);var transport=new Transport(200);
   Assert.Equal("Authentication required",await new SyncEngine(store,new Session(Guid.NewGuid()),transport).RunAsync());Assert.Equal(0,transport.Calls);Assert.Equal(1,(await store.CountsAsync())["Pending"]);
  }
+ [Theory][InlineData(false)][InlineData(true)]
+ public async Task Diagnostics_exclude_payloads_and_cannot_change_acknowledgment(bool brokenLogger)
+ {
+  var owner=Guid.NewGuid();await using var store=new OfflineStore(Path.Combine(Path.GetTempPath(),"qms-tests",Guid.NewGuid().ToString()),owner,new Keys());
+  await store.SaveAndEnqueueAsync(Guid.NewGuid(),"local","UpdateQCResponse","synthetic-private-payload",1);
+  var messages=new List<string>();
+  var engine=new SyncEngine(store,new Session(owner),new Transport(204),message=>{messages.Add(message);if(brokenLogger)throw new InvalidOperationException("logger unavailable");});
+  Assert.Equal("Synced",await engine.RunAsync());
+  var log=Assert.Single(messages);Assert.Contains("HTTP 204",log);Assert.Contains("elapsed",log);Assert.DoesNotContain("synthetic-private-payload",log);
+  Assert.Equal(1,(await store.CountsAsync())["Completed"]);
+ }
 }

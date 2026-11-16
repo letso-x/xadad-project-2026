@@ -88,6 +88,8 @@ public sealed class ApiExceptionHandler : IExceptionHandler
             Instance = httpContext.Request.Path
         };
 
+        problemDetails.Extensions["traceId"]=httpContext.TraceIdentifier;
+
         httpContext.Response.StatusCode =
             statusCode;
 

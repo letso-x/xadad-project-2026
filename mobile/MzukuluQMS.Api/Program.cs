@@ -45,6 +45,7 @@ builder.Services.AddScoped<IQCWorkflow, QCWorkflow>();
 builder.Services.AddScoped<QCFormQueries>();
 builder.Services.AddScoped<EvidenceContentService>();
 builder.Services.AddScoped<NcrService>();
+builder.Services.AddScoped<INcrFailureRecorder>(services=>services.GetRequiredService<NcrService>());
 builder.Services.AddScoped<TemplateAuthoring>();
 builder.Services.AddScoped<CableRegisters>();
 builder.Services.AddScoped<QualityReporting>();
@@ -137,6 +138,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 var app = builder.Build();
 if(app.Environment.IsProduction())ProductionConfiguration.Validate(app.Configuration);
 app.UseForwardedHeaders();
+app.UseMiddleware<MzukuluQMS.Api.Diagnostics.WorkflowTimingMiddleware>();
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.

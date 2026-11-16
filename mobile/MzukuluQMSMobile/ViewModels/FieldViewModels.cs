@@ -44,7 +44,8 @@ public sealed class FieldFormViewModel(InspectionWorkspace workspace,long formId
  public bool Editable=>!LockedByQueue&&Form is not null && FormInput.Editable(Form["status"]!.GetValue<string>())&&workspace.Permissions.Contains("PerformInspection");
  public bool Can(string permission)=>workspace.Permissions.Contains(permission);
  public async Task<bool> LoadAsync()=>await RunAsync(async()=>{
-  Form=await workspace.FormAsync(formId);LockedByQueue=await (await workspace.StoreAsync()).HasPendingTransitionAsync(InspectionWorkspace.LocalId("form",formId));Message=workspace.IsCached?"Saved answers · pending sync":"";HistoryMessage="";
+  using var timing=PerformanceTrace.Measure("form.load-data");
+  Form=await workspace.FormAsync(formId);LockedByQueue=await (await workspace.StoreAsync()).HasPendingTransitionAsync(InspectionWorkspace.LocalId("form",formId));Message=await workspace.RecordStateAsync(formId);HistoryMessage="";
   foreach(var kind in new[]{"evidence","sign-offs","ncrs","audit"})
   {
    if(kind=="audit"&&!Can("ReadAudit") || kind=="ncrs"&&!Can("ReadNcr"))continue;
@@ -79,12 +80,22 @@ public sealed class FieldFormViewModel(InspectionWorkspace workspace,long formId
   }
   return rows;
  }
- public Task<bool> SubmitAsync()=>RunAsync(async()=>{
+ public async Task<bool> SubmitAsync()
+ {
+  var confirmed=false;
+  var finished=await RunAsync(async()=>{
   var photos=Evidence.Where(e=>e?["evidenceType"]?.GetValue<string>()=="Photo"&&e["qcFormFieldID"] is not null).Select(e=>e!["qcFormFieldID"]!.GetValue<long>()).ToHashSet();
   foreach(var item in await LocalEvidenceAsync())if(item.Type=="Photo"&&item.Field.HasValue&&item.Status!="Cancelled")photos.Add(item.Field.Value);
   var errors=FormInput.RequiredErrors(Form!,photos);if(errors.Count>0)throw new ArgumentException(string.Join("\n",errors));
-  await workspace.QueueSubmitAsync(Form!);Message=await workspace.SyncAsync();await LoadFormOnlyAsync();
- });
+  var intent=await workspace.QueueSubmitAsync(Form!);Message=await workspace.SyncAsync();
+  var local=await workspace.StoreAsync();
+  confirmed=RecordSyncState.SubmissionConfirmed(intent,await local.OutboxAsync());
+  LockedByQueue=await local.HasPendingTransitionAsync(InspectionWorkspace.LocalId("form",formId));
+  if(confirmed){Form=System.Text.Json.Nodes.JsonNode.Parse((await local.GetAsync(InspectionWorkspace.LocalId("form",formId)))!.Json);Message="Submitted";}
+  else if(Message!="Authentication required"&&Message!="Syncing")Message=await workspace.RecordStateAsync(formId);
+  });
+  return finished&&confirmed;
+ }
  private async Task LoadFormOnlyAsync()=>Form=await workspace.FormAsync(formId);
  public Task<bool> SyncAsync()=>RunAsync(async()=>{Message=await workspace.SyncAsync();await LoadFormOnlyAsync();});
  public Task<bool> ReviewAsync(bool approve,string? reason)=>RunAsync(async()=>{await workspace.QueueReviewAsync(Form!,approve,reason);Message=await workspace.SyncAsync();await LoadFormOnlyAsync();});

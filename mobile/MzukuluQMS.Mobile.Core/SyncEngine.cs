@@ -7,9 +7,10 @@ public sealed record SyncRequest(string Method,string Route,string? Body=null,Gu
 public sealed record SyncReply(int Status,string Body,long? Revision,long? ServerId,string? ServerSnapshot=null);
 public interface ISyncTransport { Task<SyncReply> SendAsync(PendingOperation operation,CancellationToken ct); }
 public interface ISyncSession { Guid? Owner {get;} Task<string?> GetAccessTokenAsync(CancellationToken ct); }
-public sealed class SyncEngine(OfflineStore store,ISyncSession session,ISyncTransport transport)
+public sealed class SyncEngine(OfflineStore store,ISyncSession session,ISyncTransport transport,Action<string>? diagnostics=null)
 {
  private readonly SemaphoreSlim gate=new(1,1);
+ private void Report(string message){try{diagnostics?.Invoke(message);}catch{/* Diagnostics cannot change durable sync outcomes. */}}
  public async Task<string> RunAsync(CancellationToken ct=default)
  {
   if(!await gate.WaitAsync(0,ct))return "Syncing";
@@ -21,7 +22,9 @@ public sealed class SyncEngine(OfflineStore store,ISyncSession session,ISyncTran
     var operation=await store.ClaimAsync(ct);if(operation is null)break;
     try
     {
+     var started=System.Diagnostics.Stopwatch.GetTimestamp();
      var reply=await transport.SendAsync(operation,ct);
+     Report($"{operation.Kind}: HTTP {reply.Status}; attempt {operation.Attempts+1}; elapsed {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:F0} ms");
      if(reply.Status is >=200 and <300)
      {
       try{await store.CompleteAsync(operation,reply.ServerId,reply.Revision,ct,reply.Body,reply.ServerSnapshot);}
@@ -33,12 +36,12 @@ public sealed class SyncEngine(OfflineStore store,ISyncSession session,ISyncTran
      else await store.FailAsync(operation,ApiFailureMessage.Describe((HttpStatusCode)reply.Status,reply.Body),(reply.Status>=500 || reply.Status==429) && operation.Attempts<8,ct:ct,failureJson:reply.Body);
     }
     catch(OperationCanceledException) when(!ct.IsCancellationRequested)
-    {await store.FailAsync(operation,"API request timed out",operation.Attempts<8,ct:ct);}
+    {Report($"{operation.Kind}: request timed out");await store.FailAsync(operation,"API request timed out",operation.Attempts<8,ct:ct);}
     catch(OperationCanceledException)
     {
      await store.FailAsync(operation,"Sync interrupted",true,ct:CancellationToken.None);throw;
     }
-    catch(HttpRequestException){await store.FailAsync(operation,"API unavailable",operation.Attempts<8,ct:ct);}
+    catch(HttpRequestException){Report($"{operation.Kind}: API unavailable");await store.FailAsync(operation,"API unavailable",operation.Attempts<8,ct:ct);}
     catch(Exception error) when(error is InvalidOperationException or JsonException or ArgumentException or IOException)
     {await store.FailAsync(operation,"Queued operation needs review; local data retained",false,ct:ct);}
    }

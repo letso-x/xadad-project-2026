@@ -18,12 +18,34 @@ public sealed class QCWorkflowServiceTests
     private readonly Mock<IQCOperation> operation = new();
     private readonly Mock<ICurrentUserService> users = new();
     private readonly Mock<IQCFormContentHashService> hash = new();
-    private QCFormService Service => new(repo.Object, new FieldValueValidator(), users.Object, workflow.Object, hash.Object, new NcrService(null!,workflow.Object,users.Object));
+    private readonly Mock<INcrFailureRecorder> ncr = new();
+    private QCFormService Service => new(repo.Object, new FieldValueValidator(), users.Object, workflow.Object, hash.Object, ncr.Object);
     public QCWorkflowServiceTests()
     {
         workflow.Setup(w => w.BeginAsync(It.IsAny<long?>(),It.IsAny<long?>(),It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(operation.Object);
         users.Setup(u => u.GetCurrentUserAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CurrentUserDto { UserID=Guid.NewGuid(), IsActive=true });
         hash.Setup(h => h.GenerateHashAsync(101,It.IsAny<CancellationToken>())).ReturnsAsync(new string('a',64));
+    }
+    [Theory][InlineData("Fail",true)][InlineData("Pass",false)][InlineData("N/A",false)]
+    public async Task Inspection_outcome_creates_NCR_only_for_failure_before_commit(string value,bool failure)
+    {
+        repo.Setup(r=>r.GetStatusAsync(101,default)).ReturnsAsync("InProgress");
+        repo.Setup(r=>r.GetResponseValidationAsync(101,201,default)).ReturnsAsync(new QCResponseValidationRow{FieldType="Dropdown",IsRequired=true,OptionsJson="[\"Pass\",\"Fail\",\"N/A\"]"});
+        var recorded=false;
+        ncr.Setup(n=>n.RecordFailureAsync(101,201,default)).Callback(()=>recorded=true).Returns(Task.CompletedTask);
+        operation.Setup(o=>o.CompleteAsync("QCResponseUpdated",101,It.IsAny<object>(),default,null)).Callback(()=>Assert.Equal(failure,recorded)).Returns(Task.CompletedTask);
+        await Service.UpdateResponseAsync(101,201,new UpdateQCResponseRequest{Value=JsonSerializer.SerializeToElement(value)});
+        ncr.Verify(n=>n.RecordFailureAsync(101,201,default),failure?Times.Once():Times.Never());
+        operation.Verify(o=>o.CompleteAsync("QCResponseUpdated",101,It.IsAny<object>(),default,null),Times.Once);
+    }
+    [Fact]public async Task NCR_failure_cannot_commit_response_or_report_success()
+    {
+        repo.Setup(r=>r.GetStatusAsync(101,default)).ReturnsAsync("InProgress");
+        repo.Setup(r=>r.GetResponseValidationAsync(101,201,default)).ReturnsAsync(new QCResponseValidationRow{FieldType="Dropdown",OptionsJson="[\"Pass\",\"Fail\",\"N/A\"]"});
+        ncr.Setup(n=>n.RecordFailureAsync(101,201,default)).ThrowsAsync(new InvalidOperationException("NCR unavailable"));
+        await Assert.ThrowsAsync<InvalidOperationException>(()=>Service.UpdateResponseAsync(101,201,new UpdateQCResponseRequest{Value=JsonSerializer.SerializeToElement("Fail")}));
+        operation.Verify(o=>o.CompleteAsync(It.IsAny<string>(),It.IsAny<long>(),It.IsAny<object>(),It.IsAny<CancellationToken>(),null),Times.Never);
+        operation.Verify(o=>o.DisposeAsync(),Times.Once);
     }
     [Theory]
     [InlineData("Draft")][InlineData("InProgress")][InlineData("ReturnedForCorrection")]
