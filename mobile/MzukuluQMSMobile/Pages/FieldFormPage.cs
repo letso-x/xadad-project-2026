@@ -65,7 +65,7 @@ public sealed class FieldFormPage : FieldScreen
   if(form["remarks"] is not null||model.Editable)
   {
    var draft=model.Editable?await workspace.InputDraftAsync(formId,"remarks"):null;
-   Rows.Add(FieldUi.Section("Remarks / observations / deviations"));var notes=new Editor{Text=draft?["text"]?.ToString()??form["remarks"]?.ToString()??"",AutoSize=EditorAutoSizeOption.TextChanges,IsReadOnly=!model.Editable,MinimumHeightRequest=100};Rows.Add(FieldUi.Card(notes));
+   Rows.Add(FieldUi.Section("Remarks / observations / deviations"));var notes=new Editor{TextColor=FieldUi.Navy,BackgroundColor=Colors.White,PlaceholderColor=FieldUi.Muted,Text=draft?["text"]?.ToString()??form["remarks"]?.ToString()??"",AutoSize=EditorAutoSizeOption.TextChanges,IsReadOnly=!model.Editable,MinimumHeightRequest=100};Rows.Add(FieldUi.Card(notes));
    if(model.Editable)
    {
     async Task SaveNotes(bool commit)
@@ -143,7 +143,7 @@ public sealed class FieldFormPage : FieldScreen
     }
     var grid=new Grid{ColumnDefinitions={new ColumnDefinition(GridLength.Star),new ColumnDefinition(GridLength.Star),new ColumnDefinition(GridLength.Star)},ColumnSpacing=6};
     var buttons=new List<Button>();var index=0;
-    foreach(var option in options){var b=FieldUi.Action(option=="Pass"?"A":option=="Fail"?"R":option,async()=>{selected=option;foreach(var button in buttons)button.BackgroundColor=button.ClassId==selected?FieldUi.Accent:FieldUi.Navy;UpdateAttention();await Changed();});b.ClassId=option;b.IsEnabled=model.Editable;b.BackgroundColor=selected==option?FieldUi.Accent:FieldUi.Navy;SemanticProperties.SetDescription(b,option is "A" or "Pass"?"Accepted":option is "R" or "Fail"?"Rejected — requires attention":"Not applicable");buttons.Add(b);grid.Add(b,index++,0);}controls.Add(grid);UpdateAttention();controls.Add(attention);value=()=>selected is null?null:JsonValue.Create(selected);focus=buttons.FirstOrDefault();
+    foreach(var option in options){var b=FieldUi.Action(option is "Pass" or "Accepted"?"A":option is "Fail" or "Rejected"?"R":option,async()=>{selected=option;foreach(var button in buttons)button.BackgroundColor=button.ClassId==selected?(selected is "A" or "Pass" or "Accepted"?Color.FromArgb("#176247"):selected=="N/A"?FieldUi.Muted:FieldUi.Accent):FieldUi.Navy;UpdateAttention();await Changed();});b.ClassId=option;b.IsEnabled=model.Editable;b.BackgroundColor=selected==option?(selected is "A" or "Pass" or "Accepted"?Color.FromArgb("#176247"):selected=="N/A"?FieldUi.Muted:FieldUi.Accent):FieldUi.Navy;SemanticProperties.SetDescription(b,option is "A" or "Pass" or "Accepted"?"Accepted":option is "R" or "Fail" or "Rejected"?"Rejected — requires attention":"Not applicable");buttons.Add(b);grid.Add(b,index++,0);}controls.Add(grid);UpdateAttention();controls.Add(attention);value=()=>selected is null?null:JsonValue.Create(selected);focus=buttons.FirstOrDefault();
    }
    else{var picker=new FieldChoice("Choose answer",options,selected){IsEnabled=model.Editable};controls.Add(picker);value=()=>picker.SelectedValue is string answer?JsonValue.Create(answer):null;focus=picker;picker.SelectionChanged+=async(_,_)=>await Changed();}
   }
@@ -161,7 +161,7 @@ public sealed class FieldFormPage : FieldScreen
   }
   else if(type is "Text" or "LongText" or "Number" or "Decimal" or "Reference")
   {
-   if(type=="LongText"){var input=new Editor{Text=draft?["text"]?.ToString()??initial?.ToString(),Placeholder=field["placeholder"]?.ToString(),AutoSize=EditorAutoSizeOption.TextChanges,IsReadOnly=!model.Editable,MinimumHeightRequest=96,TextColor=FieldUi.Navy};controls.Add(input);value=()=>FormInput.Parse(type,input.Text);rawText=()=>input.Text;focus=input;input.TextChanged+=async(_,_)=>await Changed(false);input.Unfocused+=async(_,_)=>await Changed();}
+   if(type=="LongText"){var input=new Editor{TextColor=FieldUi.Navy,BackgroundColor=Colors.White,PlaceholderColor=FieldUi.Muted,Text=draft?["text"]?.ToString()??initial?.ToString(),Placeholder=field["placeholder"]?.ToString(),AutoSize=EditorAutoSizeOption.TextChanges,IsReadOnly=!model.Editable,MinimumHeightRequest=96};controls.Add(input);value=()=>FormInput.Parse(type,input.Text);rawText=()=>input.Text;focus=input;input.TextChanged+=async(_,_)=>await Changed(false);input.Unfocused+=async(_,_)=>await Changed();}
    else{var input=FieldUi.Entry(field["placeholder"]?.ToString()??type,type is "Number" or "Decimal"?Keyboard.Numeric:Keyboard.Default);input.Text=draft?["text"]?.ToString()??(initial is JsonValue v&&v.TryGetValue<decimal>(out var number)&&type is "Number" or "Decimal"?number.ToString(CultureInfo.CurrentCulture):initial?.ToString());input.IsReadOnly=!model.Editable;controls.Add(input);value=()=>FormInput.Parse(type,input.Text);rawText=()=>input.Text;focus=input;input.TextChanged+=async(_,_)=>await Changed(false);input.Unfocused+=async(_,_)=>await Changed();}
   }
   else if(type is not ("Photo" or "Signature")){controls.Add(FieldUi.Warning("This answer format is not supported. Ask an administrator to review it. Saved answers are retained."));}
@@ -199,10 +199,10 @@ public sealed class FieldFormPage : FieldScreen
  private static string? ValueError(InputState input,out JsonNode? value)
  {
   value=null;if(input.GetValue is null)return null;
-  try{value=input.GetValue();FormInput.Validate(input.Field,value);return null;}
+  try{value=input.GetValue();var error=FormInput.ValidationError(input.Field,value);return error is not null&&FormInput.Missing(value)?input.Field["fieldType"]?.ToString()=="Dropdown"&&ChecklistItems.IsResultOptions(Options(input.Field))?"Select a result.":"Required field":error;}
   catch(FormatException){return "Check the number or date format.";}
   catch(OverflowException){return "This number is too large.";}
-  catch(ArgumentException e){return FormInput.Missing(value)?input.Field["fieldType"]?.ToString()=="Dropdown"&&ChecklistItems.IsResultOptions(Options(input.Field))?"Select a result.":"Required field":e.Message;}
+  catch(ArgumentException e){return e.Message;}
  }
  private static void ShowError(InputState input,string? error)
  {
@@ -286,7 +286,7 @@ public sealed class FieldSignaturePage : FieldScreen
   pad.StartInteraction+=(_,e)=>Point(e,true);pad.DragInteraction+=(_,e)=>Point(e,false);pad.EndInteraction+=(_,e)=>Point(e,false);
   Rows.Add(FieldUi.Card(pad));Rows.Add(FieldUi.Action("Clear / redraw",()=>{ink.Clear();pad.Invalidate();return Task.CompletedTask;},true));
   var types=workspace.Permissions.Where(p=>p.StartsWith("SignInspection:",StringComparison.Ordinal)).Select(p=>p["SignInspection:".Length..]).Order().ToList();var picker=new Picker{Title="Signing capacity",ItemsSource=types};if(types.Count==1)picker.SelectedIndex=0;Rows.Add(picker);
-  var comments=new Editor{Placeholder="Signing comments",AutoSize=EditorAutoSizeOption.TextChanges};Rows.Add(comments);
+  var comments=new Editor{TextColor=FieldUi.Navy,BackgroundColor=Colors.White,PlaceholderColor=FieldUi.Muted,Placeholder="Signing comments",AutoSize=EditorAutoSizeOption.TextChanges};Rows.Add(comments);
   var consent=new CheckBox();Rows.Add(new HorizontalStackLayout{Children={consent,FieldUi.Text("I confirm my intent to sign this submitted record.")}});
   Rows.Add(FieldUi.Action("Sign record",async()=>{
    if(!consent.IsChecked||picker.SelectedItem is not string type||!ink.HasInk){model.Message="Draw a signature, choose your capacity and confirm signing intent.";return;}

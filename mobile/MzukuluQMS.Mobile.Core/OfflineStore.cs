@@ -61,6 +61,17 @@ public sealed partial class OfflineStore(string directory, Guid owner, ILocalKey
     {
         await Locked(async()=>{await ExecuteAsync("INSERT INTO Entity VALUES($id,$server,$payload,0) ON CONFLICT(LocalId) DO UPDATE SET ServerId=excluded.ServerId,Payload=excluded.Payload WHERE Entity.Dirty=0",null,ct,("$id",id.ToString()),("$server",serverId),("$payload",Encrypt(json)));},ct);
     }
+    public async Task RestoreFormMetadataAsync(Guid entityId,JsonNode definition,CancellationToken ct=default)
+    {
+        await Locked(async()=>{
+            using var tx=connection!.BeginTransaction();
+            await using var query=Command("SELECT Payload FROM Entity WHERE LocalId=$id",tx,("$id",entityId.ToString()));
+            var bytes=await query.ExecuteScalarAsync(ct) as byte[]??throw new InvalidOperationException("Saved record not found.");
+            var source=JsonNode.Parse(Decrypt(bytes))!;var repaired=OfflineFormIdentity.RestoreMetadata(source,definition);
+            if(!JsonNode.DeepEquals(source,repaired))await ExecuteAsync("UPDATE Entity SET Payload=$payload WHERE LocalId=$id",tx,ct,("$payload",Encrypt(repaired.ToJsonString())),("$id",entityId.ToString()));
+            tx.Commit();
+        },ct);
+    }
     public async Task<Guid> SaveAndEnqueueAsync(Guid entityId,string localJson,string kind,string payload,long? expectedRevision,Guid? dependsOn=null,CancellationToken ct=default)
     {
         var operationId=Guid.NewGuid();

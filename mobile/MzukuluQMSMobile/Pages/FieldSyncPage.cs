@@ -34,7 +34,7 @@ public sealed class FieldSyncPage : FieldScreen
     var record=operation is null?null:await local.GetAsync(operation.Operation.EntityId);
     JsonNode? form=null;try{form=JsonNode.Parse(record?.Json??"null");}catch(System.Text.Json.JsonException){}
     var comparison=ConflictPresentation.Describe(conflict,form);
-    Rows.Add(FieldUi.Card(FieldUi.Warning(conflict.Status=="Cancelled"?"This unsuccessful action was withdrawn. Both versions remain in the record history.":"This record changed while you were offline. Review the latest record with an authorised reviewer before continuing."),FieldUi.Badge(conflict.Status),FieldUi.Text(comparison.Label,16,true),FieldUi.Text("Saved on this device: "+comparison.SavedValue),FieldUi.Text("Central record: "+comparison.CentralValue)));
+    Rows.Add(FieldUi.Card(FieldUi.Warning(conflict.Status=="Completed"?"The accepted record was reconciled after restoring its saved checklist metadata. The original mismatch remains retained for traceability.":conflict.Status=="Cancelled"?"This unsuccessful action was withdrawn. Both versions remain in the record history.":"This record changed while you were offline. Review the latest record with an authorised reviewer before continuing."),FieldUi.Badge(conflict.Status),FieldUi.Text(comparison.Label,16,true),FieldUi.Text("Saved on this device: "+comparison.SavedValue),FieldUi.Text("Central record: "+comparison.CentralValue)));
    }
    Rows.Add(FieldUi.Text("Both versions are retained for review. Your answers and attachments are never automatically replaced to resolve a conflict."));
    Rows.Add(FieldUi.Text("Signing out keeps your saved work on this device for your account."));

@@ -75,7 +75,7 @@ public sealed partial class InspectionWorkspace(FieldSession session,IFieldMedia
  {
   if(formId>0)return await CachedGetAsync("form",formId,$"api/qc-forms/{formId}");
   var local=await StoreAsync();var record=await local.GetAsync(LocalId("form",formId))??throw new InvalidOperationException("This saved record is unavailable for this account.");
-  var form=JsonNode.Parse(record.Json)!;IsCached=true;if(record.ServerId is not long serverId||record.Dirty)return form;
+  var form=JsonNode.Parse(record.Json)!;if(OfflineFormIdentity.NeedsMetadataRepair(form)){await local.RestoreFormMetadataAsync(record.LocalId,await TemplateAsync(form["checklistTemplateVersionID"]!.GetValue<long>()));record=(await local.GetAsync(record.LocalId))!;form=JsonNode.Parse(record.Json)!;}IsCached=true;if(record.ServerId is not long serverId||record.Dirty)return form;
   try{form=OfflineFormIdentity.Localize(await RequestAsync("GET",$"api/qc-forms/{serverId}"),form);await local.CacheAsync(record.LocalId,serverId,form.ToJsonString());IsCached=false;}
   catch(Exception e) when(e is HttpRequestException or TaskCanceledException){ }
   return form;
@@ -162,7 +162,30 @@ public sealed partial class InspectionWorkspace(FieldSession session,IFieldMedia
  public async Task<string> SyncAsync()
  {
   if(!await syncGate.WaitAsync(0))return "Syncing";
-  try{var local=await StoreAsync();return await new SyncEngine(local,session,new HttpSyncTransport(client,local,session)).RunAsync();}
+  try{
+   var local=await StoreAsync();
+   foreach(var record in await local.RecordsAsync())
+   {
+    var node=JsonNode.Parse(record.Json);
+    if(node is JsonObject&&OfflineFormIdentity.NeedsMetadataRepair(node))
+     await local.RestoreFormMetadataAsync(record.LocalId,await TemplateAsync(node["checklistTemplateVersionID"]!.GetValue<long>()));
+   }
+   // A creation already accepted remotely may have failed only at local acknowledgement
+   // because this client dropped options/rules. Reconcile the same record, never create a copy.
+   var conflicts=await local.ConflictsAsync();
+   foreach(var entry in (await local.OutboxAsync()).Where(e=>e.Operation.Kind=="CreateQCForm"&&e.Status=="Conflict"&&e.LastError=="Created record differs from saved checklist; review both versions"))
+   {
+    var conflict=conflicts.Single(c=>c.OperationId==entry.Operation.OperationId);
+    var snapshot=JsonNode.Parse(conflict.ServerJson);
+    if(!long.TryParse(snapshot?["qcFormID"]?.ToString(),out var serverId)||serverId<=0)continue;
+    var current=await RequestAsync("GET",$"api/qc-forms/{serverId}");
+    var saved=await local.GetAsync(entry.Operation.EntityId);
+    try{OfflineFormIdentity.Acknowledge(JsonNode.Parse(saved!.Json)!,current);}
+    catch(InvalidOperationException){continue;} // A genuine content/revision mismatch remains a conflict.
+    await local.CompleteAsync(entry.Operation,serverId,0,resultJson:entry.FailureJson,serverSnapshot:current.ToJsonString());
+   }
+   return await new SyncEngine(local,session,new HttpSyncTransport(client,local,session)).RunAsync();
+  }
   finally{syncGate.Release();}
  }
  public async ValueTask DisposeAsync(){if(store is not null)await store.DisposeAsync();store=null;Permissions.Clear();}

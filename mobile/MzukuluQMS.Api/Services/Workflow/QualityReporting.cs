@@ -3,7 +3,7 @@ using MzukuluQMS.Api.Data;
 using MzukuluQMS.Api.Services.SignOffs;
 using MzukuluQMS.Api.Services.Users;
 namespace MzukuluQMS.Api.Services.Workflow;
-public sealed class QualityReporting(QmsDbSession session,IQCWorkflow workflow,IQCFormContentHashService hash,ICurrentUserService users)
+public sealed class QualityReporting(QmsDbSession session,IQCWorkflow workflow,IQCFormContentHashService hash,ICurrentUserService users,ItpService itps)
 {
  public async Task<System.Text.Json.JsonElement> PortfolioAsync(CancellationToken ct)
  {
@@ -54,7 +54,8 @@ public sealed class QualityReporting(QmsDbSession session,IQCWorkflow workflow,I
       AND (NOT EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID")
         OR EXISTS(SELECT 1 FROM qms_core."Ncr" n WHERE n."LegacyNCRID"=legacy."NCRID" AND n."ClosedAt" IS NOT NULL)))
    """,new {projectId},session.Transaction,cancellationToken:ct));
-  return new {projectId,asOf=DateTimeOffset.UtcNow,qcStatusCounts=forms,openNcrCount=ncrs,limitations=new[]{"ITP, Hold, calibration, training and portfolio metrics are not implemented."}};
+  var itpProgress=await itps.ProjectProgressInTransaction(projectId,ct);
+  return new {projectId,asOf=DateTimeOffset.UtcNow,qcStatusCounts=forms,openNcrCount=ncrs,itpProgress,limitations=new[]{"Calibration, training and portfolio metrics are not implemented. ITP progress covers current approved plans and requires migration 007."}};
  }
  public async Task<HandoverReadiness> ReadinessAsync(long projectId,CancellationToken ct)
  {

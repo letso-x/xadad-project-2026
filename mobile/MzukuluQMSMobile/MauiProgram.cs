@@ -1,4 +1,5 @@
-﻿using MzukuluQMSMobile.Constants;
+using MzukuluQMS.Mobile.Core;
+using MzukuluQMSMobile.Constants;
 using MzukuluQMSMobile.Data.Remote;
 using MzukuluQMSMobile.Services;
 using MzukuluQMSMobile.ViewModels;
@@ -28,6 +29,11 @@ public static class MauiProgram
             });
 
         builder.Services.AddSingleton<FieldSession>();
+        builder.Services.AddSingleton<PasswordRecovery>(_=>{
+            var client=new HttpClient{Timeout=TimeSpan.FromSeconds(30),MaxResponseContentBufferSize=1024*1024};
+            if(Uri.TryCreate(SupabaseConstants.Url,UriKind.Absolute,out var url)&&url.Scheme=="https")client.BaseAddress=new Uri(url.ToString().TrimEnd('/')+"/auth/v1/");
+            return new PasswordRecovery(client,SupabaseConstants.AnonKey,RecoveryConfiguration.RedirectUri,new SecureRecoveryState());
+        });
         builder.Services.AddSingleton<IFieldMedia,FieldMedia>();
         builder.Services.AddSingleton<InspectionWorkspace>();
         builder.Services.AddTransient<FieldLoginPage>();

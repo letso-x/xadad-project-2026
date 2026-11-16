@@ -47,6 +47,7 @@ builder.Services.AddScoped<EvidenceContentService>();
 builder.Services.AddScoped<NcrService>();
 builder.Services.AddScoped<TemplateAuthoring>();
 builder.Services.AddScoped<CableRegisters>();
+builder.Services.AddScoped<ItpService>();
 builder.Services.AddScoped<QualityReporting>();
 builder.Services.AddScoped<IQCFormRepository,QCFormRepository>();
 builder.Services.AddScoped<IQCFormService,QCFormService>();
